@@ -19,7 +19,8 @@
 4. **命令**：本地 `commands/SubCommand` + `HistoriaCommand`；新增子命令在主类 `setupCommands()` 挂载。
 5. **PDC 数据类型**：`utils/datatypes/DataType`（BOOLEAN/DOUBLE_ARRAY/INTEGER_ARRAY/LOCATION），
    编码与原 MorePersistentDataTypes 一致，勿改编码格式（涉及历史数据兼容）。
-6. **依赖红线**：运行时仅依赖 paper-api（1.21.11）与 Slimefun 5.0.0；
-   新增依赖前确认是否可被这两者覆盖，第三方库一律不得进入 `depend`/`softdepend`。
+6. **依赖红线**：`depend` 仅 Slimefun；运行时核心只依赖 paper-api（1.21.11）与 Slimefun 5.0.0。
+   `softdepend` 仅允许 Slimefun 附属插件（ExoticGarden/Networks/Netheopoiesis/SlimeTinker/HeadLimiter），
+   且所有附属集成必须有运行时守卫（参见 `SupportedPluginManager`），保证未安装时行为不变。
 7. **验证环境**：`F:/paper-test-1.21.11` 存有 Paper 1.21.11 build 132 测试服务端
    （plugins 内已放 Slimefun 5.0.0 与本插件），可直接启动回归。
