@@ -1,6 +1,7 @@
 package io.github.sefiraat.crystamaehistoria.utils.mobgoals;
 
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 
 import java.util.UUID;
@@ -17,7 +18,7 @@ public class LeechGoal extends AbstractGoal<Mob> {
     }
 
     @Override
-    public Class<? extends Entity> getTargetClass() {
+    public Class<? extends LivingEntity> getTargetClass() {
         return Mob.class;
     }
 }

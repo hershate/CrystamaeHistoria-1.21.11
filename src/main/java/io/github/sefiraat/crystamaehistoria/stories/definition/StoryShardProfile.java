@@ -51,7 +51,7 @@ public class StoryShardProfile {
         if (storyRarity != StoryRarity.UNIQUE && GeneralUtils.testChance(storyRarity.getId(), 100)) {
             ParticleUtils.displayParticleEffect(location, Particle.SPIT, 1, 3);
             ParticleUtils.displayParticleEffect(location, Particle.ENCHANT, 1, 1);
-            location.getWorld().dropItemNaturally(location, CrystaStacks.ARCANE_SIGIL.clone());
+            location.getWorld().dropItemNaturally(location, CrystaStacks.ARCANE_SIGIL.item().clone());
         }
     }
 

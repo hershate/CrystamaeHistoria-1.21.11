@@ -19,10 +19,22 @@ import org.bukkit.block.data.Bisected;
 
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class HarmonysSonata extends Spell {
+
+    /**
+     * 两格高的花。Paper 1.21.11 移除了 {@code Tag.TALL_FLOWERS}，此处以枚举集合等价替代。
+     */
+    private static final Set<Material> TALL_FLOWERS = EnumSet.of(
+        Material.SUNFLOWER,
+        Material.LILAC,
+        Material.ROSE_BUSH,
+        Material.PEONY,
+        Material.PITCHER_PLANT
+    );
 
     public HarmonysSonata() {
         SpellCoreBuilder spellCoreBuilder = new SpellCoreBuilder(60, true, 10, true, 10, true)
@@ -49,7 +61,7 @@ public class HarmonysSonata extends Spell {
                 .skip(ThreadLocalRandom.current().nextInt(set.size()))
                 .findAny()
                 .orElse(Material.DANDELION);
-            if (Tag.TALL_FLOWERS.isTagged(material)) {
+            if (TALL_FLOWERS.contains(material)) {
                 final Block upper = block.getRelative(BlockFace.UP);
                 if (upper.getType() == Material.AIR) {
                     block.setType(material, false);

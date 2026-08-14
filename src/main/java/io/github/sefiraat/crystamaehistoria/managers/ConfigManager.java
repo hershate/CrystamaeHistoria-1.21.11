@@ -99,7 +99,12 @@ public class ConfigManager {
 
     public void saveAll() {
         CrystamaeHistoria.getInstance().getLogger().info("正在保存魔法水晶编年史的数据");
-        CrystamaeHistoria.getInstance().getConfig().save();
+        final File configFile = new File(CrystamaeHistoria.getInstance().getDataFolder(), "config.yml");
+        try {
+            CrystamaeHistoria.getInstance().getConfig().save(configFile);
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
         saveResearches();
     }
 

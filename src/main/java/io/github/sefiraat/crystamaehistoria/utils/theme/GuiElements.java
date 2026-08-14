@@ -17,59 +17,59 @@ import java.text.MessageFormat;
 @UtilityClass
 public class GuiElements {
 
-    public static final CustomItemStack MENU_BACKGROUND = new CustomItemStack(ChestMenuUtils.getBackground());
+    public static final ItemStack MENU_BACKGROUND = new ItemStack(ChestMenuUtils.getBackground());
 
-    public static final CustomItemStack MENU_BACKGROUND_INPUT = new CustomItemStack(
+    public static final ItemStack MENU_BACKGROUND_INPUT = CustomItemStack.create(
         Material.LIGHT_BLUE_STAINED_GLASS_PANE,
         ChatColor.BLUE + "输入"
     );
 
-    public static final CustomItemStack MENU_STAVE_INPUT = new CustomItemStack(
+    public static final ItemStack MENU_STAVE_INPUT = CustomItemStack.create(
         Material.LIGHT_BLUE_STAINED_GLASS_PANE,
         ChatColor.BLUE + "在此处放入法杖"
     );
 
-    public static final CustomItemStack MENU_REMOVE_PLATES = new CustomItemStack(
+    public static final ItemStack MENU_REMOVE_PLATES = CustomItemStack.create(
         Material.ORANGE_STAINED_GLASS_PANE,
         ChatColor.BLUE + "移除法术板"
     );
 
-    public static final CustomItemStack MENU_SAVE_STAVE = new CustomItemStack(
+    public static final ItemStack MENU_SAVE_STAVE = CustomItemStack.create(
         Material.GREEN_STAINED_GLASS_PANE,
         ChatColor.BLUE + "保存法杖设置"
     );
 
-    public static final CustomItemStack MENU_BACKGROUND_OUTPUT = new CustomItemStack(
+    public static final ItemStack MENU_BACKGROUND_OUTPUT = CustomItemStack.create(
         Material.ORANGE_STAINED_GLASS_PANE,
         ChatColor.RED + "输出"
     );
 
-    public static final CustomItemStack MENU_DIVIDER = new CustomItemStack(
+    public static final ItemStack MENU_DIVIDER = CustomItemStack.create(
         Material.LIME_STAINED_GLASS_PANE,
         " "
     );
 
-    public static final CustomItemStack TIER_INDICATOR_1 = new CustomItemStack(
+    public static final ItemStack TIER_INDICATOR_1 = CustomItemStack.create(
         Skulls.GUI_TIER_NUMBER_1.getPlayerHead(),
         ThemeType.CLICK_INFO.getColor() + "T1"
     );
 
-    public static final CustomItemStack TIER_INDICATOR_2 = new CustomItemStack(
+    public static final ItemStack TIER_INDICATOR_2 = CustomItemStack.create(
         Skulls.GUI_TIER_NUMBER_2.getPlayerHead(),
         ThemeType.CLICK_INFO.getColor() + "T2"
     );
 
-    public static final CustomItemStack TIER_INDICATOR_3 = new CustomItemStack(
+    public static final ItemStack TIER_INDICATOR_3 = CustomItemStack.create(
         Skulls.GUI_TIER_NUMBER_3.getPlayerHead(),
         ThemeType.CLICK_INFO.getColor() + "T3"
     );
 
-    public static final CustomItemStack TIER_INDICATOR_4 = new CustomItemStack(
+    public static final ItemStack TIER_INDICATOR_4 = CustomItemStack.create(
         Skulls.GUI_TIER_NUMBER_4.getPlayerHead(),
         ThemeType.CLICK_INFO.getColor() + "T4"
     );
 
-    public static final CustomItemStack TIER_INDICATOR_5 = new CustomItemStack(
+    public static final ItemStack TIER_INDICATOR_5 = CustomItemStack.create(
         Skulls.GUI_TIER_NUMBER_5.getPlayerHead(),
         ThemeType.CLICK_INFO.getColor() + "T5"
     );
@@ -132,17 +132,17 @@ public class GuiElements {
     }
 
     @ParametersAreNonnullByDefault
-    public static CustomItemStack getSpellSlotPane(SpellSlot spellSlot) {
-        return new CustomItemStack(
+    public static ItemStack getSpellSlotPane(SpellSlot spellSlot) {
+        return CustomItemStack.create(
             Material.RED_STAINED_GLASS_PANE,
             ChatColor.GRAY + "法术: " + spellSlot.getDescription()
         );
     }
 
     @ParametersAreNonnullByDefault
-    public static CustomItemStack getDirectionalSlotPane(BlockFace blockFace, boolean active) {
+    public static ItemStack getDirectionalSlotPane(BlockFace blockFace, boolean active) {
         Material material = active ? Material.RED_STAINED_GLASS_PANE : Material.GREEN_STAINED_GLASS_PANE;
-        return new CustomItemStack(
+        return CustomItemStack.create(
             material,
             ChatColor.GRAY + "设置方向: " + blockFace.name()
         );

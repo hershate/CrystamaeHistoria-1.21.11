@@ -133,7 +133,7 @@ public abstract class AbstractGoal<T extends Mob> implements Goal<T> {
         return true;
     }
 
-    public Class<? extends Entity> getTargetClass() {
+    public Class<? extends LivingEntity> getTargetClass() {
         return Monster.class;
     }
 

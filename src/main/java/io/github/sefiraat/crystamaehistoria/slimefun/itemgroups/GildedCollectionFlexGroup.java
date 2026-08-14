@@ -156,7 +156,7 @@ public class GildedCollectionFlexGroup extends FlexItemGroup {
         lore.add(MessageFormat.format("{0}已镀金方块: {1}{2}", color, passive, PlayerStatistics.getBlocksGilded(player.getUniqueId())));
         lore.add(MessageFormat.format("{0}等级: {1}{2}", color, gildingRank.getTheme().getColor(), gildingRank.getTheme().getLoreLine()));
 
-        return new CustomItemStack(
+        return CustomItemStack.create(
             Material.TARGET,
             ThemeType.MAIN.getColor() + "镀金统计",
             lore

@@ -138,7 +138,7 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
                 final boolean researched = PlayerStatistics.hasUnlockedSpell(player, spellType);
 
                 if (mode == SlimefunGuideMode.CHEAT_MODE || researched) {
-                    menu.replaceExistingItem(slot, spellType.getSpell().getThemedStack());
+                    menu.replaceExistingItem(slot, spellType.getSpell().getThemedStack().item());
                     menu.addMenuClickHandler(slot, (player1, i1, itemStack1, clickAction) -> {
                         displayDefinition(player1, profile, mode, menu, page, spellType);
                         return false;
@@ -176,7 +176,7 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
 
         clearDisplay(menu);
 
-        menu.replaceExistingItem(SPELL, spellType.getSpell().getThemedStack());
+        menu.replaceExistingItem(SPELL, spellType.getSpell().getThemedStack().item());
         menu.addMenuClickHandler(SPELL, ((player, i, itemStack, clickAction) -> false));
 
         for (int i = 0; i < RECIPE.length; i++) {
@@ -261,7 +261,7 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
             ).map(s -> ThemeType.PASSIVE.getColor() + s)
             .collect(Collectors.toList());
 
-        return new CustomItemStack(
+        return CustomItemStack.create(
             Material.CAULDRON,
             ThemeType.MAIN.getColor() + "液化池",
             lore
@@ -280,7 +280,7 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
         final String cooldownDivided = MessageFormat.format("{0}冷却时间{1}随着法杖等级提升而减少", color, spellCore.isDamageMultiplied() ? "不会" : "会");
 
 
-        return new CustomItemStack(
+        return CustomItemStack.create(
             Material.GLOW_BERRIES,
             ThemeType.MAIN.getColor() + "基本信息",
             crysta,
@@ -317,7 +317,7 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
             lore.add(passive + "该法术不会进行治疗.");
         }
 
-        return new CustomItemStack(
+        return CustomItemStack.create(
             Material.MAP,
             ThemeType.MAIN.getColor() + "法术属性",
             lore
@@ -364,7 +364,7 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
             lore.add(projectileSpell1);
             lore.add(projectileSpell2);
         }
-        return new CustomItemStack(
+        return CustomItemStack.create(
             Material.NAME_TAG,
             ThemeType.MAIN.getColor() + "施法类型",
             lore
@@ -388,7 +388,7 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
             lore.add(noRange);
         }
 
-        return new CustomItemStack(
+        return CustomItemStack.create(
             Material.TARGET,
             ThemeType.MAIN.getColor() + "范围",
             lore
@@ -412,7 +412,7 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
             lore.add(noKnockback);
         }
 
-        return new CustomItemStack(
+        return CustomItemStack.create(
             Material.SLIME_BLOCK,
             ThemeType.MAIN.getColor() + "击退",
             lore
@@ -442,7 +442,7 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
             lore.add(passive + "不是弹射物类型的法术");
         }
 
-        return new CustomItemStack(
+        return CustomItemStack.create(
             Material.FIRE_CHARGE,
             ThemeType.MAIN.getColor() + "弹射物信息",
             lore
@@ -509,7 +509,7 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
             lore.add(passive + "没有药水效果");
         }
 
-        return new CustomItemStack(
+        return CustomItemStack.create(
             Material.BREWING_STAND,
             ThemeType.MAIN.getColor() + "药水效果",
             lore
@@ -526,7 +526,7 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
         lore.add(MessageFormat.format("{0}已解锁法术: {1}{2}", color, passive, PlayerStatistics.getSpellsUnlocked(player.getUniqueId())));
         lore.add(MessageFormat.format("{0}等级: {1}{2}", color, spellRank.getTheme().getColor(), spellRank.getTheme().getLoreLine()));
 
-        return new CustomItemStack(
+        return CustomItemStack.create(
             Material.TARGET,
             ThemeType.MAIN.getColor() + "法术统计",
             lore

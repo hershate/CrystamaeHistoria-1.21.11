@@ -23,105 +23,105 @@ public final class ItemGroups {
 
     public static final DummyItemGroup DUMMY_ITEM_GROUP = new DummyItemGroup(
         Keys.newKey("dummy"),
-        new CustomItemStack(
+        CustomItemStack.create(
             new ItemStack(Material.FIRE_CHARGE),
             ThemeType.MAIN.getColor() + "魔法水晶编年史 - 占位符 - 不要使用这里的物品"
         )
     );
     public static final MainFlexGroup MAIN = new MainFlexGroup(
         Keys.newKey("main"),
-        new CustomItemStack(
+        CustomItemStack.create(
             new ItemStack(Material.AMETHYST_CLUSTER),
             ThemeType.MAIN.getColor() + "魔法水晶编年史"
         )
     );
     public static final DummyItemGroup MECHANISMS = new DummyItemGroup(
         Keys.newKey("mechanisms"),
-        new CustomItemStack(
+        CustomItemStack.create(
             new ItemStack(Material.DEEPSLATE_TILE_SLAB),
             ThemeType.MAIN.getColor() + "装置"
         )
     );
     public static final DummyItemGroup CRYSTALS = new DummyItemGroup(
         Keys.newKey("crystals"),
-        new CustomItemStack(
+        CustomItemStack.create(
             new ItemStack(Material.AMETHYST_CLUSTER),
             ThemeType.MAIN.getColor() + "魔法水晶"
         )
     );
     public static final DummyItemGroup TOOLS = new DummyItemGroup(
         Keys.newKey("tools"),
-        new CustomItemStack(
+        CustomItemStack.create(
             new ItemStack(Material.STICK),
             ThemeType.MAIN.getColor() + "法杖与工具"
         )
     );
     public static final DummyItemGroup ARTISTIC = new DummyItemGroup(
         Keys.newKey("art"),
-        new CustomItemStack(
+        CustomItemStack.create(
             MagicPaintbrush.getTippedBrush(DyeColor.WHITE, true),
             ThemeType.MAIN.getColor() + "魔法与艺术"
         )
     );
     public static final DummyItemGroup GADGETS = new DummyItemGroup(
         Keys.newKey("gadgets"),
-        new CustomItemStack(
+        CustomItemStack.create(
             new ItemStack(Material.REDSTONE_LAMP),
             ThemeType.MAIN.getColor() + "魔法与科技"
         )
     );
     public static final DummyItemGroup EXALTED = new DummyItemGroup(
         Keys.newKey("exalted"),
-        new CustomItemStack(
+        CustomItemStack.create(
             new ItemStack(Material.BEACON),
             ThemeType.MAIN.getColor() + "尊贵物品"
         )
     );
     public static final DummyItemGroup MATERIALS = new DummyItemGroup(
         Keys.newKey("materials"),
-        new CustomItemStack(
+        CustomItemStack.create(
             new ItemStack(Material.GOLD_INGOT),
             ThemeType.MAIN.getColor() + "原材料"
         )
     );
     public static final DummyItemGroup RUNES = new DummyItemGroup(
         Keys.newKey("runes"),
-        new CustomItemStack(
+        CustomItemStack.create(
             new ItemStack(Material.ENCHANTING_TABLE),
             ThemeType.MAIN.getColor() + "神秘符文"
         )
     );
     public static final DummyItemGroup UNIQUES = new DummyItemGroup(
         Keys.newKey("uniques"),
-        new CustomItemStack(
+        CustomItemStack.create(
             new ItemStack(Material.NETHER_STAR),
             ThemeType.MAIN.getColor() + "独特物品"
         )
     );
     public static final DummyItemGroup GUIDE = new DummyItemGroup(
         Keys.newKey("guide"),
-        new CustomItemStack(
+        CustomItemStack.create(
             new ItemStack(Material.KNOWLEDGE_BOOK),
             ThemeType.MAIN.getColor() + "指南/教程"
         )
     );
     public static final StoryCollectionFlexGroup STORY_COLLECTION = new StoryCollectionFlexGroup(
         Keys.newKey("story_collection"),
-        new CustomItemStack(
+        CustomItemStack.create(
             new ItemStack(Material.KNOWLEDGE_BOOK),
             ThemeType.MAIN.getColor() + "故事集"
         )
     );
     public static final SpellCollectionFlexGroup SPELL_COLLECTION = new SpellCollectionFlexGroup(
         Keys.newKey("spell_collection"),
-        new CustomItemStack(
+        CustomItemStack.create(
             new ItemStack(Material.KNOWLEDGE_BOOK),
             ThemeType.MAIN.getColor() + "法术集"
         )
     );
     public static final GildedCollectionFlexGroup GILDING_COLLECTION = new GildedCollectionFlexGroup(
         Keys.newKey("gilding_collection"),
-        new CustomItemStack(
+        CustomItemStack.create(
             new ItemStack(Material.KNOWLEDGE_BOOK),
             ThemeType.MAIN.getColor() + "镀金集"
         )

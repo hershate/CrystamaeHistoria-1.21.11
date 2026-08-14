@@ -104,7 +104,7 @@ public class Tools {
 
         // Inert Plate
         RecipeItem inertPlateRecipe = new RecipeItem(
-            SlimefunItems.REINFORCED_PLATE.clone(),
+            SlimefunItems.REINFORCED_PLATE.item().clone(),
             StoryType.ELEMENTAL, 10,
             StoryType.HUMAN, 10,
             StoryType.PHILOSOPHICAL, 10
@@ -132,7 +132,7 @@ public class Tools {
             CrystaStacks.STAVE_BASIC,
             RecipeType.MAGIC_WORKBENCH,
             new ItemStack[]{
-                null, null, CrystaStacks.AMALGAMATE_INGOT_UNIQUE,
+                null, null, CrystaStacks.AMALGAMATE_INGOT_UNIQUE.item(),
                 null, new ItemStack(Material.STICK), null,
                 new ItemStack(Material.STICK), null, null
             },
@@ -145,9 +145,9 @@ public class Tools {
             CrystaStacks.STAVE_ADVANCED,
             RecipeType.MAGIC_WORKBENCH,
             new ItemStack[]{
-                CrystaStacks.AMALGAMATE_INGOT_COMMON, CrystaStacks.AMALGAMATE_INGOT_COMMON, CrystaStacks.AMALGAMATE_INGOT_COMMON,
-                CrystaStacks.AMALGAMATE_INGOT_COMMON, CrystaStacks.STAVE_BASIC, CrystaStacks.AMALGAMATE_INGOT_COMMON,
-                CrystaStacks.AMALGAMATE_INGOT_COMMON, CrystaStacks.AMALGAMATE_INGOT_COMMON, CrystaStacks.AMALGAMATE_INGOT_COMMON
+                CrystaStacks.AMALGAMATE_INGOT_COMMON.item(), CrystaStacks.AMALGAMATE_INGOT_COMMON.item(), CrystaStacks.AMALGAMATE_INGOT_COMMON.item(),
+                CrystaStacks.AMALGAMATE_INGOT_COMMON.item(), CrystaStacks.STAVE_BASIC.item(), CrystaStacks.AMALGAMATE_INGOT_COMMON.item(),
+                CrystaStacks.AMALGAMATE_INGOT_COMMON.item(), CrystaStacks.AMALGAMATE_INGOT_COMMON.item(), CrystaStacks.AMALGAMATE_INGOT_COMMON.item()
             },
             2
         );
@@ -158,9 +158,9 @@ public class Tools {
             CrystaStacks.STAVE_ARCANE,
             RecipeType.MAGIC_WORKBENCH,
             new ItemStack[]{
-                CrystaStacks.RUNE_BEGINNING, CrystaStacks.RUNE_CHANGE, CrystaStacks.RUNE_DRAGON,
-                CrystaStacks.RUNE_SUN, CrystaStacks.STAVE_ADVANCED, CrystaStacks.RUNE_CIRCLE,
-                CrystaStacks.RUNE_TRUE_LIGHTNING, CrystaStacks.RUNE_CHARM, CrystaStacks.RUNE_BRIGHT_SHIELD
+                CrystaStacks.RUNE_BEGINNING.item(), CrystaStacks.RUNE_CHANGE.item(), CrystaStacks.RUNE_DRAGON.item(),
+                CrystaStacks.RUNE_SUN.item(), CrystaStacks.STAVE_ADVANCED.item(), CrystaStacks.RUNE_CIRCLE.item(),
+                CrystaStacks.RUNE_TRUE_LIGHTNING.item(), CrystaStacks.RUNE_CHARM.item(), CrystaStacks.RUNE_BRIGHT_SHIELD.item()
             },
             3
         );
@@ -171,9 +171,9 @@ public class Tools {
             CrystaStacks.REFRACTING_LENS,
             RecipeType.MAGIC_WORKBENCH,
             new ItemStack[]{
-                null, CrystaStacks.IMBUED_GLASS, null,
+                null, CrystaStacks.IMBUED_GLASS.item(), null,
                 null, new ItemStack(Material.SPYGLASS), null,
-                null, CrystaStacks.AMALGAMATE_INGOT_COMMON, null
+                null, CrystaStacks.AMALGAMATE_INGOT_COMMON.item(), null
             }
         );
 
@@ -183,9 +183,9 @@ public class Tools {
             CrystaStacks.THAUMATURGIC_SALTS,
             RecipeType.MAGIC_WORKBENCH,
             new ItemStack[]{
-                CrystaStacks.AMALGAMATE_DUST_COMMON, CrystaStacks.AMALGAMATE_DUST_COMMON, CrystaStacks.AMALGAMATE_DUST_COMMON,
-                CrystaStacks.AMALGAMATE_DUST_COMMON, SlimefunItems.SALT, CrystaStacks.AMALGAMATE_DUST_COMMON,
-                CrystaStacks.AMALGAMATE_DUST_COMMON, CrystaStacks.AMALGAMATE_DUST_COMMON, CrystaStacks.AMALGAMATE_DUST_COMMON
+                CrystaStacks.AMALGAMATE_DUST_COMMON.item(), CrystaStacks.AMALGAMATE_DUST_COMMON.item(), CrystaStacks.AMALGAMATE_DUST_COMMON.item(),
+                CrystaStacks.AMALGAMATE_DUST_COMMON.item(), SlimefunItems.SALT.item(), CrystaStacks.AMALGAMATE_DUST_COMMON.item(),
+                CrystaStacks.AMALGAMATE_DUST_COMMON.item(), CrystaStacks.AMALGAMATE_DUST_COMMON.item(), CrystaStacks.AMALGAMATE_DUST_COMMON.item()
             }
         );
 
@@ -195,9 +195,9 @@ public class Tools {
             CrystaStacks.CRYSTA_RECALL_LATTICE,
             RecipeType.MAGIC_WORKBENCH,
             new ItemStack[]{
-                new ItemStack(Material.AMETHYST_SHARD), CrystaStacks.AMALGAMATE_INGOT_EPIC, new ItemStack(Material.AMETHYST_SHARD),
-                CrystaStacks.AMALGAMATE_INGOT_EPIC, new ItemStack(Material.NETHER_STAR), CrystaStacks.AMALGAMATE_INGOT_EPIC,
-                new ItemStack(Material.AMETHYST_SHARD), CrystaStacks.AMALGAMATE_INGOT_EPIC, new ItemStack(Material.AMETHYST_SHARD)
+                new ItemStack(Material.AMETHYST_SHARD), CrystaStacks.AMALGAMATE_INGOT_EPIC.item(), new ItemStack(Material.AMETHYST_SHARD),
+                CrystaStacks.AMALGAMATE_INGOT_EPIC.item(), new ItemStack(Material.NETHER_STAR), CrystaStacks.AMALGAMATE_INGOT_EPIC.item(),
+                new ItemStack(Material.AMETHYST_SHARD), CrystaStacks.AMALGAMATE_INGOT_EPIC.item(), new ItemStack(Material.AMETHYST_SHARD)
             }
         );
 
@@ -217,7 +217,7 @@ public class Tools {
 
         // Ephemeral Workbench
         RecipeItem ephemeralWorkBenchRecipe = new RecipeItem(
-            CrystaStacks.EPHEMERAL_CRAFT_TABLE,
+            CrystaStacks.EPHEMERAL_CRAFT_TABLE.item(),
             StoryType.HUMAN, 250,
             StoryType.HISTORICAL, 100,
             StoryType.PHILOSOPHICAL, 250
@@ -246,7 +246,7 @@ public class Tools {
 
         // Brilliance Scoop
         RecipeItem brillianceScoopRecipe = new RecipeItem(
-            CrystaStacks.LUMINESCENCE_SCOOP,
+            CrystaStacks.LUMINESCENCE_SCOOP.item(),
             StoryType.CELESTIAL, 140,
             StoryType.ALCHEMICAL, 40,
             StoryType.HUMAN, 30
@@ -261,7 +261,7 @@ public class Tools {
 
         // Lustre Scoop
         RecipeItem lustreScoopRecipe = new RecipeItem(
-            CrystaStacks.BRILLIANCE_SCOOP,
+            CrystaStacks.BRILLIANCE_SCOOP.item(),
             StoryType.CELESTIAL, 280,
             StoryType.ALCHEMICAL, 80,
             StoryType.HUMAN, 60
@@ -280,9 +280,9 @@ public class Tools {
             CrystaStacks.RADIANCE_SCOOP,
             RecipeType.MAGIC_WORKBENCH,
             new ItemStack[] {
-                null, CrystaStacks.RUNE_TRUE_EARTH, null,
-                CrystaStacks.RUNE_TRUE_WATER, CrystaStacks.LUSTRE_SCOOP, CrystaStacks.RUNE_TWILIGHT,
-                null, CrystaStacks.RUNE_CHARM, null
+                null, CrystaStacks.RUNE_TRUE_EARTH.item(), null,
+                CrystaStacks.RUNE_TRUE_WATER.item(), CrystaStacks.LUSTRE_SCOOP.item(), CrystaStacks.RUNE_TWILIGHT.item(),
+                null, CrystaStacks.RUNE_CHARM.item(), null
             },
             500,
             true
@@ -323,16 +323,16 @@ public class Tools {
             CrystaStacks.INCORPOREAL_SILKEN,
             RecipeType.MAGIC_WORKBENCH,
             new ItemStack[] {
-                null, CrystaStacks.RUNE_MOON, null,
-                CrystaStacks.RUNE_TRUE_HOLY, CrystaStacks.SPIRITUAL_SILKEN, CrystaStacks.RUNE_BLINKING,
-                null, CrystaStacks.RUNE_TRUE_LIGHTNING, null
+                null, CrystaStacks.RUNE_MOON.item(), null,
+                CrystaStacks.RUNE_TRUE_HOLY.item(), CrystaStacks.SPIRITUAL_SILKEN.item(), CrystaStacks.RUNE_BLINKING.item(),
+                null, CrystaStacks.RUNE_TRUE_LIGHTNING.item(), null
             },
             1000
         );
 
         // Simple Displacer
         RecipeItem simpleDisplacerRecipe = new RecipeItem(
-            CrystaStacks.POWDERED_ESSENCE,
+            CrystaStacks.POWDERED_ESSENCE.item(),
             StoryType.ALCHEMICAL, 120,
             StoryType.ANIMAL, 70,
             StoryType.HUMAN, 60
@@ -347,7 +347,7 @@ public class Tools {
 
         // Arcane Displacer
         RecipeItem arcaneDisplacerRecipe = new RecipeItem(
-            CrystaStacks.SIMPLE_DISPLACER,
+            CrystaStacks.SIMPLE_DISPLACER.item(),
             StoryType.ALCHEMICAL, 240,
             StoryType.ANIMAL, 140,
             StoryType.HUMAN, 120
@@ -377,7 +377,7 @@ public class Tools {
 
         // Searing Sponge
         RecipeItem searingSpongeRecipe = new RecipeItem(
-            CrystaStacks.SPONGE_BALMY,
+            CrystaStacks.SPONGE_BALMY.item(),
             StoryType.ELEMENTAL, 90,
             StoryType.ALCHEMICAL, 60,
             StoryType.VOID, 50
@@ -396,9 +396,9 @@ public class Tools {
             CrystaStacks.SPONGE_SUPER_MASSIVE,
             RecipeType.MAGIC_WORKBENCH,
             new ItemStack[] {
-                null, CrystaStacks.RUNE_CHANGE, null,
-                CrystaStacks.RUNE_SUN, CrystaStacks.SPONGE_SEARING, CrystaStacks.RUNE_CIRCLE,
-                null, CrystaStacks.RUNE_EIGHTFOLD, null
+                null, CrystaStacks.RUNE_CHANGE.item(), null,
+                CrystaStacks.RUNE_SUN.item(), CrystaStacks.SPONGE_SEARING.item(), CrystaStacks.RUNE_CIRCLE.item(),
+                null, CrystaStacks.RUNE_EIGHTFOLD.item(), null
             },
             10
         );
@@ -423,8 +423,8 @@ public class Tools {
             CrystaStacks.DISPLACED_VOID,
             RecipeType.MAGIC_WORKBENCH,
             new ItemStack[]{
-                null, CrystaStacks.ARCANE_DISPLACER, null,
-                null, CrystaStacks.SHATTERED_VOID, null,
+                null, CrystaStacks.ARCANE_DISPLACER.item(), null,
+                null, CrystaStacks.SHATTERED_VOID.item(), null,
                 null, null, null
             }
         );
@@ -446,7 +446,7 @@ public class Tools {
 
         // Crystamages Satchel
         RecipeItem crystamagesSatchelRecipe = new RecipeItem(
-            CrystaStacks.SATCHEL_1,
+            CrystaStacks.SATCHEL_1.item(),
             StoryType.ALCHEMICAL, 35,
             StoryType.ANIMAL, 35,
             StoryType.VOID, 35
@@ -461,7 +461,7 @@ public class Tools {
 
         // Wizards Satchel
         RecipeItem wizardsSatchelRecipe = new RecipeItem(
-            CrystaStacks.SATCHEL_2,
+            CrystaStacks.SATCHEL_2.item(),
             StoryType.MECHANICAL, 45,
             StoryType.HISTORICAL, 45,
             StoryType.CELESTIAL, 45
@@ -476,7 +476,7 @@ public class Tools {
 
         // Conjurers Satchel
         RecipeItem conjurersSatchelRecipe = new RecipeItem(
-            CrystaStacks.SATCHEL_3,
+            CrystaStacks.SATCHEL_3.item(),
             StoryType.ELEMENTAL, 55,
             StoryType.HUMAN, 55,
             StoryType.PHILOSOPHICAL, 55
@@ -491,7 +491,7 @@ public class Tools {
 
         // Sorcerers Satchel
         RecipeItem sorcerersSatchelRecipe = new RecipeItem(
-            CrystaStacks.SATCHEL_4,
+            CrystaStacks.SATCHEL_4.item(),
             StoryType.ALCHEMICAL, 65,
             StoryType.ANIMAL, 65,
             StoryType.VOID, 65
@@ -506,7 +506,7 @@ public class Tools {
 
         // Grandmasters Satchel
         RecipeItem grandmastersSatchelRecipe = new RecipeItem(
-            CrystaStacks.SATCHEL_5,
+            CrystaStacks.SATCHEL_5.item(),
             StoryType.MECHANICAL, 75,
             StoryType.HISTORICAL, 75,
             StoryType.CELESTIAL, 75
@@ -588,7 +588,7 @@ public class Tools {
          */
         // Cargo Cover
         RecipeItem cargoCoverRecipe = new RecipeItem(
-            SlimefunItems.CARGO_INPUT_NODE,
+            SlimefunItems.CARGO_INPUT_NODE.item(),
             StoryType.MECHANICAL, 10,
             StoryType.HUMAN, 10,
             StoryType.VOID, 10
@@ -604,7 +604,7 @@ public class Tools {
 
         // Energy Net Cover
         RecipeItem energyNetCoverRecipe = new RecipeItem(
-            SlimefunItems.ENERGY_CONNECTOR,
+            SlimefunItems.ENERGY_CONNECTOR.item(),
             StoryType.MECHANICAL, 10,
             StoryType.HUMAN, 10,
             StoryType.VOID, 10

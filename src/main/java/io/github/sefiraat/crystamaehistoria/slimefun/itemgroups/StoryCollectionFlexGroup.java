@@ -254,7 +254,7 @@ public class StoryCollectionFlexGroup extends FlexItemGroup {
         for (StoryType storyType : storyTypes) {
             lore.add(ThemeType.CLICK_INFO.getColor() + ThemeType.getByType(storyType).getLoreLine());
         }
-        return new CustomItemStack(
+        return CustomItemStack.create(
             Material.DEEPSLATE_BRICK_SLAB,
             ThemeType.MAIN.getColor() + "故事发掘结果",
             lore
@@ -263,7 +263,7 @@ public class StoryCollectionFlexGroup extends FlexItemGroup {
 
     @ParametersAreNonnullByDefault
     private ItemStack getUniqueStoryItemStack(BlockDefinition definition) {
-        return new CustomItemStack(
+        return CustomItemStack.create(
             definition.getMaterial(),
             ThemeType.MAIN.getColor() + definition.getUnique().getId(),
             definition.getUnique().getStoryLore()
@@ -306,7 +306,7 @@ public class StoryCollectionFlexGroup extends FlexItemGroup {
         lore.add(MessageFormat.format("{0}发掘次数: {1}{2} {3}", color, passive, timesChronicled, chronicleCap));
         lore.add(MessageFormat.format("{0}现实转化次数: {1}{2} {3}", color, passive, timesRealised, realisationCap));
 
-        return new CustomItemStack(
+        return CustomItemStack.create(
             Material.TARGET,
             ThemeType.MAIN.getColor() + "物品统计",
             lore
@@ -323,7 +323,7 @@ public class StoryCollectionFlexGroup extends FlexItemGroup {
         lore.add(MessageFormat.format("{0}已发掘故事: {1}{2}", color, passive, PlayerStatistics.getStoriesUnlocked(player.getUniqueId())));
         lore.add(MessageFormat.format("{0}等级: {1}{2}", color, storyRank.getTheme().getColor(), storyRank.getTheme().getLoreLine()));
 
-        return new CustomItemStack(
+        return CustomItemStack.create(
             Material.TARGET,
             ThemeType.MAIN.getColor() + "故事统计",
             lore
