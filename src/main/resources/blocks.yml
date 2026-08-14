@@ -2993,7 +2993,7 @@ CAULDRON:
       - 0
       - 0
       - 1
-CHAIN:
+IRON_CHAIN:
   tier: 2
   elements:
     - ELEMENTAL
@@ -8552,7 +8552,7 @@ GRANITE_WALL:
       - 1
       - 0
       - 0
-GRASS:
+SHORT_GRASS:
   tier: 1
   elements:
     - ANIMAL
@@ -17374,7 +17374,7 @@ SCAFFOLDING:
       - 0
       - 0
       - 0
-SCUTE:
+TURTLE_SCUTE:
   tier: 2
   elements:
     - ANIMAL

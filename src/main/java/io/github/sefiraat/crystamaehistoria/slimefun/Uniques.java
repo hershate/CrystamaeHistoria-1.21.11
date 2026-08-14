@@ -428,7 +428,7 @@ public class Uniques {
     }
 
     private static void spawnBirthdayFirework(@Nonnull Location location, @Nonnull Color color) {
-        final Firework firework = (Firework) location.getWorld().spawnEntity(location, EntityType.FIREWORK);
+        final Firework firework = (Firework) location.getWorld().spawnEntity(location, EntityType.FIREWORK_ROCKET);
         final FireworkMeta fireworkMeta = firework.getFireworkMeta();
         fireworkMeta.addEffect(
             FireworkEffect.builder()

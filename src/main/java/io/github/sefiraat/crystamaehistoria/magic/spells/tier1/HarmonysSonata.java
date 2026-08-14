@@ -67,7 +67,7 @@ public class HarmonysSonata extends Spell {
                 block.setType(material);
             }
             block.getRelative(BlockFace.DOWN).setType(Material.GRASS_BLOCK);
-            ParticleUtils.displayParticleEffect(block.getLocation(), Particle.FIREWORKS_SPARK, 0.5, 3);
+            ParticleUtils.displayParticleEffect(block.getLocation(), Particle.FIREWORK, 0.5, 3);
         }
     }
 
@@ -105,6 +105,6 @@ public class HarmonysSonata extends Spell {
     @Nonnull
     @Override
     public Material getMaterial() {
-        return Material.GRASS;
+        return Material.SHORT_GRASS;
     }
 }

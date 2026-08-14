@@ -279,7 +279,7 @@ public class Gadgets {
         final List<EntityType> soulfilledSoilSpawns = new ArrayList<>();
 
         soulfilledSoilSpawns.add(EntityType.COW);
-        soulfilledSoilSpawns.add(EntityType.MUSHROOM_COW);
+        soulfilledSoilSpawns.add(EntityType.MOOSHROOM);
         soulfilledSoilSpawns.add(EntityType.CHICKEN);
         soulfilledSoilSpawns.add(EntityType.PIG);
         soulfilledSoilSpawns.add(EntityType.SHEEP);
@@ -553,7 +553,7 @@ public class Gadgets {
             15,
             block -> ParticleUtils.displayParticleEffect(
                 block.getLocation().add(0.5, 0.5, 0.5),
-                Particle.WATER_SPLASH,
+                Particle.SPLASH,
                 0.5,
                 3
             )

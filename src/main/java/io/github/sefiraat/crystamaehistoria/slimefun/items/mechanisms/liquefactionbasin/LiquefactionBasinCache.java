@@ -406,7 +406,7 @@ public class LiquefactionBasinCache extends DisplayStandHolder {
     private void summonBoilingParticles() {
         final Location location = getLocation(true).add(0, 0.8, 0);
         location.getWorld().spawnParticle(
-            Particle.SMOKE_NORMAL,
+            Particle.SMOKE,
             location,
             0,
             0.2,
