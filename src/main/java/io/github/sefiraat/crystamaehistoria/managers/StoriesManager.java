@@ -11,7 +11,7 @@ import io.github.sefiraat.crystamaehistoria.stories.definition.StoryType;
 import io.github.sefiraat.crystamaehistoria.utils.StoryUtils;
 import io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType;
 import lombok.Getter;
-import net.guizhanss.guizhanlib.minecraft.helper.inventory.ItemStackHelper;
+import io.github.sefiraat.crystamaehistoria.utils.NameUtils;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -253,7 +253,7 @@ public class StoriesManager {
 
     @ParametersAreNonnullByDefault
     private static void setName(ItemStack itemStack, ItemMeta im) {
-        TextComponent name = new TextComponent("有故事的" + ItemStackHelper.getName(itemStack));
+        TextComponent name = new TextComponent("有故事的" + NameUtils.getItemStackName(itemStack));
         name.setColor(ThemeType.MAIN.getColor());
         name.setBold(true);
         im.setDisplayName(name.toLegacyText());

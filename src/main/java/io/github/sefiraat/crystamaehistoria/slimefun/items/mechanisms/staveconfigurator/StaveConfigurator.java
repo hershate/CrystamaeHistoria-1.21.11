@@ -1,6 +1,6 @@
 package io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.staveconfigurator;
 
-import io.github.mooy1.infinitylib.machines.MenuBlock;
+import io.github.sefiraat.crystamaehistoria.slimefun.machines.MenuBlock;
 import io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate;
 import io.github.sefiraat.crystamaehistoria.magic.spells.core.InstanceStave;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.tools.plates.ChargedPlate;

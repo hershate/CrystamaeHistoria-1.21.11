@@ -1,6 +1,6 @@
 package io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.prismaticgilder;
 
-import io.github.mooy1.infinitylib.machines.TickingMenuBlock;
+import io.github.sefiraat.crystamaehistoria.slimefun.machines.TickingMenuBlock;
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;

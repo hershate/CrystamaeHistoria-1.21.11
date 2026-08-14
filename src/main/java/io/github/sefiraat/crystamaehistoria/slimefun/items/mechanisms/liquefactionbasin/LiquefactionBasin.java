@@ -1,6 +1,6 @@
 package io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.liquefactionbasin;
 
-import io.github.mooy1.infinitylib.machines.TickingMenuBlock;
+import io.github.sefiraat.crystamaehistoria.slimefun.machines.TickingMenuBlock;
 import io.github.sefiraat.crystamaehistoria.stories.definition.StoryType;
 import io.github.sefiraat.crystamaehistoria.utils.ParticleUtils;
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;

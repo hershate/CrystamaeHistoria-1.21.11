@@ -1,7 +1,6 @@
 package io.github.sefiraat.crystamaehistoria.slimefun;
 
 import io.github.sefiraat.crystamaehistoria.CrystamaeHistoria;
-import io.github.sefiraat.crystamaehistoria.managers.SupportedPluginManager;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.liquefactionbasin.LiquefactionBasinCache;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.liquefactionbasin.RecipeItem;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.tools.BalmySponge;
@@ -22,9 +21,6 @@ import io.github.sefiraat.crystamaehistoria.slimefun.items.tools.plates.ChargedP
 import io.github.sefiraat.crystamaehistoria.slimefun.items.tools.satchel.CrystamageSatchel;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.Stave;
 import io.github.sefiraat.crystamaehistoria.stories.definition.StoryType;
-import io.github.sefiraat.networks.slimefun.NetworksSlimefunItemStacks;
-import io.github.sefiraat.networks.slimefun.network.NetworkBridge;
-import io.github.sefiraat.networks.slimefun.network.NetworkMonitor;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
 import io.github.thebusybiscuit.slimefun4.implementation.SlimefunItems;
@@ -80,8 +76,6 @@ public class Tools {
     private static BlockVeil cargoCover;
     @Getter
     private static BlockVeil energyNetCover;
-    @Getter
-    private static BlockVeil networkNodeCover;
     @Getter
     private static BalmySponge balmySponge;
     @Getter
@@ -587,73 +581,47 @@ public class Tools {
         LiquefactionBasinCache.addCraftingRecipe(grandmastersSatchel, grandmastersSatchelRecipe);
 
         /*
-        Covers 'hide' items from HL - until the tile entity check
-        is swapped out to extend to all SlimefunItems we don't want
-        to allow the items to exist here.
+        遮蔽物（Cover）用于将 Slimefun 的线缆节点伪装成普通方块。
+        原实现仅在未安装 HeadLimiter 时注册货物/能量遮蔽物、在安装 Networks 时注册网络遮蔽物；
+        移除这些可选插件依赖后，货物/能量遮蔽物无条件注册（行为与目标环境一致），
+        网络遮蔽物（仅作用于 Networks 插件方块）一并移除。
          */
-        if (!SupportedPluginManager.isHeadLimiter()) {
-            // Cargo Cover
-            RecipeItem cargoCoverRecipe = new RecipeItem(
-                SlimefunItems.CARGO_INPUT_NODE,
-                StoryType.MECHANICAL, 10,
-                StoryType.HUMAN, 10,
-                StoryType.VOID, 10
-            );
-            cargoCover = new BlockVeil(
-                ItemGroups.TOOLS,
-                CrystaStacks.CARGO_COVER,
-                CrystaRecipeTypes.LIQUEFACTION_CRAFTING,
-                cargoCoverRecipe.getDisplayRecipe(),
-                CrystaStacks.CARGO_COVER.asQuantity(8),
-                CargoConnectorNode.class
-            );
+        // Cargo Cover
+        RecipeItem cargoCoverRecipe = new RecipeItem(
+            SlimefunItems.CARGO_INPUT_NODE,
+            StoryType.MECHANICAL, 10,
+            StoryType.HUMAN, 10,
+            StoryType.VOID, 10
+        );
+        cargoCover = new BlockVeil(
+            ItemGroups.TOOLS,
+            CrystaStacks.CARGO_COVER,
+            CrystaRecipeTypes.LIQUEFACTION_CRAFTING,
+            cargoCoverRecipe.getDisplayRecipe(),
+            CrystaStacks.CARGO_COVER.asQuantity(8),
+            CargoConnectorNode.class
+        );
 
-            // Energy Net Cover
-            RecipeItem energyNetCoverRecipe = new RecipeItem(
-                SlimefunItems.ENERGY_CONNECTOR,
-                StoryType.MECHANICAL, 10,
-                StoryType.HUMAN, 10,
-                StoryType.VOID, 10
-            );
-            energyNetCover = new BlockVeil(
-                ItemGroups.TOOLS,
-                CrystaStacks.ENERGY_NET_COVER,
-                CrystaRecipeTypes.LIQUEFACTION_CRAFTING,
-                energyNetCoverRecipe.getDisplayRecipe(),
-                CrystaStacks.ENERGY_NET_COVER.asQuantity(8),
-                EnergyConnector.class
-            );
+        // Energy Net Cover
+        RecipeItem energyNetCoverRecipe = new RecipeItem(
+            SlimefunItems.ENERGY_CONNECTOR,
+            StoryType.MECHANICAL, 10,
+            StoryType.HUMAN, 10,
+            StoryType.VOID, 10
+        );
+        energyNetCover = new BlockVeil(
+            ItemGroups.TOOLS,
+            CrystaStacks.ENERGY_NET_COVER,
+            CrystaRecipeTypes.LIQUEFACTION_CRAFTING,
+            energyNetCoverRecipe.getDisplayRecipe(),
+            CrystaStacks.ENERGY_NET_COVER.asQuantity(8),
+            EnergyConnector.class
+        );
 
+        cargoCover.register(plugin);
+        energyNetCover.register(plugin);
 
-            cargoCover.register(plugin);
-            energyNetCover.register(plugin);
-
-            LiquefactionBasinCache.addCraftingRecipe(cargoCover, cargoCoverRecipe);
-            LiquefactionBasinCache.addCraftingRecipe(energyNetCover, energyNetCoverRecipe);
-        }
-
-        if (SupportedPluginManager.isNetworks()) {
-
-            // Networks Cover
-            RecipeItem networksCoverRecipe = new RecipeItem(
-                NetworksSlimefunItemStacks.NETWORK_BRIDGE,
-                StoryType.MECHANICAL, 10,
-                StoryType.HUMAN, 10,
-                StoryType.VOID, 10
-            );
-            networkNodeCover = new BlockVeil(
-                ItemGroups.TOOLS,
-                CrystaStacks.NETWORKS_COVER,
-                CrystaRecipeTypes.LIQUEFACTION_CRAFTING,
-                networksCoverRecipe.getDisplayRecipe(),
-                CrystaStacks.NETWORKS_COVER.asQuantity(8),
-                NetworkBridge.class,
-                NetworkMonitor.class
-            );
-
-            networkNodeCover.register(plugin);
-
-            LiquefactionBasinCache.addCraftingRecipe(networkNodeCover, networksCoverRecipe);
-        }
+        LiquefactionBasinCache.addCraftingRecipe(cargoCover, cargoCoverRecipe);
+        LiquefactionBasinCache.addCraftingRecipe(energyNetCover, energyNetCoverRecipe);
     }
 }

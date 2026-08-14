@@ -1,6 +1,5 @@
 package io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.liquefactionbasin;
 
-import de.slikey.effectlib.effect.SphereEffect;
 import io.github.sefiraat.crystamaehistoria.CrystamaeHistoria;
 import io.github.sefiraat.crystamaehistoria.magic.SpellType;
 import io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate;
@@ -417,13 +416,33 @@ public class LiquefactionBasinCache extends DisplayStandHolder {
         );
     }
 
+    /**
+     * 催化剂粒子：以斐波那契球面分布渲染半径 1 的青色尘埃球。
+     * 原实现使用 EffectLib 的 SphereEffect，为移除 EffectLib 依赖改为原生粒子渲染，视觉效果等价。
+     */
     private void summonCatalystParticles() {
-        SphereEffect sphereEffect = new SphereEffect(CrystamaeHistoria.getEffectManager());
-        sphereEffect.particle = Particle.REDSTONE;
-        sphereEffect.color = org.bukkit.Color.TEAL;
-        sphereEffect.setLocation(getLocation(true));
-        sphereEffect.radius = 1;
-        sphereEffect.iterations = 2;
-        sphereEffect.start();
+        final Location center = getLocation(true);
+        final org.bukkit.World world = center.getWorld();
+
+        if (world == null) {
+            return;
+        }
+
+        final Particle.DustOptions dustOptions = new Particle.DustOptions(org.bukkit.Color.TEAL, 1);
+        final int particleCount = 60;
+        final double radius = 1;
+        final double goldenAngle = Math.PI * (3 - Math.sqrt(5));
+
+        for (int i = 0; i < particleCount; i++) {
+            final double y = 1 - (i / (double) (particleCount - 1)) * 2;
+            final double ringRadius = Math.sqrt(1 - y * y);
+            final double theta = goldenAngle * i;
+            final Location particleLocation = center.clone().add(
+                Math.cos(theta) * ringRadius * radius,
+                y * radius,
+                Math.sin(theta) * ringRadius * radius
+            );
+            world.spawnParticle(Particle.DUST, particleLocation, 1, 0, 0, 0, 0, dustOptions);
+        }
     }
 }

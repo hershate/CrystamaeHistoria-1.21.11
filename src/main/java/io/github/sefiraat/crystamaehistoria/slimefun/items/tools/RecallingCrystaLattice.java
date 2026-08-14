@@ -1,6 +1,6 @@
 package io.github.sefiraat.crystamaehistoria.slimefun.items.tools;
 
-import com.jeff_media.morepersistentdatatypes.DataType;
+import io.github.sefiraat.crystamaehistoria.utils.datatypes.DataType;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.gadgets.Waystone;
 import io.github.sefiraat.crystamaehistoria.utils.GeneralUtils;
 import io.github.sefiraat.crystamaehistoria.utils.Keys;

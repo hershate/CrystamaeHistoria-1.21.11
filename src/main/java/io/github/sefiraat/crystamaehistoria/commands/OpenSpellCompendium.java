@@ -1,6 +1,5 @@
 package io.github.sefiraat.crystamaehistoria.commands;
 
-import io.github.mooy1.infinitylib.commands.SubCommand;
 import io.github.sefiraat.crystamaehistoria.slimefun.ItemGroups;
 import io.github.thebusybiscuit.slimefun4.api.player.PlayerProfile;
 import io.github.thebusybiscuit.slimefun4.core.guide.SlimefunGuideMode;

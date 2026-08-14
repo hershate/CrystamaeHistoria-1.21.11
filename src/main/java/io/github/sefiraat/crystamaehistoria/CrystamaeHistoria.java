@@ -1,9 +1,8 @@
 package io.github.sefiraat.crystamaehistoria;
 
 import com.google.common.base.Preconditions;
-import de.slikey.effectlib.EffectManager;
-import io.github.mooy1.infinitylib.core.AbstractAddon;
 import io.github.sefiraat.crystamaehistoria.commands.GetRanks;
+import io.github.sefiraat.crystamaehistoria.commands.HistoriaCommand;
 import io.github.sefiraat.crystamaehistoria.commands.OpenSpellCompendium;
 import io.github.sefiraat.crystamaehistoria.commands.OpenStoryCompendium;
 import io.github.sefiraat.crystamaehistoria.commands.TestSpell;
@@ -19,34 +18,32 @@ import io.github.sefiraat.crystamaehistoria.managers.ListenerManager;
 import io.github.sefiraat.crystamaehistoria.managers.RunnableManager;
 import io.github.sefiraat.crystamaehistoria.managers.StoriesManager;
 import io.github.sefiraat.crystamaehistoria.managers.SupportedPluginManager;
-import io.github.sefiraat.crystamaehistoria.player.PlayerStatistics;
 import io.github.sefiraat.crystamaehistoria.slimefun.ArtisticItems;
 import io.github.sefiraat.crystamaehistoria.slimefun.Exalted;
 import io.github.sefiraat.crystamaehistoria.slimefun.Gadgets;
 import io.github.sefiraat.crystamaehistoria.slimefun.ItemGroups;
 import io.github.sefiraat.crystamaehistoria.slimefun.Materials;
 import io.github.sefiraat.crystamaehistoria.slimefun.Mechanisms;
-import io.github.sefiraat.crystamaehistoria.slimefun.NetheoPlants;
 import io.github.sefiraat.crystamaehistoria.slimefun.Runes;
 import io.github.sefiraat.crystamaehistoria.slimefun.Tools;
 import io.github.sefiraat.crystamaehistoria.slimefun.Uniques;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.chroniclerpanel.ChroniclerPanel;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.chroniclerpanel.ChroniclerPanelCache;
-import io.github.sefiraat.crystamaehistoria.stories.BlockDefinition;
+import io.github.thebusybiscuit.slimefun4.api.SlimefunAddon;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.collections.Pair;
 import io.github.thebusybiscuit.slimefun4.libraries.paperlib.PaperLib;
-import net.guizhanss.minecraft.guizhanlib.updater.GuizhanUpdater;
-import org.bstats.bukkit.Metrics;
-import org.bstats.charts.AdvancedPie;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.PluginManager;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
-public class CrystamaeHistoria extends AbstractAddon {
+public class CrystamaeHistoria extends JavaPlugin implements SlimefunAddon {
 
     private static CrystamaeHistoria instance;
 
@@ -55,15 +52,16 @@ public class CrystamaeHistoria extends AbstractAddon {
     private ListenerManager listenerManager;
     private RunnableManager runnableManager;
     private SpellMemory spellMemory;
-    private EffectManager effectManager;
     private SupportedPluginManager supportedPluginManager;
-
-    public CrystamaeHistoria() {
-        super("SlimefunGuguProject", "CrystamaeHistoria", "master", "auto-update");
-    }
+    private HistoriaCommand historiaCommand;
 
     public static CrystamaeHistoria getInstance() {
         return instance;
+    }
+
+    @Nonnull
+    public static CrystamaeHistoria instance() {
+        return Objects.requireNonNull(instance, "CrystamaeHistoria 还没有启用");
     }
 
     public static ConfigManager getConfigManager() {
@@ -84,10 +82,6 @@ public class CrystamaeHistoria extends AbstractAddon {
 
     public static SpellMemory getSpellMemory() {
         return instance.spellMemory;
-    }
-
-    public static EffectManager getEffectManager() {
-        return instance.effectManager;
     }
 
     public static SupportedPluginManager getSupportedPluginManager() {
@@ -152,12 +146,11 @@ public class CrystamaeHistoria extends AbstractAddon {
     }
 
     @Override
-    public void enable() {
+    public void onEnable() {
         instance = this;
 
         getLogger().info("########################################");
         getLogger().info("     CrystamaeHistoria  魔法水晶编年史    ");
-        getLogger().info(" 作者: Sefiraat 汉化: SlimefunGuguProject");
         getLogger().info("########################################");
 
         if (PaperLib.isSpigot() && !PaperLib.isPaper()) {
@@ -174,9 +167,7 @@ public class CrystamaeHistoria extends AbstractAddon {
             return;
         }
 
-        if (getConfig().getBoolean("auto-update") && getDescription().getVersion().startsWith("Build")) {
-            GuizhanUpdater.start(this, getFile(), "SlimefunGuguProject", "CrystamaeHistoria", "master");
-        }
+        saveDefaultConfig();
 
         this.configManager = new ConfigManager();
         this.storiesManager = new StoriesManager();
@@ -184,7 +175,6 @@ public class CrystamaeHistoria extends AbstractAddon {
         this.runnableManager = new RunnableManager();
         this.spellMemory = new SpellMemory();
         this.supportedPluginManager = new SupportedPluginManager();
-        this.effectManager = new EffectManager(this);
 
         configManager.loadConfig();
 
@@ -192,61 +182,23 @@ public class CrystamaeHistoria extends AbstractAddon {
 
         setupSlimefun();
 
-        setupBstats();
-
-        getAddonCommand().addSub(new TestSpell());
-        getAddonCommand().addSub(new TestWand());
-        getAddonCommand().addSub(new OpenSpellCompendium());
-        getAddonCommand().addSub(new OpenStoryCompendium());
-        getAddonCommand().addSub(new GetRanks());
+        setupCommands();
     }
 
-    private void setupBstats() {
-        Metrics metrics = new Metrics(this, 12065);
-
-        AdvancedPie disabledSpellsChart = new AdvancedPie("disabled_spells", () -> {
-            Map<String, Integer> values = new HashMap<>();
-            for (SpellType spellType : SpellType.getCachedValues()) {
-                Spell spell = spellType.getSpell();
-                values.put(spell.getId(), spell.isEnabled() ? 0 : 1);
-            }
-            return values;
-        });
-
-        AdvancedPie spellsCastChart = new AdvancedPie("spells_cast", () -> {
-            Map<String, Integer> values = new HashMap<>();
-            for (SpellType spellType : SpellType.getCachedValues()) {
-                Spell spell = spellType.getSpell();
-                int timesCast = 0;
-                for (String string : CrystamaeHistoria.getConfigManager().getPlayerStats().getKeys(false)) {
-                    UUID uuid = UUID.fromString(string);
-                    timesCast += PlayerStatistics.getUsages(uuid, spellType);
-                }
-                values.put(spell.getId(), timesCast);
-            }
-            return values;
-        });
-
-        AdvancedPie storiesChronicled = new AdvancedPie("stories_chronicled", () -> {
-            Map<String, Integer> values = new HashMap<>();
-            for (BlockDefinition definition : CrystamaeHistoria.getStoriesManager().getBlockDefinitionMap().values()) {
-                int timesChronicled = 0;
-                for (String string : CrystamaeHistoria.getConfigManager().getPlayerStats().getKeys(false)) {
-                    UUID uuid = UUID.fromString(string);
-                    timesChronicled += PlayerStatistics.getChronicle(uuid, definition);
-                }
-                values.put(definition.getMaterial().toString(), timesChronicled);
-            }
-            return values;
-        });
-
-        metrics.addCustomChart(disabledSpellsChart);
-        metrics.addCustomChart(spellsCastChart);
-        metrics.addCustomChart(storiesChronicled);
+    private void setupCommands() {
+        final PluginCommand command = getCommand("crystamaehistoria");
+        if (command != null) {
+            this.historiaCommand = new HistoriaCommand(command);
+            this.historiaCommand.addSub(new TestSpell());
+            this.historiaCommand.addSub(new TestWand());
+            this.historiaCommand.addSub(new OpenSpellCompendium());
+            this.historiaCommand.addSub(new OpenStoryCompendium());
+            this.historiaCommand.addSub(new GetRanks());
+        }
     }
 
     @Override
-    protected void disable() {
+    public void onDisable() {
         if (instance != null) {
             for (ChroniclerPanelCache cache : ChroniclerPanel.getCaches().values()) {
                 cache.shutdown();
@@ -268,12 +220,17 @@ public class CrystamaeHistoria extends AbstractAddon {
         Exalted.setup();
         Uniques.setup();
         Runes.setup();
-        if (supportedPluginManager.isNetheopoiesis()){
-            try {
-                NetheoPlants.setup();
-            } catch (NoClassDefFoundError e) {
-                getLogger().severe("你必须更新下界乌托邦才能让魔法水晶编年史添加相关功能.");
-            }
-        }
+    }
+
+    @Nonnull
+    @Override
+    public JavaPlugin getJavaPlugin() {
+        return this;
+    }
+
+    @Nullable
+    @Override
+    public String getBugTrackerURL() {
+        return "https://github.com/Sefiraat/CrystamaeHistoria/issues";
     }
 }

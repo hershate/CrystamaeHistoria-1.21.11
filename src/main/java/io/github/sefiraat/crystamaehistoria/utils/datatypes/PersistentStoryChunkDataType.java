@@ -1,6 +1,6 @@
 package io.github.sefiraat.crystamaehistoria.utils.datatypes;
 
-import com.jeff_media.morepersistentdatatypes.DataType;
+import io.github.sefiraat.crystamaehistoria.utils.datatypes.DataType;
 import io.github.sefiraat.crystamaehistoria.CrystamaeHistoria;
 import io.github.sefiraat.crystamaehistoria.stories.Story;
 import io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity;

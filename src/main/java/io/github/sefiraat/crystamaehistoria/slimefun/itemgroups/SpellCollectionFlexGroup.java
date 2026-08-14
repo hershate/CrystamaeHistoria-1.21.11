@@ -18,7 +18,7 @@ import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.items.CustomItemStack;
 import io.github.thebusybiscuit.slimefun4.utils.ChestMenuUtils;
 import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu;
-import net.guizhanss.minecraft.guizhanlib.gugu.minecraft.helpers.potion.PotionEffectTypeHelper;
+import io.github.sefiraat.crystamaehistoria.utils.NameUtils;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -475,7 +475,7 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
                         final String negativeEffectMessage = MessageFormat.format(
                             "{0}{1}: {2}等级 ({3}) - 持续时间 ({4})",
                             color,
-                            PotionEffectTypeHelper.getName(type),
+                            NameUtils.getPotionEffectTypeName(type),
                             passive,
                             pair.getFirstValue(),
                             pair.getSecondValue()
@@ -492,7 +492,7 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
                         final String positiveEffectMessage = MessageFormat.format(
                             "{0}{1}: {2}等级 ({3}) - 持续时间 ({4})",
                             color,
-                            PotionEffectTypeHelper.getName(type),
+                            NameUtils.getPotionEffectTypeName(type),
                             passive,
                             pair.getFirstValue(),
                             pair.getSecondValue()

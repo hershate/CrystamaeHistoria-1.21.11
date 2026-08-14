@@ -5,7 +5,7 @@ import io.github.sefiraat.crystamaehistoria.utils.Skulls;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.items.CustomItemStack;
 import io.github.thebusybiscuit.slimefun4.utils.ChestMenuUtils;
 import lombok.experimental.UtilityClass;
-import net.guizhanss.guizhanlib.minecraft.helper.MaterialHelper;
+import io.github.sefiraat.crystamaehistoria.utils.NameUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
@@ -79,7 +79,7 @@ public class GuiElements {
         return ThemeType.themedItemStack(
             material,
             ThemeType.RARITY_UNIQUE,
-            MaterialHelper.getName(material),
+            NameUtils.getMaterialName(material),
             "该故事已被发掘"
         );
     }
@@ -89,7 +89,7 @@ public class GuiElements {
         return ThemeType.themedItemStack(
             Material.BARRIER,
             ThemeType.RESEARCH,
-            MaterialHelper.getName(material),
+            NameUtils.getMaterialName(material),
             MessageFormat.format("{0}{1}已锁定", ThemeType.RESEARCH.getColor(), ChatColor.BOLD),
             "该故事还没有解锁",
             "当你使用记录者首次发掘",
@@ -115,7 +115,7 @@ public class GuiElements {
         return ThemeType.themedItemStack(
             material,
             ThemeType.RARITY_UNIQUE,
-            MaterialHelper.getName(material),
+            NameUtils.getMaterialName(material),
             "该方块已被镀金过"
         );
     }
@@ -125,7 +125,7 @@ public class GuiElements {
         return ThemeType.themedItemStack(
             Material.BARRIER,
             ThemeType.RESEARCH,
-            MaterialHelper.getName(material),
+            NameUtils.getMaterialName(material),
             MessageFormat.format("{0}{1}已锁定", ThemeType.RESEARCH.getColor(), ChatColor.BOLD),
             "该方块还未被镀金过"
         );
