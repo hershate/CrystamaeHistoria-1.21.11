@@ -4,18 +4,9 @@ description: A magical addon with a semi-technical slimefun feel allowing for th
 main: io.github.sefiraat.crystamaehistoria.CrystamaeHistoria
 website: https://github.com/Sefiraat/CrystamaeHistoria
 version: ${project.version}
-api-version: 1.17
+api-version: '1.21'
 depend:
   - Slimefun
-  - GuizhanLibPlugin
-softdepend:
-  - mcMMO
-  - SlimeTinker
-  - ExoticGarden
-  - HeadLimiter
-  - RoseStacker
-  - WildStacker
-  - Netheopoiesis
 commands:
   crystamaehistoria:
     description: /historia
