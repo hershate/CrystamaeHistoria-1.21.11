@@ -17,6 +17,10 @@
             <id>papermc</id>
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
     </repositories>
 
     <build>
@@ -82,6 +86,26 @@
             <groupId>com.github.slimefun</groupId>
             <artifactId>Slimefun</artifactId>
             <version>5.0.0</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Supported Slimefun Addons (optional integrations, runtime-guarded) -->
+        <dependency>
+            <groupId>com.github.SlimefunGuguProject</groupId>
+            <artifactId>ExoticGarden</artifactId>
+            <version>edae221160</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.Sefiraat</groupId>
+            <artifactId>Networks</artifactId>
+            <version>3de3c9d608</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.Sefiraat</groupId>
+            <artifactId>Netheopoiesis</artifactId>
+            <version>8d1af6c570</version>
             <scope>provided</scope>
         </dependency>
 
