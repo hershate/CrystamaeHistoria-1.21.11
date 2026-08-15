@@ -29,6 +29,7 @@
 | 15 | 收尾覆盖：PlayerStatistics/ConfigManager/剩余 utils（[round-15](round-15.md)） | ✅ 完成（1 commit：339abbe；**全部 265 文件类别覆盖完毕**） |
 | 16 | 核心引擎终审：Spell 分发/加载器（[round-16](round-16.md)） | ✅ 完成（1 commit：d65dbec） |
 | 17 | 施法上下文与构建器终审（[round-17](round-17.md)） | ✅ 完成（1 commit：311ee3f，删 SpellInstance 死代码） |
+| 18 | 工具类实体覆盖收尾（[round-18](round-18.md)） | ✅ 完成（1 commit：228b525） |
 
 ## 已修复问题汇总
 
