@@ -26,6 +26,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class StoriesManager {
@@ -202,19 +203,29 @@ public class StoriesManager {
             final int tier = wholeSection.getInt("tier");
             final List<StoryType> types = wholeSection.getStringList("elements").stream()
                                                       .map(StoryType::getByName)
+                                                      .filter(Objects::nonNull)
                                                       .collect(Collectors.toList());
 
-            for (StoryType storyType : types) {
-                if (storyType == null) {
-                    CrystamaeHistoria.getInstance().getLogger().info(
-                        MessageFormat.format("A block has a badly typed element -> {0}", key)
-                    );
-                }
+            // 非法元素名已在过滤时剔除（原实现只打日志，null 混入池后发掘时 NPE）
+            if (wholeSection.getStringList("elements").size() != types.size()) {
+                CrystamaeHistoria.getInstance().getLogger().info(
+                    MessageFormat.format("A block has a badly typed element -> {0}", key)
+                );
+            }
+
+            // tier 非法（缺失/越界）时跳过该方块：null 的 BlockTier 会在运行期
+            // canBeStoried 等处延迟 NPE
+            final BlockTier blockTier = blockTierMap.get(tier);
+            if (blockTier == null) {
+                CrystamaeHistoria.getInstance().getLogger().info(
+                    MessageFormat.format("Ignoring a story with an invalid tier -> {0} (tier {1})", key, tier)
+                );
+                continue;
             }
 
             final BlockDefinition blockDefinition = new BlockDefinition(
                 material,
-                blockTierMap.get(tier),
+                blockTier,
                 types,
                 story
             );
@@ -241,11 +252,14 @@ public class StoriesManager {
         ItemMeta im = itemStack.getItemMeta();
         setName(itemStack, im);
         List<String> lore = new ArrayList<>();
+        // 伪造/损坏物品可能带故事标记但无故事列表（getAllStories 为 @Nullable）
         List<Story> storyList = StoryUtils.getAllStories(itemStack);
-        for (Story story : storyList) {
-            lore.add("");
-            lore.add(story.getDisplayName());
-            lore.addAll(story.getStoryLore());
+        if (storyList != null) {
+            for (Story story : storyList) {
+                lore.add("");
+                lore.add(story.getDisplayName());
+                lore.addAll(story.getStoryLore());
+            }
         }
         im.setLore(lore);
         itemStack.setItemMeta(im);

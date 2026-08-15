@@ -224,7 +224,9 @@ public abstract class Spell {
             duration = spellCore.isEffectDurationMultiplied() ? duration * castInformation.getStaveLevel() : duration;
             amplification = spellCore.isAmplificationMultiplied() ? amplification * castInformation.getStaveLevel() : amplification;
 
-            final PotionEffect potionEffect = new PotionEffect(entry.getKey(), duration, amplification - 1);
+            // 钳制：amplification 为 0 时 -1 会构造非法 PotionEffect（构造器要求 ≥0），
+            // 当前注册数据均 ≥1，此处防御未来新法术
+            final PotionEffect potionEffect = new PotionEffect(entry.getKey(), duration, Math.max(0, amplification - 1));
             livingEntity.addPotionEffect(potionEffect);
         }
     }
@@ -243,7 +245,7 @@ public abstract class Spell {
             duration = spellCore.isEffectDurationMultiplied() ? duration * castInformation.getStaveLevel() : duration;
             amplification = spellCore.isAmplificationMultiplied() ? amplification * castInformation.getStaveLevel() : amplification;
 
-            final PotionEffect potionEffect = new PotionEffect(entry.getKey(), duration, amplification - 1);
+            final PotionEffect potionEffect = new PotionEffect(entry.getKey(), duration, Math.max(0, amplification - 1));
             livingEntity.addPotionEffect(potionEffect);
         }
     }
