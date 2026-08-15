@@ -42,7 +42,11 @@ public class SleepingBag extends UnplaceableBlock {
                 final Location respawnLocation = player.getBedSpawnLocation();
 
                 block.setType(Material.WHITE_BED);
-                player.sleep(location, true);
+                if (!player.sleep(location, true)) {
+                    // 入睡失败时必须回滚临时床方块，否则会在世界中留下可被采集的免费床
+                    block.setType(Material.AIR);
+                    return;
+                }
                 CrystamaeHistoria.getSpellMemory().getSleepingBags().put(player.getUniqueId(), location);
                 player.sendMessage(ThemeType.SUCCESS.getColor() + "Respawn location reset to previous.");
                 player.setBedSpawnLocation(respawnLocation, true);

@@ -18,12 +18,16 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.block.Block;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.player.PlayerBedLeaveEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 
 public class MiscListener implements Listener {
@@ -106,9 +110,47 @@ public class MiscListener implements Listener {
         final Player player = event.getPlayer();
         final Location location = CrystamaeHistoria.getSpellMemory().getSleepingBags().remove(player.getUniqueId());
 
-        if (location != null) {
+        if (location != null && location.isWorldLoaded() && location.getBlock().getType() == Material.WHITE_BED) {
             location.getBlock().setType(Material.AIR);
         }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onQuitWithSleepingBag(PlayerQuitEvent event) {
+        // 玩家在睡袋中下线时 PlayerBedLeaveEvent 不保证触发，必须在此兜底清理，
+        // 否则临时床会永久残留世界（睡袋可重复使用，残留床可采集 = 无中生有刷床）
+        final Location location = CrystamaeHistoria.getSpellMemory().getSleepingBags().remove(event.getPlayer().getUniqueId());
+        if (location != null && location.isWorldLoaded() && location.getBlock().getType() == Material.WHITE_BED) {
+            location.getBlock().setType(Material.AIR);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onBreakSleepingBagBed(BlockBreakEvent event) {
+        // 睡袋生成的临时床禁止被采集，否则成为免费床物品来源（睡袋不消耗，可无限重复）
+        if (isSleepingBagBed(event.getBlock())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onExplodeSleepingBagBed(EntityExplodeEvent event) {
+        // 爆炸同样不得摧毁临时床（摧毁会产生掉落物，与直接挖掘同属刷物品路径）
+        event.blockList().removeIf(this::isSleepingBagBed);
+    }
+
+    private boolean isSleepingBagBed(Block block) {
+        for (Location location : CrystamaeHistoria.getSpellMemory().getSleepingBags().values()) {
+            if (location.isWorldLoaded()
+                && location.getWorld() == block.getWorld()
+                && location.getBlockX() == block.getX()
+                && location.getBlockY() == block.getY()
+                && location.getBlockZ() == block.getZ()
+            ) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
