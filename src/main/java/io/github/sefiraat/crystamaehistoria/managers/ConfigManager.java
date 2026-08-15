@@ -77,7 +77,9 @@ public class ConfigManager {
 
     @ParametersAreNonnullByDefault
     public boolean spellEnabled(Spell spell) {
-        return spells.getBoolean(spell.getId());
+        // 性能：每次施法都会走到这里。spells.yml 仅在 loadConfig()（启动期）写入，
+        // 同一值那时已同步进 Spell.enabled 字段——直接读字段，省去 YAML 路径分割与查表
+        return spell.isEnabled();
     }
 
     public void loadConfig() {

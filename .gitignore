@@ -11,3 +11,6 @@ dependency-reduced-pom.xml
 .DS_Store
 
 /REF
+
+/benchmark/build/
+/benchmark/results/latest.tsv

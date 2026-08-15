@@ -16,10 +16,11 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.util.BoundingBox;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 public class SpellMemory {
@@ -109,57 +110,92 @@ public class SpellMemory {
     }
 
     public void removeProjectiles(boolean forceRemoveAll) {
-        Set<MagicProjectile> set = new HashSet<>(projectileMap.keySet());
-        for (MagicProjectile magicProjectile : set) {
-            long expiry = projectileMap.get(magicProjectile).getSecondValue();
-            if (System.currentTimeMillis() > expiry || forceRemoveAll) {
-                magicProjectile.kill();
+        if (projectileMap.isEmpty()) {
+            return;
+        }
+        final long time = System.currentTimeMillis();
+        // kill()/run() 都会改映射表（kill 自移除、run 的消费者可能间接触发移除），
+        // 故先单遍扫描收集、扫描结束后统一执行——常规情况（全部存活）零复制分配
+        final List<MagicProjectile> toKill = new ArrayList<>();
+        final List<MagicProjectile> toRun = new ArrayList<>();
+        for (Map.Entry<MagicProjectile, Pair<CastInformation, Long>> entry : projectileMap.entrySet()) {
+            final MagicProjectile magicProjectile = entry.getKey();
+            if (time > entry.getValue().getSecondValue() || forceRemoveAll) {
+                toKill.add(magicProjectile);
             } else if (magicProjectile.getProjectile() == null) {
                 // 实体已消失（命中后事件时序差、区块卸载等）：清理条目，避免残留与后续空引用
-                magicProjectile.kill();
+                toKill.add(magicProjectile);
             } else {
                 // 驱动弹射物的 tick 消费者（如 StarFall/Chaos/Hellscape 的拖尾粒子）。
                 // 上游从未驱动该回调，导致注册的弹射物周期效果一直未生效
-                magicProjectile.run();
+                toRun.add(magicProjectile);
             }
+        }
+        for (MagicProjectile magicProjectile : toKill) {
+            magicProjectile.kill();
+        }
+        for (MagicProjectile magicProjectile : toRun) {
+            magicProjectile.run();
         }
     }
 
     public void removeFallingBlocks(boolean forceRemoveAll) {
-        Set<MagicFallingBlock> set = new HashSet<>(fallingBlockMap.keySet());
-        for (MagicFallingBlock magicFallingBlock : set) {
-            long expiry = fallingBlockMap.get(magicFallingBlock).getSecondValue();
-            if (System.currentTimeMillis() > expiry || forceRemoveAll) {
-                magicFallingBlock.kill();
+        if (fallingBlockMap.isEmpty()) {
+            return;
+        }
+        final long time = System.currentTimeMillis();
+        final List<MagicFallingBlock> toKill = new ArrayList<>();
+        for (Map.Entry<MagicFallingBlock, Pair<CastInformation, Long>> entry : fallingBlockMap.entrySet()) {
+            if (time > entry.getValue().getSecondValue() || forceRemoveAll) {
+                toKill.add(entry.getKey());
             }
+        }
+        for (MagicFallingBlock magicFallingBlock : toKill) {
+            magicFallingBlock.kill();
         }
     }
 
     public void removeEntities(boolean forceRemoveAll) {
-        Set<MagicSummon> set = new HashSet<>(CrystamaeHistoria.getSummonedEntityMap().keySet());
-        for (MagicSummon magicSummon : set) {
-            long expiry = summonedEntities.get(magicSummon);
-            if (System.currentTimeMillis() > expiry || magicSummon.getMob() == null || forceRemoveAll) {
-                magicSummon.kill();
+        if (summonedEntities.isEmpty()) {
+            return;
+        }
+        final long time = System.currentTimeMillis();
+        // kill()/run() 都会改映射表（kill 自移除、run 的消费者可能间接触发移除），先收集后执行
+        final List<MagicSummon> toKill = new ArrayList<>();
+        final List<MagicSummon> toRun = new ArrayList<>();
+        for (Map.Entry<MagicSummon, Long> entry : summonedEntities.entrySet()) {
+            final MagicSummon magicSummon = entry.getKey();
+            if (time > entry.getValue() || magicSummon.getMob() == null || forceRemoveAll) {
+                toKill.add(magicSummon);
             } else if (magicSummon.getPlayer() == null) {
                 // 主人已离线：召唤物的 AI/跟随逻辑全部失效（多个 tick 消费者直接链式引用玩家，
                 // 离线时 NPE 会中断整个 TemporaryEffectsRunnable 清理链）——按 mobgoals 的
                 // 离线自毁语义一致处理
-                magicSummon.kill();
+                toKill.add(magicSummon);
             } else {
-                magicSummon.run();
+                toRun.add(magicSummon);
             }
+        }
+        for (MagicSummon magicSummon : toKill) {
+            magicSummon.kill();
+        }
+        for (MagicSummon magicSummon : toRun) {
+            magicSummon.run();
         }
     }
 
     public void removeBlocks(boolean forceRemoveAll) {
-        long time = System.currentTimeMillis();
-        final Set<Map.Entry<BlockPosition, Long>> set = new HashSet<>(blocksToRemove.entrySet());
-        for (Map.Entry<BlockPosition, Long> entry : set) {
+        if (blocksToRemove.isEmpty()) {
+            return;
+        }
+        final long time = System.currentTimeMillis();
+        final Iterator<Map.Entry<BlockPosition, Long>> iterator = blocksToRemove.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Map.Entry<BlockPosition, Long> entry = iterator.next();
             if (forceRemoveAll || entry.getValue() < time) {
                 try {
                     entry.getKey().getBlock().setType(Material.AIR);
-                    blocksToRemove.remove(entry.getKey());
+                    iterator.remove();
                 } catch (IllegalStateException e) {
                     // BlockPosition 以 WeakReference 持有世界，世界卸载后 getBlock() 会抛出 IllegalStateException。
                     // 此时保留条目，等待世界重新加载后的下一轮再清理（不能抛出，否则会中断本轮后续所有清理）
@@ -169,96 +205,127 @@ public class SpellMemory {
     }
 
     public void removeStrikes(boolean forceRemoveAll) {
-        long time = System.currentTimeMillis();
-        final Set<Map.Entry<UUID, Pair<CastInformation, Long>>> set = new HashSet<>(strikeMap.entrySet());
-        for (Map.Entry<UUID, Pair<CastInformation, Long>> entry : set) {
+        if (strikeMap.isEmpty()) {
+            return;
+        }
+        final long time = System.currentTimeMillis();
+        final Iterator<Map.Entry<UUID, Pair<CastInformation, Long>>> iterator = strikeMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Map.Entry<UUID, Pair<CastInformation, Long>> entry = iterator.next();
             if (forceRemoveAll || entry.getValue().getSecondValue() < time) {
                 // 闪电视觉上转瞬即逝，此处仅清理未被 LightningStrikeEvent 消费掉的残留条目，防止泄漏
-                strikeMap.remove(entry.getKey());
+                iterator.remove();
             }
         }
     }
 
     public void removeFlight(boolean forceRemoveAll) {
-        long time = System.currentTimeMillis();
-        final Set<Map.Entry<UUID, Long>> set = new HashSet<>(playersWithFlight.entrySet());
-        for (Map.Entry<UUID, Long> entry : set) {
+        if (playersWithFlight.isEmpty()) {
+            return;
+        }
+        final long time = System.currentTimeMillis();
+        final Iterator<Map.Entry<UUID, Long>> iterator = playersWithFlight.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Map.Entry<UUID, Long> entry = iterator.next();
             if (forceRemoveAll || entry.getValue() < time) {
-                Player player = Bukkit.getPlayer(entry.getKey());
+                final Player player = Bukkit.getPlayer(entry.getKey());
                 if (player != null) {
                     player.setAllowFlight(false);
                     player.setFlying(false);
                 }
                 // 玩家已离线时飞行状态随会话重置，条目同样必须移除，否则永久泄漏
-                playersWithFlight.remove(entry.getKey());
+                iterator.remove();
             }
         }
     }
 
     public void removeFrozenTime(boolean forceRemoveAll) {
-        long time = System.currentTimeMillis();
-        final Set<Map.Entry<UUID, Long>> set = new HashSet<>(playersWithFrozenTime.entrySet());
-        for (Map.Entry<UUID, Long> entry : set) {
+        if (playersWithFrozenTime.isEmpty()) {
+            return;
+        }
+        final long time = System.currentTimeMillis();
+        final Iterator<Map.Entry<UUID, Long>> iterator = playersWithFrozenTime.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Map.Entry<UUID, Long> entry = iterator.next();
             if (forceRemoveAll || entry.getValue() < time) {
-                Player player = Bukkit.getPlayer(entry.getKey());
+                final Player player = Bukkit.getPlayer(entry.getKey());
                 if (player != null) {
                     player.resetPlayerTime();
                 }
                 // 玩家已离线时个人时间随会话重置，条目同样必须移除，否则永久泄漏
-                playersWithFrozenTime.remove(entry.getKey());
+                iterator.remove();
             }
         }
     }
 
     public void removeFrozenWeather(boolean forceRemoveAll) {
-        long time = System.currentTimeMillis();
-        final Set<Map.Entry<UUID, Long>> set = new HashSet<>(playersWithFrozenWeather.entrySet());
-        for (Map.Entry<UUID, Long> entry : set) {
+        if (playersWithFrozenWeather.isEmpty()) {
+            return;
+        }
+        final long time = System.currentTimeMillis();
+        final Iterator<Map.Entry<UUID, Long>> iterator = playersWithFrozenWeather.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Map.Entry<UUID, Long> entry = iterator.next();
             if (forceRemoveAll || entry.getValue() < time) {
-                Player player = Bukkit.getPlayer(entry.getKey());
+                final Player player = Bukkit.getPlayer(entry.getKey());
                 if (player != null) {
                     player.resetPlayerWeather();
                 }
                 // 玩家已离线时个人天气随会话重置，条目同样必须移除，否则永久泄漏
-                playersWithFrozenWeather.remove(entry.getKey());
+                iterator.remove();
             }
         }
     }
 
     public void removeEnderman(boolean forceRemoveAll) {
-        long time = System.currentTimeMillis();
-        final Set<Map.Entry<UUID, Long>> set = new HashSet<>(inhibitedEndermen.entrySet());
-        for (Map.Entry<UUID, Long> entry : set) {
+        if (inhibitedEndermen.isEmpty()) {
+            return;
+        }
+        final long time = System.currentTimeMillis();
+        final Iterator<Map.Entry<UUID, Long>> iterator = inhibitedEndermen.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Map.Entry<UUID, Long> entry = iterator.next();
             if (forceRemoveAll || entry.getValue() < time) {
-                inhibitedEndermen.remove(entry.getKey());
+                iterator.remove();
             }
         }
     }
 
     public void enableSpawningInArea(boolean forceRemoveAll) {
-        long time = System.currentTimeMillis();
-        final Set<Map.Entry<BoundingBox, Long>> set = new HashSet<>(noSpawningAreas.entrySet());
-        for (Map.Entry<BoundingBox, Long> entry : set) {
+        if (noSpawningAreas.isEmpty()) {
+            return;
+        }
+        final long time = System.currentTimeMillis();
+        final Iterator<Map.Entry<BoundingBox, Long>> iterator = noSpawningAreas.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Map.Entry<BoundingBox, Long> entry = iterator.next();
             if (forceRemoveAll || entry.getValue() < time) {
-                noSpawningAreas.remove(entry.getKey());
+                iterator.remove();
             }
         }
     }
 
     public void removeDisplayItems(boolean forceRemoveAll) {
-        long time = System.currentTimeMillis();
-        final Set<Map.Entry<DisplayItem, Long>> set = new HashSet<>(displayItems.entrySet());
-        for (Map.Entry<DisplayItem, Long> entry : set) {
+        if (displayItems.isEmpty()) {
+            return;
+        }
+        final long time = System.currentTimeMillis();
+        final List<DisplayItem> toKill = new ArrayList<>();
+        for (Map.Entry<DisplayItem, Long> entry : displayItems.entrySet()) {
             if (forceRemoveAll || entry.getValue() < time) {
-                entry.getKey().kill();
-                displayItems.remove(entry.getKey());
+                toKill.add(entry.getKey());
             }
+        }
+        for (DisplayItem displayItem : toKill) {
+            displayItem.kill();
+            // DisplayItem.kill() 不会自移除映射表，须在此显式移除
+            displayItems.remove(displayItem);
         }
     }
 
     public void removeSleepingBags() {
-        final Set<Map.Entry<UUID, Location>> set = new HashSet<>(sleepingBags.entrySet());
-        for (Map.Entry<UUID, Location> entry : set) {
+        // setType 不触碰映射表本身，可直接遍历（无过期概念，全量置 AIR）
+        for (Map.Entry<UUID, Location> entry : sleepingBags.entrySet()) {
             final Location location = entry.getValue();
             if (location.isWorldLoaded()) {
                 location.getBlock().setType(Material.AIR);
