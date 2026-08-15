@@ -47,6 +47,7 @@ public final class CHPerfBench extends JavaPlugin {
             benchStavePdc(w);
             benchInteractPaths(w);
             benchMachineTick(w);
+            benchMachineTickMemo(w);
         } catch (Exception e) {
             getLogger().severe("基准失败: " + e);
             e.printStackTrace();
@@ -204,6 +205,42 @@ public final class CHPerfBench extends JavaPlugin {
             }
         });
     }
+
+    /** 第 5 轮：面板完整工作 tick（process + processStack 判定）跨 3 个版本形态 */
+    private void benchMachineTickMemo(PrintWriter w) {
+        ItemStack stone = new ItemStack(Material.STONE);
+        StoryUtils.makeStoried(stone);
+        final ItemStack[] slot = {stone};
+        final boolean[] verdict = {false};
+
+        // 第 3 轮前：process 与 processStack 各自独立读取（5 次克隆 + 3 次 JSON 解析）
+        time(w, "machineTick.fullWorking", "round3_itemstack_args", 2_000, () -> {
+            if (StoryUtils.canBeStoried(stone, 2)
+                && StoryUtils.hasRemainingStorySlots(stone)) {
+                bh += StoryUtils.getRemainingStoryAmount(stone);
+            }
+        });
+
+        // 第 4 轮后：process 单次 meta，processStack 两次独立读取（3 次克隆 + 2 次 JSON）
+        time(w, "machineTick.fullWorking", "round4_single_meta_partial", 2_000, () -> {
+            final ItemMeta meta = stone.getItemMeta();
+            final boolean storied = StoryUtils.isStoried(meta);
+            if (StoryUtils.canBeStoried(stone, 2, storied)
+                && StoryUtils.hasRemainingStorySlots(meta)) {
+                bh += StoryUtils.getRemainingStoryAmount(stone);
+            }
+        });
+
+        // 第 5 轮后：稳态备忘录命中（引用比较，无元数据读取）
+        memoItem = stone;
+        time(w, "machineTick.fullWorking", "round5_memo_hit", 5_000_000, () -> {
+            if (slot[0] == memoItem) {
+                bh++;
+            }
+        });
+    }
+
+    private ItemStack memoItem;
 
     /** 时间驱动预热 + 分批中位数（主线程内，每变体约 1s） */
     private void time(PrintWriter w, String bench, String variant, int batchOps, Runnable op) {
