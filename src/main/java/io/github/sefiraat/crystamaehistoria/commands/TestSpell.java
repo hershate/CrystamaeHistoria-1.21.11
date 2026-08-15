@@ -24,14 +24,23 @@ public class TestSpell extends SubCommand {
             if (args.length != 2) {
                 return;
             }
-            int power = Integer.parseInt(args[1]);
-            if (power <= 5) {
+            final int power;
+            try {
+                power = Integer.parseInt(args[1]);
+            } catch (NumberFormatException e) {
+                player.sendMessage(ThemeType.ERROR.getColor() + "强度必须为 1-5 的整数!");
+                return;
+            }
+            // 原实现仅有上界检查：负强度会以负法杖等级参与伤害/范围缩放（负伤害反而治疗目标）
+            if (power >= 1 && power <= 5) {
                 Spell spell = SpellType.getById(args[0]);
                 if (spell != null) {
                     spell.castSpell(new CastInformation((Player) sender, power));
                 } else {
                     player.sendMessage(ThemeType.ERROR.getColor() + "法术不存在或无法释放!");
                 }
+            } else {
+                player.sendMessage(ThemeType.ERROR.getColor() + "强度必须为 1-5 的整数!");
             }
         }
     }

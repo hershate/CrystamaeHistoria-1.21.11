@@ -31,7 +31,13 @@ public class TestWand extends SubCommand {
             if (args.length != 2) {
                 return;
             }
-            int power = Integer.parseInt(args[1]);
+            final int power;
+            try {
+                power = Integer.parseInt(args[1]);
+            } catch (NumberFormatException e) {
+                player.sendMessage("法杖等级必须为 1-2 的整数!");
+                return;
+            }
             if (power <= 2) {
                 ItemStack stave;
                 if (power == 1) {
@@ -39,6 +45,14 @@ public class TestWand extends SubCommand {
                 } else if (power == 2) {
                     stave = Tools.getStaveAdvanced().getItem().clone();
                 } else {
+                    return;
+                }
+
+                // 与 test-spell 一致：非法法术名给出提示而非抛出 IllegalArgumentException
+                final io.github.sefiraat.crystamaehistoria.magic.spells.core.Spell spell =
+                    SpellType.getById(args[0]);
+                if (spell == null) {
+                    player.sendMessage("法术不存在!");
                     return;
                 }
 

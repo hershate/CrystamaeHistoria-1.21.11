@@ -26,8 +26,12 @@ public class StripMine extends Spell {
     public void tick(CastInformation castInformation) {
 
         BlockFace blockFace = castInformation.getTargetedBlockFaceOnCast();
-
-        if (blockFace == BlockFace.UP || blockFace == BlockFace.DOWN) {
+        // 施法瞬间视线 50 格内无方块时 raycast 结果为 null，跳过本次效果（原实现 NPE）
+        if (blockFace == null
+            || castInformation.getTargetedBlockOnCast() == null
+            || blockFace == BlockFace.UP
+            || blockFace == BlockFace.DOWN
+        ) {
             return;
         }
 
