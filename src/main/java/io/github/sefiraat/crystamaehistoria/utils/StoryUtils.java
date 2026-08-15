@@ -189,7 +189,19 @@ public class StoryUtils {
      */
     @ParametersAreNonnullByDefault
     public static int getMaxStoryAmount(ItemStack itemStack) {
-        return getStoryLimits(itemStack).get(Keys.JS_S_AVAILABLE_STORIES).getAsInt();
+        // PDC 中的 JsonObject 不可信（改造客户端可伪造部分键/非数字/坏 JSON）：
+        // 异常或缺失一律按 0 处理（无剩余槽位），避免每 tick 异常卡死机械
+        try {
+            final JsonObject limits = getStoryLimits(itemStack);
+            if (limits == null || !limits.has(Keys.JS_S_AVAILABLE_STORIES)
+                || !limits.get(Keys.JS_S_AVAILABLE_STORIES).isJsonPrimitive()
+            ) {
+                return 0;
+            }
+            return limits.get(Keys.JS_S_AVAILABLE_STORIES).getAsInt();
+        } catch (RuntimeException e) {
+            return 0;
+        }
     }
 
     /**
@@ -206,6 +218,10 @@ public class StoryUtils {
     public static void requestNewStory(ItemStack itemstack) {
         final StoriesManager manager = CrystamaeHistoria.getStoriesManager();
         final BlockDefinition definition = manager.getBlockDefinitionMap().get(itemstack.getType());
+        // blocks.yml 可被编辑：定义缺失（含元素池为空）时跳过，不能 NPE/越界
+        if (definition == null || definition.getPools().isEmpty()) {
+            return;
+        }
         final BlockTier tier = definition.getBlockTier();
         final StoryChances chance = tier.storyChances;
         final List<StoryType> pool = definition.getPools();
@@ -231,6 +247,11 @@ public class StoryUtils {
                                                       .stream()
                                                       .filter(t -> t.getType() == st)
                                                       .collect(Collectors.toList());
+        // generic-stories.yml 可被编辑：该稀有度下无此类型故事时跳过，
+        // 原 nextInt(0, 0) 抛 IllegalArgumentException 使记录者面板每 tick 报错
+        if (availableStories.isEmpty()) {
+            return;
+        }
         final Story story = availableStories.get(ThreadLocalRandom.current().nextInt(0, availableStories.size()));
         applyStory(itemStack, story);
         incrementStoryAmount(itemStack);
@@ -285,6 +306,10 @@ public class StoryUtils {
     public static void requestUniqueStory(ItemStack itemstack) {
         final StoriesManager m = CrystamaeHistoria.getStoriesManager();
         final BlockDefinition s = m.getBlockDefinitionMap().get(itemstack.getType());
+        // blocks.yml 可被编辑：定义或独特故事缺失时跳过
+        if (s == null || s.getUnique() == null) {
+            return;
+        }
         Story unique = s.getUnique();
         applyStory(itemstack, unique);
     }
