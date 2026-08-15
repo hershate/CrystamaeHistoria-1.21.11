@@ -23,6 +23,11 @@ public abstract class AbstractRidableGoal<T extends Mob> extends AbstractGoal<T>
     public void tick() {
         if (!this.self.getPassengers().isEmpty()) {
             final Player player = Bukkit.getPlayer(owner);
+            // 乘客未必是主人（其他玩家/实体也可骑上召唤物），主人离线时按无骑乘处理
+            if (player == null) {
+                super.tick();
+                return;
+            }
             final Vector eyeDirection = player.getEyeLocation().getDirection();
             final Location destination = player.getLocation().clone().add(eyeDirection);
 

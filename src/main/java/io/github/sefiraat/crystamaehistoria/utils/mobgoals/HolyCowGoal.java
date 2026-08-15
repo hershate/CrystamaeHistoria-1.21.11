@@ -89,7 +89,9 @@ public class HolyCowGoal extends AbstractGoal<Cow> {
             }
         }
 
+        // 跨世界 distance 会抛 IllegalArgumentException：不同世界时跳过跟随（同 AbstractGoal）
         if (getFollowsPlayer()
+            && self.getLocation().getWorld() == player.getWorld()
             && self.getLocation().distance(player.getLocation()) > getStayNearDistance()
         ) {
             final Location location = player.getLocation().clone().add(

@@ -99,7 +99,10 @@ public abstract class AbstractGoal<T extends Mob> implements Goal<T> {
             }
         }
 
+        // 跨世界 distance 会抛 IllegalArgumentException（主人过传送门后 AI 每 tick 崩）：
+        // 不同世界时跳过跟随逻辑（召唤物由 SpellMemory 过期清理兜底）
         if (getFollowsPlayer()
+            && self.getLocation().getWorld() == player.getWorld()
             && self.getLocation().distance(player.getLocation()) > getStayNearDistance()
         ) {
             final Location location = player.getLocation().clone().add(
