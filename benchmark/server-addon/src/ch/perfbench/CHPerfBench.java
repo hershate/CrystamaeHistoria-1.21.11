@@ -1,8 +1,10 @@
 package ch.perfbench;
 
+import io.github.sefiraat.crystamaehistoria.CrystamaeHistoria;
 import io.github.sefiraat.crystamaehistoria.magic.SpellType;
 import io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate;
 import io.github.sefiraat.crystamaehistoria.magic.spells.core.InstanceStave;
+import io.github.sefiraat.crystamaehistoria.stories.definition.StoryType;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot;
 import io.github.sefiraat.crystamaehistoria.utils.GeneralUtils;
 import io.github.sefiraat.crystamaehistoria.utils.StoryUtils;
@@ -27,6 +29,7 @@ import me.mrCookieSlime.Slimefun.api.BlockStorage;
 
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -58,6 +61,7 @@ public final class CHPerfBench extends JavaPlugin {
             benchMachineTickMemo(w);
             benchStaveCast(w);
             benchGadgetTick(w);
+            benchStoryPick(w);
         } catch (Exception e) {
             getLogger().severe("基准失败: " + e);
             e.printStackTrace();
@@ -348,6 +352,51 @@ public final class CHPerfBench extends JavaPlugin {
             final Location center = blockLocation.clone().add(0.5, 0.5, 0.5);
             bh += center.getBlockX();
             bh += blockLocation.hashCode();
+        });
+    }
+
+    /** 第 8 轮：故事选取索引与配置加载（真实 StoriesManager 数据/真实 blocks.yml） */
+    private void benchStoryPick(PrintWriter w) {
+        final io.github.sefiraat.crystamaehistoria.managers.StoriesManager manager =
+            CrystamaeHistoria.getStoriesManager();
+        final StoryType type = StoryType.ELEMENTAL;
+
+        // 旧：每次对整稀有度故事表 stream 过滤 + 收集
+        time(w, "storyPick.byType", "old_stream_filter", 20_000, () -> {
+            final List<io.github.sefiraat.crystamaehistoria.stories.Story> available =
+                manager.getStoryMapCommon().values().stream()
+                       .filter(t -> t.getType() == type)
+                       .collect(java.util.stream.Collectors.toList());
+            bh += available.size();
+        });
+        // 新：稀有度×类型索引查表
+        time(w, "storyPick.byType", "new_index_lookup", 1_000_000, () -> {
+            final List<io.github.sefiraat.crystamaehistoria.stories.Story> available =
+                manager.getStories(io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity.COMMON, type);
+            bh += available == null ? 0 : available.size();
+        });
+
+        // 配置加载：单次解析 vs 旧实现的双重解析（真实 995 键 blocks.yml）
+        final java.io.File blocksFile =
+            new java.io.File(CrystamaeHistoria.getInstance().getDataFolder(), "blocks.yml");
+        time(w, "configParse.blocksYml", "old_double_parse", 20, () -> {
+            try {
+                org.bukkit.configuration.file.YamlConfiguration cfg =
+                    org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(blocksFile);
+                cfg.load(blocksFile);
+                bh += cfg.getKeys(false).size();
+            } catch (Exception e) {
+                bh++;
+            }
+        });
+        time(w, "configParse.blocksYml", "new_single_parse", 40, () -> {
+            try {
+                org.bukkit.configuration.file.YamlConfiguration cfg =
+                    org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(blocksFile);
+                bh += cfg.getKeys(false).size();
+            } catch (Exception e) {
+                bh++;
+            }
         });
     }
 
