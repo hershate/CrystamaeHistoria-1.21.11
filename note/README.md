@@ -7,6 +7,10 @@
 - [1.21.11-1](release/1.21.11-1.md)：迁移至 Paper 1.21.11 + Slimefun 5.0.0（REF/Slimefun4.1），
   移除 bstats / GuizhanLibPlugin / InfinityLib / EffectLib / MorePersistentDataTypes 及全部第三方可选插件集成。
 
+## 专项分析
+
+- [法术系统结构化分析](spell-system-analysis.md)：`magic/`、`listeners/`、`runnables/` 包与 `SpellMemory.java` 的核心抽象、注册/触发/执行机制、69 个法术的数量与层级划分、监听器与定时任务职责、法术执行流程调用链（2026-08-15）。
+
 ## 维护要点（改代码前必读）
 
 1. **构建**：`mvn package`（需 Java 21）。Slimefun 依赖来自本地仓库的
