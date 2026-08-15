@@ -18,8 +18,8 @@
 
 持续性能优化（红线：安全/稳定/兼容，量化见 [benchmark/](../benchmark/)，
 报告与索引见 [report/perf/](report/perf/README.md)）：
-第 1-2 轮完成（施法前置校验 29x；SpellMemory 零复制 8x；施法触发懒 raycast——
-失败路径 0 raycast、成功 1.7-2x、未映射动作免 5.4μs PDC，服务器回归均通过）。
+第 1-3 轮完成（施法前置校验 29x；SpellMemory 零复制 8x；施法触发懒 raycast；
+交互路径 ItemMeta 削减——冷却检查 8.7x/调光勺 3.6x 每次交互全局生效，服务器回归均通过）。
 
 ## 维护要点（改代码前必读）
 
