@@ -14,6 +14,12 @@
 
 - [法术系统结构化分析](spell-system-analysis.md)：`magic/`、`listeners/`、`runnables/` 包与 `SpellMemory.java` 的核心抽象、注册/触发/执行机制、69 个法术的数量与层级划分、监听器与定时任务职责、法术执行流程调用链（2026-08-15）。
 
+## 性能优化轮次
+
+持续性能优化（红线：安全/稳定/兼容，量化见 [benchmark/](../benchmark/)，
+报告与索引见 [report/perf/](report/perf/README.md)）：
+第 1 轮完成（施法前置校验 29x + SpellMemory 周期清理零复制 8x，服务器回归通过）。
+
 ## 维护要点（改代码前必读）
 
 1. **构建**：`mvn package`（需 Java 21）。Slimefun 依赖来自本地仓库的
