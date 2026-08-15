@@ -71,14 +71,26 @@ public class PlutosDecent extends Spell {
     }
 
     private void blockLands(CastInformation castInformation) {
+        // 流星从 40 格高空落下需要数秒，施法者可能已下线：
+        // 无源爆炸使用不带实体的重载，避免 getCasterAsPlayer() 空引用
         Location location = castInformation.getHitBlock().getLocation();
-        location.getWorld().createExplosion(
-            castInformation.getCasterAsPlayer(),
-            location,
-            getRadius(castInformation) + 1F,
-            true,
-            true
-        );
+        final Player caster = castInformation.getCasterAsPlayer();
+        if (caster != null) {
+            location.getWorld().createExplosion(
+                caster,
+                location,
+                getRadius(castInformation) + 1F,
+                true,
+                true
+            );
+        } else {
+            location.getWorld().createExplosion(
+                location,
+                getRadius(castInformation) + 1F,
+                true,
+                true
+            );
+        }
     }
 
     private int getRadius(CastInformation castInformation) {

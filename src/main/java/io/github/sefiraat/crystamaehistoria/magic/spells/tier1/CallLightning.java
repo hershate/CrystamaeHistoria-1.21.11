@@ -53,7 +53,8 @@ public class CallLightning extends Spell {
     public void beforeProjectileHit(CastInformation castInformation) {
         for (LivingEntity livingEntity : getTargets(castInformation, getProjectileAoe(castInformation), true)) {
             final Interaction interaction = livingEntity instanceof Player ? Interaction.ATTACK_PLAYER : Interaction.ATTACK_ENTITY;
-            if (GeneralUtils.hasPermission(castInformation.getCasterAsPlayer(), livingEntity.getLocation(), interaction)) {
+            // 闪电命中可能晚于施法者下线：用 UUID 重载校验权限，避免 getCasterAsPlayer() 空引用
+            if (GeneralUtils.hasPermission(castInformation.getCaster(), livingEntity.getLocation(), interaction)) {
                 livingEntity.setFireTicks(40);
             }
         }

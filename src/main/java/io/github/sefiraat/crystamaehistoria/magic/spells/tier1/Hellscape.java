@@ -14,6 +14,7 @@ import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -50,12 +51,15 @@ public class Hellscape extends Spell {
 
     @ParametersAreNonnullByDefault
     public void projectileHit(CastInformation castInformation) {
+        // 弹射物命中可能晚于施法者下线：击退源位置不能链式取离线玩家（NPE），退回命中位置
+        final Player caster = castInformation.getCasterAsPlayer();
+        final Location knockbackOrigin = caster != null ? caster.getLocation() : castInformation.getDamageLocation();
         for (LivingEntity livingEntity : getTargets(castInformation, getProjectileAoe(castInformation), true)) {
             GeneralUtils.damageEntity(
                 livingEntity,
                 castInformation.getCaster(),
                 getDamage(castInformation),
-                castInformation.getCasterAsPlayer().getLocation(),
+                knockbackOrigin,
                 getKnockback(castInformation)
             );
         }
