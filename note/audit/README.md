@@ -42,6 +42,7 @@
 | 28 | 事件 API 评估 + 文档/git 一致性（[round-28](round-28.md)） | ✅ 完成（1 commit：0a95716；README 自动更新声明修正；上游 co-author 历史查明为继承） |
 | 29 | 补回归缺口 + 版本序列重定（[round-29](round-29.md)） | ✅ 完成（**版本自 0.1.0 起算**（用户指令）；第 8/9 次回归通过） |
 | 30 | 审计经验沉淀 + README 来源一致性（[round-30](round-30.md)） | ✅ 完成（1 commit：209782c；下载指引修正 + 维护要点第 8 条红线） |
+| 31 | CI 工作流可用性（[round-31](round-31.md)） | ✅ 完成（1 commit：74a6a0f；**CI 三重缺陷修复**——依赖入库 vendored + JDK 固定 + gitignore 目录级排除陷阱） |
 
 ## 已修复问题汇总
 
