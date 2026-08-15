@@ -38,10 +38,11 @@ public class GrowUp extends Spell {
                 }
             } else if (entity instanceof Slime) {
                 Slime slime = (Slime) entity;
-                slime.setSize(slime.getSize() + 1);
+                // 钳制尺寸上限：原版 API 对越界 size 抛 IllegalArgumentException
+                slime.setSize(Math.min(slime.getSize() + 1, 255));
             } else if (entity instanceof Phantom) {
                 Phantom phantom = (Phantom) entity;
-                phantom.setSize(phantom.getSize() + 1);
+                phantom.setSize(Math.min(phantom.getSize() + 1, 64));
             }
         }
     }

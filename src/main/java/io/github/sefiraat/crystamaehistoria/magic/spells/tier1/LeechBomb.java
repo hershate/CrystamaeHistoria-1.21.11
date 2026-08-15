@@ -66,6 +66,11 @@ public class LeechBomb extends Spell {
     public void onTick(MagicSummon magicSummon) {
         Mob mob = magicSummon.getMob();
         Player player = magicSummon.getPlayer();
+        // 纵深防御：主人离线时自毁（通用层已拦截，此处兜底）
+        if (mob == null || player == null) {
+            magicSummon.kill();
+            return;
+        }
         Block block = player.getLocation().subtract(0, 0.5, 0).getBlock();
         if (!player.getWorld().equals(mob.getWorld())
             || (mob.getLocation().distance(player.getLocation()) > 50 && block.getType().isSolid())

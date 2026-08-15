@@ -48,7 +48,14 @@ public class MagicSummon {
 
     public void run() {
         if (tickConsumer != null) {
-            tickConsumer.accept(this);
+            try {
+                tickConsumer.accept(this);
+            } catch (Exception e) {
+                // 断路器：tick 消费者异常时停用该消费者，避免剩余生命周期内每秒重复抛异常
+                CrystamaeHistoria.getInstance().getLogger()
+                    .log(java.util.logging.Level.WARNING, "召唤物 tick 回调执行异常，已停用该回调", e);
+                tickConsumer = null;
+            }
         }
     }
 }

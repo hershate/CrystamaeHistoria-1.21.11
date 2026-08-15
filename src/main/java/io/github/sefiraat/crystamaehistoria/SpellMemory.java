@@ -141,6 +141,11 @@ public class SpellMemory {
             long expiry = summonedEntities.get(magicSummon);
             if (System.currentTimeMillis() > expiry || magicSummon.getMob() == null || forceRemoveAll) {
                 magicSummon.kill();
+            } else if (magicSummon.getPlayer() == null) {
+                // 主人已离线：召唤物的 AI/跟随逻辑全部失效（多个 tick 消费者直接链式引用玩家，
+                // 离线时 NPE 会中断整个 TemporaryEffectsRunnable 清理链）——按 mobgoals 的
+                // 离线自毁语义一致处理
+                magicSummon.kill();
             } else {
                 magicSummon.run();
             }
