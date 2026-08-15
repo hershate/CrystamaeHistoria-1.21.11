@@ -25,6 +25,7 @@
 | 11 | artistic/exhalted/materials 物品深审（[round-11](round-11.md)） | ✅ 完成（2 commit：f9ed746/03cb3dc） |
 | 12 | mobgoals 召唤物 AI 目标类（[round-12](round-12.md)） | ✅ 完成（1 commit：1105890） |
 | 13 | 剩余 tier1 法术逐文件精读（[round-13](round-13.md)） | ✅ 完成（1 commit：6aaf782；67 类全覆盖） |
+| 14 | 交叉复审：故事系统核心 + tools 残余（[round-14](round-14.md)） | ✅ 完成（1 commit：489c23d） |
 
 ## 已修复问题汇总
 
