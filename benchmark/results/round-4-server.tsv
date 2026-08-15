@@ -1,0 +1,17 @@
+bench	variant	median_ns_op
+raycast50.miss	old_exact_plus_face	166.27
+raycast50.miss	new_single_raytrace	91.43
+raycast50.hit5	old_exact_plus_face	387.93
+raycast50.hit5	new_single_raytrace	253.49
+stavePdc.deserialize	full_meta_plus_pdc	7537.68
+interactRightClick.cooldownCheck	old_pdc_read	59.79
+interactRightClick.cooldownCheck	new_material_gate	4.99
+interactAny.scoopCheck	old_getByItem_plain	14.38
+interactAny.scoopCheck	new_material_gate	5.81
+staveSuccess.metaWriteBack	old_two_round_trips	27319.35
+staveSuccess.metaWriteBack	new_single_round_trip	18087.05
+machineTick.steadyStoryCheck	old_itemstack_args	2784.38
+machineTick.steadyStoryCheck	new_single_meta	1243.04
+machineTick.jsonLimitsParse	getMaxStoryAmount	1076.97
+machineTick.pickupLocCompute	old_clone_add	4.32
+machineTick.pickupLocCompute	new_cached_field	2.86

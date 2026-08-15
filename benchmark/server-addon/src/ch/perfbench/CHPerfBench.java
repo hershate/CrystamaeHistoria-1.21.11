@@ -5,6 +5,7 @@ import io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate;
 import io.github.sefiraat.crystamaehistoria.magic.spells.core.InstanceStave;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot;
 import io.github.sefiraat.crystamaehistoria.utils.GeneralUtils;
+import io.github.sefiraat.crystamaehistoria.utils.StoryUtils;
 import io.github.sefiraat.crystamaehistoria.utils.Keys;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveDataType;
@@ -45,6 +46,7 @@ public final class CHPerfBench extends JavaPlugin {
             benchRaycast(w);
             benchStavePdc(w);
             benchInteractPaths(w);
+            benchMachineTick(w);
         } catch (Exception e) {
             getLogger().severe("基准失败: " + e);
             e.printStackTrace();
@@ -158,6 +160,48 @@ public final class CHPerfBench extends JavaPlugin {
                 staveInstance.getSpellInstanceMap());
             staveInstance.buildLore(m);
             stave.setItemMeta(m);
+        });
+    }
+
+    /** 第 4 轮：机械每 tick 故事判定链与拾取点计算（真实插件代码） */
+    private void benchMachineTick(PrintWriter w) {
+        // 真实已记录物品（STONE，含故事上限 PDC）
+        ItemStack stone = new ItemStack(Material.STONE);
+        StoryUtils.makeStoried(stone);
+
+        // 记录者面板稳态 tick 判定链（canBeStoried/isStoried/hasRemainingStorySlots）
+        time(w, "machineTick.steadyStoryCheck", "old_itemstack_args", 5_000, () -> {
+            if (StoryUtils.canBeStoried(stone, 2)
+                && StoryUtils.isStoried(stone)
+                && StoryUtils.hasRemainingStorySlots(stone)) {
+                bh++;
+            }
+        });
+        time(w, "machineTick.steadyStoryCheck", "new_single_meta", 5_000, () -> {
+            final ItemMeta meta = stone.getItemMeta();
+            final boolean storied = StoryUtils.isStoried(meta);
+            if (StoryUtils.canBeStoried(stone, 2, storied)
+                && storied
+                && StoryUtils.hasRemainingStorySlots(meta)) {
+                bh++;
+            }
+        });
+
+        // 剩余地板成本：单次 getMaxStoryAmount（ItemMeta 克隆 + Gson 解析）
+        time(w, "machineTick.jsonLimitsParse", "getMaxStoryAmount", 20_000,
+            () -> StoryUtils.getMaxStoryAmount(stone));
+
+        // 拾取扫描中心：旧（每 tick 克隆+偏移两次分配）vs 新（懒缓存字段读）
+        final Location base = Bukkit.getWorlds().get(0).getSpawnLocation();
+        final Location cached = base.clone().add(0.5, 0.5, 0.5);
+        time(w, "machineTick.pickupLocCompute", "old_clone_add", 1_000_000, () ->
+            base.clone().add(0.5, 0.5, 0.5));
+        time(w, "machineTick.pickupLocCompute", "new_cached_field", 5_000_000, () -> {
+            // 真实路径仅将缓存字段传给 getNearbyEntities（无 hashCode/计算），
+            // 此处以 null 检查强迫字段读取，防死码消除
+            if (cached == null) {
+                bh++;
+            }
         });
     }
 
