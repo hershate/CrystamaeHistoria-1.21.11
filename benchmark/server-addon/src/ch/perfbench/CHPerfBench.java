@@ -48,6 +48,7 @@ public final class CHPerfBench extends JavaPlugin {
             benchInteractPaths(w);
             benchMachineTick(w);
             benchMachineTickMemo(w);
+            benchStaveCast(w);
         } catch (Exception e) {
             getLogger().severe("基准失败: " + e);
             e.printStackTrace();
@@ -241,6 +242,40 @@ public final class CHPerfBench extends JavaPlugin {
     }
 
     private ItemStack memoItem;
+
+    /** 第 6 轮：施法交互的 PDC 读取（4 板满法杖，真实插件代码） */
+    private void benchStaveCast(PrintWriter w) {
+        ItemStack stave = new ItemStack(Material.BLAZE_ROD);
+        ItemMeta meta = stave.getItemMeta();
+        Map<SpellSlot, InstancePlate> plates = new EnumMap<>(SpellSlot.class);
+        for (SpellSlot slot : SpellSlot.values()) {
+            plates.put(slot, new InstancePlate(1, SpellType.HEAL, 100));
+        }
+        DataTypeMethods.setCustom(meta, Keys.PDC_STAVE_STORAGE, PersistentStaveDataType.TYPE, plates);
+        stave.setItemMeta(meta);
+
+        // 失败前置路径（冷却/缺晶能/空槽）的读取成本
+        time(w, "staveCast.precheckReads", "old_full_deserialize", 2_000,
+            () -> new InstanceStave(stave));
+        time(w, "staveCast.precheckReads", "new_slot_only_read", 5_000, () -> {
+            try {
+                if (PersistentStaveDataType.getSlotPlate(stave.getItemMeta(), SpellSlot.RIGHT_CLICK) != null) {
+                    bh++;
+                }
+            } catch (IllegalStateException e) {
+                bh += 2;
+            }
+        });
+
+        // 成功路径读取总量：旧（全量一次，独立 meta）vs 新（单次 meta 克隆 + 单槽 + 全量）
+        time(w, "staveCast.successReads", "old_full_once", 2_000,
+            () -> new InstanceStave(stave));
+        time(w, "staveCast.successReads", "new_shared_meta_reads", 2_000, () -> {
+            final ItemMeta m = stave.getItemMeta();
+            PersistentStaveDataType.getSlotPlate(m, SpellSlot.RIGHT_CLICK);
+            new InstanceStave(stave, m);
+        });
+    }
 
     /** 时间驱动预热 + 分批中位数（主线程内，每变体约 1s） */
     private void time(PrintWriter w, String bench, String variant, int batchOps, Runnable op) {
