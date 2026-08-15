@@ -1,0 +1,12 @@
+bench	variant	median_ns_op
+raycast50.miss	old_exact_plus_face	119.72
+raycast50.miss	new_single_raytrace	102.72
+raycast50.hit5	old_exact_plus_face	360.92
+raycast50.hit5	new_single_raytrace	199.22
+stavePdc.deserialize	full_meta_plus_pdc	7268.80
+interactRightClick.cooldownCheck	old_pdc_read	41.36
+interactRightClick.cooldownCheck	new_material_gate	4.74
+interactAny.scoopCheck	old_getByItem_plain	20.12
+interactAny.scoopCheck	new_material_gate	5.64
+staveSuccess.metaWriteBack	old_two_round_trips	21396.30
+staveSuccess.metaWriteBack	new_single_round_trip	18766.90

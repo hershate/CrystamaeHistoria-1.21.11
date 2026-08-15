@@ -2,10 +2,13 @@ package ch.perfbench;
 
 import io.github.sefiraat.crystamaehistoria.magic.SpellType;
 import io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate;
+import io.github.sefiraat.crystamaehistoria.magic.spells.core.InstanceStave;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot;
+import io.github.sefiraat.crystamaehistoria.utils.GeneralUtils;
 import io.github.sefiraat.crystamaehistoria.utils.Keys;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveDataType;
+import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -26,6 +29,9 @@ import java.util.Map;
  */
 public final class CHPerfBench extends JavaPlugin {
 
+    /** 黑洞计数，防死码消除 */
+    private long bh;
+
     @Override
     public void onEnable() {
         Bukkit.getScheduler().runTaskLater(this, this::runBenchmarks, 100L);
@@ -38,11 +44,12 @@ public final class CHPerfBench extends JavaPlugin {
             w.println("bench\tvariant\tmedian_ns_op");
             benchRaycast(w);
             benchStavePdc(w);
+            benchInteractPaths(w);
         } catch (Exception e) {
             getLogger().severe("基准失败: " + e);
             e.printStackTrace();
         }
-        getLogger().info("CHPERFBENCH COMPLETE");
+        getLogger().info("CHPERFBENCH COMPLETE, blackhole=" + bh);
     }
 
     /** 变体：A=旧构造器（两次 raycast），B=新构造器（单次 rayTraceBlocks）；miss=50格无命中，hit=5格石墙命中 */
@@ -101,6 +108,56 @@ public final class CHPerfBench extends JavaPlugin {
         time(w, "stavePdc.deserialize", "full_meta_plus_pdc", 5_000, () -> {
             ItemMeta m = stack.getItemMeta();
             DataTypeMethods.getCustom(m, Keys.PDC_STAVE_STORAGE, PersistentStaveDataType.TYPE);
+        });
+    }
+
+    /** 第 3 轮：交互路径 ItemMeta 操作（真实插件代码/真实 ItemStack） */
+    private void benchInteractPaths(PrintWriter w) {
+        // 任意物品右键的冷却检查（MiscListener.checkCooldown，LOWEST，每次右键触发）
+        ItemStack dirt = new ItemStack(Material.DIRT);
+        time(w, "interactRightClick.cooldownCheck", "old_pdc_read", 20_000,
+            () -> GeneralUtils.isOnCooldown(dirt));
+        time(w, "interactRightClick.cooldownCheck", "new_material_gate", 2_000_000, () -> {
+            if (dirt.getType() == Material.SPYGLASS) {
+                bh++;
+            }
+        });
+
+        // 任意交互的调光勺检查（MiscListener.onUseScoop，LOWEST，每次交互触发）
+        ItemStack lantern = new ItemStack(Material.LANTERN);
+        time(w, "interactAny.scoopCheck", "old_getByItem_plain", 5_000,
+            () -> SlimefunItem.getByItem(lantern));
+        time(w, "interactAny.scoopCheck", "new_material_gate", 2_000_000, () -> {
+            Material t = lantern.getType();
+            if (t == Material.LANTERN || t == Material.SOUL_LANTERN) {
+                bh++;
+            }
+        });
+
+        // 施法成功路径的法杖写回（SpellCastListener）
+        ItemStack stave = new ItemStack(Material.BLAZE_ROD);
+        ItemMeta meta = stave.getItemMeta();
+        Map<SpellSlot, InstancePlate> plates = new EnumMap<>(SpellSlot.class);
+        for (SpellSlot slot : SpellSlot.values()) {
+            plates.put(slot, new InstancePlate(1, SpellType.HEAL, 100));
+        }
+        DataTypeMethods.setCustom(meta, Keys.PDC_STAVE_STORAGE, PersistentStaveDataType.TYPE, plates);
+        stave.setItemMeta(meta);
+        final InstanceStave staveInstance = new InstanceStave(stave);
+
+        time(w, "staveSuccess.metaWriteBack", "old_two_round_trips", 2_000, () -> {
+            ItemMeta m = stave.getItemMeta();
+            DataTypeMethods.setCustom(m, Keys.PDC_STAVE_STORAGE, PersistentStaveDataType.TYPE,
+                staveInstance.getSpellInstanceMap());
+            stave.setItemMeta(m);
+            staveInstance.buildLore();
+        });
+        time(w, "staveSuccess.metaWriteBack", "new_single_round_trip", 2_000, () -> {
+            ItemMeta m = stave.getItemMeta();
+            DataTypeMethods.setCustom(m, Keys.PDC_STAVE_STORAGE, PersistentStaveDataType.TYPE,
+                staveInstance.getSpellInstanceMap());
+            staveInstance.buildLore(m);
+            stave.setItemMeta(m);
         });
     }
 
