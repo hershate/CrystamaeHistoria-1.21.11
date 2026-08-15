@@ -7,6 +7,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
 import java.util.List;
 
 @UtilityClass
@@ -32,7 +33,11 @@ public class GildingUtils {
     public static void makeGilded(ItemStack itemStack) {
         ItemMeta itemMeta = itemStack.getItemMeta();
         PersistentDataAPI.setBoolean(itemMeta, Keys.PDC_IS_GILDED, true);
+        // 伪造物品可能通过镀金前置但无 lore（getLore 为 @Nullable），判空避免 NPE
         List<String> lore = itemStack.getLore();
+        if (lore == null) {
+            lore = new ArrayList<>();
+        }
         lore.add("");
         lore.add("" + ChatColor.YELLOW + ChatColor.BOLD + "已镀金");
         itemMeta.setLore(lore);
