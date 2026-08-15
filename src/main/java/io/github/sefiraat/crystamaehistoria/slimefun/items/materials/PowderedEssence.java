@@ -1,11 +1,13 @@
 package io.github.sefiraat.crystamaehistoria.slimefun.items.materials;
 
+import io.github.sefiraat.crystamaehistoria.utils.GeneralUtils;
 import io.github.sefiraat.crystamaehistoria.utils.Keys;
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
 import io.github.thebusybiscuit.slimefun4.core.handlers.ItemUseHandler;
 import io.github.thebusybiscuit.slimefun4.implementation.items.LimitedUseItem;
+import io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
@@ -35,6 +37,12 @@ public class PowderedEssence extends LimitedUseItem {
             }
 
             Block block = optionalBlock.get();
+
+            // 领地校验：原实现可在他人领地对作物施加骨粉（催熟他人作物），
+            // 与同类作用方块的物品校验先例对齐
+            if (!GeneralUtils.hasPermission(e.getPlayer(), block, Interaction.INTERACT_BLOCK)) {
+                return;
+            }
 
             if (block.applyBoneMeal(e.getClickedFace())) {
                 damageItem(e.getPlayer(), e.getItem());
