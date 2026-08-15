@@ -79,6 +79,8 @@ public abstract class TickingBlockNoGui extends SlimefunItem {
             new BlockBreakHandler(false, false) {
                 @Override
                 public void onPlayerBreak(@Nonnull BlockBreakEvent blockBreakEvent, @Nonnull ItemStack itemStack, @Nonnull List<ItemStack> list) {
+                    // 破坏后清理 firstTick 标记，否则该映射随放置/破坏循环无界增长
+                    firstTickMap.remove(blockBreakEvent.getBlock().getLocation());
                     onBreak(blockBreakEvent, itemStack, list);
                 }
             }

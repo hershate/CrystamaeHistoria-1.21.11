@@ -53,7 +53,11 @@ public abstract class Stand extends TickingBlockNoGui {
         final Location blockLocation = block.getLocation();
         String itemUuidString = BlockStorage.getLocationInfo(block.getLocation(), PDC_ITEM);
         if (itemUuidString != null) {
-            itemMap.put(block.getLocation(), UUID.fromString(itemUuidString));
+            try {
+                itemMap.put(block.getLocation(), UUID.fromString(itemUuidString));
+            } catch (IllegalArgumentException e) {
+                // BlockStorage 为持久化数据，不可信：损坏 UUID 不登记（视为无展示物品）
+            }
         }
         // Set a random current tick
         Stand.this.currentTickMap.put(
@@ -83,7 +87,9 @@ public abstract class Stand extends TickingBlockNoGui {
                 final Location desiredLocation = blockLocation.clone().add(0.5, 1.5, 0.5);
 
                 // Check if item has moved off the platform
-                if (itemLocation.distance(desiredLocation) > 0.3) {
+                // （跨世界 distance 会抛 IllegalArgumentException——按已离开平台处理）
+                if (itemLocation.getWorld() != desiredLocation.getWorld()
+                    || itemLocation.distance(desiredLocation) > 0.3) {
                     final ItemStack itemStack = currentItem.getItemStack();
                     blockLocation.getWorld().dropItemNaturally(blockLocation, itemStack);
                     BlockStorage.addBlockInfo(block, PDC_ITEM, null);
@@ -113,7 +119,9 @@ public abstract class Stand extends TickingBlockNoGui {
     @ParametersAreNonnullByDefault
     protected void onBreak(BlockBreakEvent blockBreakEvent, ItemStack itemStack, List<ItemStack> list) {
         Location location = blockBreakEvent.getBlock().getLocation();
-        final UUID currentItemUuid = itemMap.get(location);
+        // 破坏后清理两个映射，否则随放置/破坏循环无界增长
+        currentTickMap.remove(location);
+        final UUID currentItemUuid = itemMap.remove(location);
         if (currentItemUuid != null) {
             final Item currentItem = (Item) Bukkit.getEntity(currentItemUuid);
             if (currentItem != null) {
