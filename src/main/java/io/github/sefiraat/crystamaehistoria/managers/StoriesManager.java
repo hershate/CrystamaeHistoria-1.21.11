@@ -47,11 +47,47 @@ public class StoriesManager {
     private final Map<String, Story> storyMapMythical = new HashMap<>();
     @Getter
     private final Map<String, Story> storyMapUnique = new HashMap<>();
+    /**
+     * 稀有度×类型故事索引：原 addStory 每次记录故事时对整稀有度故事表做
+     * stream 过滤 + 收集（每次分配中间列表）。启动期一次构建，运行期 O(1) 查表。
+     * UNIQUE 不参与（独特故事走 BlockDefinition.getUnique()）。
+     */
+    @Getter
+    private final Map<StoryRarity, Map<StoryType, List<Story>>> storiesByRarityAndType = new EnumMap<>(StoryRarity.class);
 
     public StoriesManager() {
         fillBlockTierMap();
         fillStories();
+        buildStoryTypeIndex();
         fillBlockDefinitions();
+    }
+
+    private void buildStoryTypeIndex() {
+        storiesByRarityAndType.put(StoryRarity.COMMON, groupStoriesByType(storyMapCommon));
+        storiesByRarityAndType.put(StoryRarity.UNCOMMON, groupStoriesByType(storyMapUncommon));
+        storiesByRarityAndType.put(StoryRarity.RARE, groupStoriesByType(storyMapRare));
+        storiesByRarityAndType.put(StoryRarity.EPIC, groupStoriesByType(storyMapEpic));
+        storiesByRarityAndType.put(StoryRarity.MYTHICAL, groupStoriesByType(storyMapMythical));
+    }
+
+    @ParametersAreNonnullByDefault
+    private Map<StoryType, List<Story>> groupStoriesByType(Map<String, Story> storyMap) {
+        final Map<StoryType, List<Story>> index = new EnumMap<>(StoryType.class);
+        for (Story story : storyMap.values()) {
+            index.computeIfAbsent(story.getType(), k -> new ArrayList<>()).add(story);
+        }
+        return index;
+    }
+
+    /**
+     * 按稀有度与类型取可选故事列表（addStory 用）。
+     *
+     * @return 对应列表；该类型无故事时 null（调用方按空池跳过）
+     */
+    @ParametersAreNonnullByDefault
+    public List<Story> getStories(StoryRarity rarity, StoryType type) {
+        final Map<StoryType, List<Story>> byType = storiesByRarityAndType.get(rarity);
+        return byType != null ? byType.get(type) : null;
     }
 
     private void fillBlockTierMap() {

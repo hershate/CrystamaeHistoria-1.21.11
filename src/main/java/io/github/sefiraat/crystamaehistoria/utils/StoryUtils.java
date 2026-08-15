@@ -9,6 +9,7 @@ import io.github.sefiraat.crystamaehistoria.stories.BlockDefinition;
 import io.github.sefiraat.crystamaehistoria.stories.BlockTier;
 import io.github.sefiraat.crystamaehistoria.stories.Story;
 import io.github.sefiraat.crystamaehistoria.stories.definition.StoryChances;
+import io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity;
 import io.github.sefiraat.crystamaehistoria.stories.definition.StoryType;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoriesDataType;
@@ -274,28 +275,26 @@ public class StoryUtils {
         int rnd = ThreadLocalRandom.current().nextInt(1, 101);
 
         if (rnd <= chance.getMythical()) {
-            addStory(itemstack, pool, manager.getStoryMapMythical());
+            addStory(itemstack, pool, StoryRarity.MYTHICAL);
         } else if (rnd <= chance.getEpic()) {
-            addStory(itemstack, pool, manager.getStoryMapEpic());
+            addStory(itemstack, pool, StoryRarity.EPIC);
         } else if (rnd <= chance.getRare()) {
-            addStory(itemstack, pool, manager.getStoryMapRare());
+            addStory(itemstack, pool, StoryRarity.RARE);
         } else if (rnd <= chance.getUncommon()) {
-            addStory(itemstack, pool, manager.getStoryMapUncommon());
+            addStory(itemstack, pool, StoryRarity.UNCOMMON);
         } else {
-            addStory(itemstack, pool, manager.getStoryMapCommon());
+            addStory(itemstack, pool, StoryRarity.COMMON);
         }
     }
 
     @ParametersAreNonnullByDefault
-    public static void addStory(ItemStack itemStack, List<StoryType> p, Map<String, Story> storyList) {
+    public static void addStory(ItemStack itemStack, List<StoryType> p, StoryRarity rarity) {
         final StoryType st = p.get(ThreadLocalRandom.current().nextInt(0, p.size()));
-        final List<Story> availableStories = storyList.values()
-                                                      .stream()
-                                                      .filter(t -> t.getType() == st)
-                                                      .collect(Collectors.toList());
+        // 稀有度×类型索引查表（原实现每次对整稀有度故事表做 stream 过滤 + 收集）
+        final List<Story> availableStories = CrystamaeHistoria.getStoriesManager().getStories(rarity, st);
         // generic-stories.yml 可被编辑：该稀有度下无此类型故事时跳过，
         // 原 nextInt(0, 0) 抛 IllegalArgumentException 使记录者面板每 tick 报错
-        if (availableStories.isEmpty()) {
+        if (availableStories == null || availableStories.isEmpty()) {
             return;
         }
         final Story story = availableStories.get(ThreadLocalRandom.current().nextInt(0, availableStories.size()));

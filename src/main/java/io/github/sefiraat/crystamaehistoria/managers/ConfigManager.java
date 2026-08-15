@@ -6,7 +6,6 @@ import io.github.sefiraat.crystamaehistoria.magic.SpellType;
 import io.github.sefiraat.crystamaehistoria.magic.spells.core.Spell;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.liquefactionbasin.LiquefactionBasinCache;
 import lombok.Getter;
-import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -51,11 +50,12 @@ public class ConfigManager {
         }
         FileConfiguration configuration = YamlConfiguration.loadConfiguration(file);
         try {
-            configuration.load(file);
+            // 原实现在此处再 configuration.load(file) 一次——同一 tick 内文件不可能
+            // 变化，纯属重复解析整个文件，已去除（5 个配置文件的启动解析量减半）
             if (updateWithDefaults) {
                 updateConfig(configuration, file, fileName);
             }
-        } catch (IOException | InvalidConfigurationException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
         return configuration;
