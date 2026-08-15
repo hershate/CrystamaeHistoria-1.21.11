@@ -17,9 +17,15 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Getter
 public class InstancePlate {
+
+    /**
+     * 已记录过施法异常的法术集合（日志限流，防止高频施放刷爆日志；条目数以法术总数为上界）
+     */
+    private static final Set<SpellType> LOGGED_FAILED_SPELLS = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     private final int tier;
     private final SpellType storedSpell;
@@ -90,9 +96,12 @@ public class InstancePlate {
         try {
             spell.castSpell(castInformation);
         } catch (Exception e) {
-            // 断路器：法术回调异常不应穿透到交互事件（否则整条事件链报错），充能已扣，按施法成功返回
-            CrystamaeHistoria.getInstance().getLogger()
-                .log(java.util.logging.Level.WARNING, "法术 " + storedSpell + " 执行异常", e);
+            // 断路器：法术回调异常不应穿透到交互事件（否则整条事件链报错），充能已扣，按施法成功返回。
+            // 同一法术仅记录首次异常：恶意玩家高频施放有缺陷法术时避免日志风暴
+            if (LOGGED_FAILED_SPELLS.add(storedSpell)) {
+                CrystamaeHistoria.getInstance().getLogger()
+                    .log(java.util.logging.Level.WARNING, "法术 " + storedSpell + " 执行异常（后续同类异常不再记录）", e);
+            }
         }
         return CastResult.CAST_SUCCESS;
     }

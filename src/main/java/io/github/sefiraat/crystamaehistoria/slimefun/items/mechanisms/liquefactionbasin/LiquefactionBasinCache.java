@@ -25,7 +25,6 @@ import lombok.Getter;
 import me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config;
 import me.mrCookieSlime.Slimefun.api.BlockStorage;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -223,7 +222,6 @@ public class LiquefactionBasinCache extends DisplayStandHolder {
 
         final ItemStack itemStack = item.getItemStack();
         if (set.size() == 3) {
-            SlimefunItem.getByItem(itemStack);
             final SpellType spellType = getMatchingRecipe(set, plate);
             if (spellType != null) {
                 item.getWorld().dropItem(item.getLocation(), ChargedPlate.getChargedPlate(plate.getTier(), spellType, getFillLevel()));
@@ -353,16 +351,6 @@ public class LiquefactionBasinCache extends DisplayStandHolder {
                 }
                 summonCatalystParticles();
                 emptyBasin();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean canCraftSatchel(ItemStack incomingItem) {
-        List<String> lore = incomingItem.getItemMeta().getLore();
-        for (String s : lore) {
-            if (s.equals(ChatColor.GRAY + "ID: <ID>")) {
                 return true;
             }
         }
