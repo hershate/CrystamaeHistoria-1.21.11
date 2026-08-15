@@ -35,7 +35,10 @@ public class TestSpell extends SubCommand {
             if (power >= 1 && power <= 5) {
                 Spell spell = SpellType.getById(args[0]);
                 if (spell != null) {
-                    spell.castSpell(new CastInformation((Player) sender, power));
+                    final CastInformation castInformation = new CastInformation((Player) sender, power);
+                    // 与法杖施法路径一致：执行前冻结施法瞬间视线目标（tick 法术跨 tick 读取）
+                    castInformation.freezeTargetsOnCast();
+                    spell.castSpell(castInformation);
                 } else {
                     player.sendMessage(ThemeType.ERROR.getColor() + "法术不存在或无法释放!");
                 }

@@ -87,6 +87,9 @@ public class InstancePlate {
         }
 
         castInformation.setSpellType(storedSpell);
+        // 前置校验已全部通过，此交互必然执行法术——现在解析并冻结视线目标，
+        // 保证后续回调（含跨 tick）读到施法瞬间值（旧实现在构造器急切 raycast）
+        castInformation.freezeTargetsOnCast();
         // 先结算消耗与冷却，再执行法术（失败关闭）：
         // 原实现先施法后扣费，若施法回调抛异常则消耗与冷却都不生效，玩家可零成本无限重试
         this.crysta -= crystaCost;

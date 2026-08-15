@@ -34,11 +34,13 @@ public class SpellCastListener implements Listener {
         final SlimefunItem slimefunItem = SlimefunItem.getByItem(stack);
         if (slimefunItem instanceof Stave) {
             Stave stave = (Stave) slimefunItem;
-            InstanceStave staveInstance = new InstanceStave(stack);
+            // 先解析栏位再反序列化法杖 PDC：栏位为 null（如 PHYSICAL 交互）时
+            // 免去整张法术板映射的 PDC 反序列化
             SpellSlot slot = SpellSlot.getByPlayerAndAction(player, e.getAction());
             if (slot == null) {
                 return;
             }
+            InstanceStave staveInstance = new InstanceStave(stack);
             CastInformation castInformation = new CastInformation(player, stave.getLevel());
             CastResult castResult = staveInstance.tryCastSpell(slot, castInformation);
             if (castResult == CastResult.CAST_SUCCESS) {

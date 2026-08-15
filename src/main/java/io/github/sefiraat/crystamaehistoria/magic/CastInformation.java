@@ -8,6 +8,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.util.RayTraceResult;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
@@ -33,12 +34,14 @@ public class CastInformation {
     @Getter
     @Setter
     private Block hitBlock;
-    @Getter
-    @Setter
-    private Block targetedBlockOnCast;
-    @Getter
-    @Setter
-    private BlockFace targetedBlockFaceOnCast;
+    /**
+     * 施法瞬间的视线 raycast 结果（50 格）。懒计算 + 一次冻结：
+     * 构造时不 raycast（施法前置校验失败的交互不需要），
+     * 首次读取或 freezeTargetsOnCast() 时以单次 rayTraceBlocks(50) 解析，
+     * 之后值恒定——tick 型法术在后续 tick 读取到的仍是施法瞬间语义。
+     */
+    private RayTraceResult targetRayTraceOnCast;
+    private boolean targetsResolved;
     @Getter
     @Setter
     private Location projectileLocation;
@@ -63,8 +66,39 @@ public class CastInformation {
         this.caster = caster.getUniqueId();
         this.staveLevel = staveLevel;
         this.castLocation = caster.getLocation().clone();
-        this.targetedBlockOnCast = caster.getTargetBlockExact(50);
-        this.targetedBlockFaceOnCast = caster.getTargetBlockFace(50);
+    }
+
+    public Block getTargetedBlockOnCast() {
+        resolveTargetsOnCast();
+        return targetRayTraceOnCast == null ? null : targetRayTraceOnCast.getHitBlock();
+    }
+
+    public BlockFace getTargetedBlockFaceOnCast() {
+        resolveTargetsOnCast();
+        return targetRayTraceOnCast == null ? null : targetRayTraceOnCast.getHitBlockFace();
+    }
+
+    /**
+     * 强制立即解析并冻结视线目标（等价于旧实现构造器中的 raycast）。
+     * 施法前置校验全部通过后、执行法术前调用，保证后续任意回调
+     * （含跨 tick 的 tickEvent）读到的都是施法瞬间值。
+     */
+    public void freezeTargetsOnCast() {
+        resolveTargetsOnCast();
+    }
+
+    private void resolveTargetsOnCast() {
+        if (targetsResolved) {
+            return;
+        }
+        targetsResolved = true;
+        final Player player = Bukkit.getPlayer(caster);
+        if (player != null) {
+            // 单次 rayTraceBlocks 同时给出命中方块与命中面，
+            // 语义与旧 getTargetBlockExact(50)/getTargetBlockFace(50)
+            // （内部各自 rayTraceBlocks 一次）完全一致，成本减半
+            targetRayTraceOnCast = player.rayTraceBlocks(50);
+        }
     }
 
     public Player getCasterAsPlayer() {
