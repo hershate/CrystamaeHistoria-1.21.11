@@ -16,6 +16,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -23,6 +24,11 @@ public class SpellCastListener implements Listener {
 
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
+        // 右键交互会为主手与副手各派发一次事件；法杖只读主手，
+        // 副手事件重复进入会因冷却触发"施法失败"提示，覆盖刚成功的 action bar 消息
+        if (e.getHand() == EquipmentSlot.OFF_HAND) {
+            return;
+        }
         final Player player = e.getPlayer();
         final ItemStack stack = player.getInventory().getItemInMainHand();
         final SlimefunItem slimefunItem = SlimefunItem.getByItem(stack);

@@ -81,11 +81,19 @@ public class InstancePlate {
         }
 
         castInformation.setSpellType(storedSpell);
-        spell.castSpell(castInformation);
+        // 先结算消耗与冷却，再执行法术（失败关闭）：
+        // 原实现先施法后扣费，若施法回调抛异常则消耗与冷却都不生效，玩家可零成本无限重试
         this.crysta -= crystaCost;
         final long cdSeconds = (long) (spell.getCooldownSeconds(castInformation) * 1000);
         this.cooldown = System.currentTimeMillis() + cdSeconds;
         PlayerStatistics.addUsage(castInformation.getCaster(), storedSpell);
+        try {
+            spell.castSpell(castInformation);
+        } catch (Exception e) {
+            // 断路器：法术回调异常不应穿透到交互事件（否则整条事件链报错），充能已扣，按施法成功返回
+            CrystamaeHistoria.getInstance().getLogger()
+                .log(java.util.logging.Level.WARNING, "法术 " + storedSpell + " 执行异常", e);
+        }
         return CastResult.CAST_SUCCESS;
     }
 

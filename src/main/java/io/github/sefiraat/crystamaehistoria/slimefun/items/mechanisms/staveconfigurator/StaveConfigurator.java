@@ -98,6 +98,10 @@ public class StaveConfigurator extends MenuBlock {
                 for (Map.Entry<SpellSlot, InstancePlate> entry : map.entrySet()) {
                     final SpellSlot spellSlot = entry.getKey();
                     final InstancePlate instancePlate = map.get(spellSlot);
+                    // 损坏数据防御：空条目跳过，避免 getChargedPlate NPE 中断整个移除流程
+                    if (instancePlate == null) {
+                        continue;
+                    }
                     final ItemStack plate = ChargedPlate.getChargedPlate(instancePlate);
                     blockMenu.replaceExistingItem(getSlot(spellSlot), plate);
                 }
@@ -133,13 +137,20 @@ public class StaveConfigurator extends MenuBlock {
                 final ItemMeta staveMeta = stave.getItemMeta();
                 rejectInvalid(blockMenu);
                 for (SpellSlot spellSlot : SpellSlot.getCashedValues()) {
-                    final ItemStack plate = blockMenu.getItemInSlot(getSlot(spellSlot));
+                    final int slot = getSlot(spellSlot);
+                    final ItemStack plate = blockMenu.getItemInSlot(slot);
                     if (plate != null && SlimefunItem.getByItem(plate) instanceof ChargedPlate) {
                         final InstancePlate instancePlate = DataTypeMethods.getCustom(
                             plate.getItemMeta(),
                             Keys.PDC_PLATE_STORAGE,
                             PersistentPlateDataType.TYPE
                         );
+                        if (instancePlate == null) {
+                            // 不可信物品输入：无 PDC 数据的充能板（如 /sf cheat 产物）不能进入映射，
+                            // 否则 EnumMap.put(null) 抛 NPE 中断绑定流程。退还该物品
+                            blockMenu.dropItems(blockMenu.getLocation(), slot);
+                            continue;
+                        }
                         staveInstance.setSlot(spellSlot, instancePlate);
                     }
                 }
@@ -160,7 +171,6 @@ public class StaveConfigurator extends MenuBlock {
     @Override
     @ParametersAreNonnullByDefault
     protected void onBreak(BlockBreakEvent e, BlockMenu menu) {
-        super.onBreak(e, menu);
         super.onBreak(e, menu);
         Location location = menu.getLocation();
         menu.dropItems(location, LEFT_CLICK_SLOT);
