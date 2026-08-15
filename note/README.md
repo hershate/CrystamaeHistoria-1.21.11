@@ -4,6 +4,9 @@
 
 ## 版本发布记录
 
+- [0.2.0](release/0.2.0.md)（当前）：性能优化版——9 轮性能优化循环
+  （量化对比见 [report/perf/](report/perf/README.md)，基准设施 [benchmark/](../benchmark/)）；
+  无数据格式变更，旧存档兼容。
 - [0.1.0](release/0.1.0.md)：**版本序列自 0.1.0 起算**。28 轮系统审计修订版（117+ 项
   稳定性/安全性/正确性修复，8 次服务器回归验证，详见 [audit/](audit/README.md)）；
   无数据格式变更，旧存档兼容。
@@ -18,9 +21,11 @@
 
 持续性能优化（红线：安全/稳定/兼容，量化见 [benchmark/](../benchmark/)，
 报告与索引见 [report/perf/](report/perf/README.md)）：
-第 1-8 轮完成（施法前置校验 29x；SpellMemory 零复制 8x；施法触发懒 raycast；
-交互路径 ItemMeta 削减 8.7x；机械 tick 判定备忘录 1034x；法杖单槽 PDC 读取 1.5x；
-gadgets 每 tick 清扫 2.3-5.9x；故事选取索引 22.9x + 配置双解析消除 2.31x，服务器回归均通过）。
+第 1-9 轮完成并**闭合**（收敛判定见 [round-9](report/perf/round-9.md)）——
+施法前置校验 29x；SpellMemory 零复制 8x；施法触发懒 raycast；交互路径 ItemMeta
+削减 8.9x；机械 tick 判定备忘录 1010x；法杖单槽 PDC 读取 1.6x；gadgets 每 tick
+清扫 2.0-5.9x；故事选取索引 21x + 配置双解析消除 2.3x；统计路径 12.4x；
+v0.2.0 全套基准 + 10 分钟 soak 终验 0 异常 0 tick 落后。
 
 ## 维护要点（改代码前必读）
 
