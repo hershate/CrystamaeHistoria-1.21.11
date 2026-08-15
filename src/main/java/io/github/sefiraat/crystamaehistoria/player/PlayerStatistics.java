@@ -135,7 +135,8 @@ public class PlayerStatistics {
 
     @ParametersAreNonnullByDefault
     public static void addRealisation(Player player, BlockDefinition definition) {
-        addChronicle(player.getUniqueId(), definition);
+        // 复制粘贴错误：原实现误调 addChronicle（现实转化计数被记入发掘计数）
+        addRealisation(player.getUniqueId(), definition);
     }
 
     @ParametersAreNonnullByDefault
@@ -154,7 +155,8 @@ public class PlayerStatistics {
 
     @ParametersAreNonnullByDefault
     public static int getRealisation(Player player, BlockDefinition definition) {
-        return getChronicle(player.getUniqueId(), definition);
+        // 复制粘贴错误：原实现误调 getChronicle（故事集图鉴的"现实转化次数"显示的是发掘次数）
+        return getRealisation(player.getUniqueId(), definition);
     }
 
     @ParametersAreNonnullByDefault
@@ -169,7 +171,9 @@ public class PlayerStatistics {
     public static StoryRank getStoryRank(UUID uuid) {
         int total = CrystamaeHistoria.getStoriesManager().getBlockDefinitionMap().size();
         final int unlocked = getStoriesUnlocked(uuid);
-        return StoryRank.getByPercent(((double) unlocked / total) * 100);
+        // blocks.yml 被清空时 total 为 0：除零得 NaN，按 0% 处理
+        final double percent = total > 0 ? ((double) unlocked / total) * 100 : 0;
+        return StoryRank.getByPercent(percent);
     }
 
     @ParametersAreNonnullByDefault

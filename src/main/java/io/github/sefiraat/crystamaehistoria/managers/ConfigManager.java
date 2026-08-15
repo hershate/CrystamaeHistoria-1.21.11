@@ -64,6 +64,10 @@ public class ConfigManager {
     @ParametersAreNonnullByDefault
     private void updateConfig(FileConfiguration config, File file, String fileName) throws IOException {
         final InputStream inputStream = CrystamaeHistoria.getInstance().getResource(fileName);
+        // jar 内资源缺失（打包异常）时跳过默认值合并，不能 NPE 中断插件启用
+        if (inputStream == null) {
+            return;
+        }
         final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, Charsets.UTF_8));
         final YamlConfiguration defaults = YamlConfiguration.loadConfiguration(reader);
         config.addDefaults(defaults);
