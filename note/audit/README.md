@@ -24,7 +24,7 @@
 | 10 | gadgets 深审（[round-10](round-10.md)） | ✅ 完成（2 commit：b41eaf6/96e8671；诅咒之土状态污染、碎裂虚空物品不落盘等） |
 | 11 | artistic/exhalted/materials 物品深审（[round-11](round-11.md)） | ✅ 完成（2 commit：f9ed746/03cb3dc） |
 | 12 | mobgoals 召唤物 AI 目标类（[round-12](round-12.md)） | ✅ 完成（1 commit：1105890） |
-| 13 | 剩余 tier1 法术逐文件精读 | 待做 |
+| 13 | 剩余 tier1 法术逐文件精读（[round-13](round-13.md)） | ✅ 完成（1 commit：6aaf782；67 类全覆盖） |
 
 ## 已修复问题汇总
 
@@ -60,3 +60,4 @@
 | 11 | `artistic/ImbuedStand.java`、`exhalted/{ExaltedHarvester,ExaltedSeaBreeze}.java` | 他人领地生成盔甲架；**随机点累积漂移（作用范围失控）** | 领地校验 + clone 基准 | `f9ed746` |
 | 11 | `materials/PowderedEssence.java` | 他人领地骨粉催熟 | INTERACT_BLOCK 校验 | `03cb3dc` |
 | 12 | `mobgoals/{AbstractGoal,HolyCowGoal,AbstractRidableGoal}.java` | 主人过传送门后 AI 每 tick 跨世界 distance IAE；他人骑乘时主人离线 getEyeLocation NPE | 同世界判定 + 离线退回常规 tick | `1105890` |
+| 13 | `SpellMemory.java`、`MagicSummon.java`、`tier1/{SummonGolem,LeechBomb,GrowUp}.java` | **召唤物 tick 消费者离线 NPE 每秒中断整个法术清理链（泄漏级联）**；setSize 无上限越界异常 | removeEntities 离线清理 + onTick 兜底 + run 断路器 + 尺寸钳制 | `6aaf782` |
