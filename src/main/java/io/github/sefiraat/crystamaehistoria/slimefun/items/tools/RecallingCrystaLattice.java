@@ -85,8 +85,22 @@ public class RecallingCrystaLattice extends SlimefunItem {
         final ItemMeta itemMeta = itemStack.getItemMeta();
         final PersistentDataContainer container = itemMeta.getPersistentDataContainer();
 
-        if (container.has(Keys.newKey("location"), DataType.LOCATION)) {
-            final Location location = container.get(Keys.newKey("location"), DataType.LOCATION);
+        // 物品 PDC 不可信（改造客户端可注入任意字节）：读取/反序列化异常与
+        // 世界无法解析（序列化的世界名不存在）一律按"路标不可用"失败关闭
+        final Location location;
+        try {
+            location = container.has(Keys.newKey("location"), DataType.LOCATION)
+                ? container.get(Keys.newKey("location"), DataType.LOCATION)
+                : null;
+        } catch (RuntimeException e) {
+            event.getPlayer().sendActionBar(
+                Component.text("路标不可用")
+                    .color(TextColor.color(200, 30, 40))
+            );
+            return;
+        }
+
+        if (location != null && location.getWorld() != null) {
             final Block block = location.getBlock();
             final SlimefunItem slimefunItem = BlockStorage.check(block);
 
@@ -100,6 +114,11 @@ public class RecallingCrystaLattice extends SlimefunItem {
                         .color(TextColor.color(200, 30, 40))
                 );
             }
+        } else if (location != null) {
+            event.getPlayer().sendActionBar(
+                Component.text("路标不可用")
+                    .color(TextColor.color(200, 30, 40))
+            );
         } else {
             event.getPlayer().sendMessage(
                 MessageFormat.format("{0}请先使用Shift+右键点击来绑定一个路标.", ChatColor.RED)

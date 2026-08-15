@@ -1,5 +1,6 @@
 package io.github.sefiraat.crystamaehistoria.magic.spells.core;
 
+import io.github.sefiraat.crystamaehistoria.CrystamaeHistoria;
 import io.github.sefiraat.crystamaehistoria.magic.CastInformation;
 import io.github.sefiraat.crystamaehistoria.magic.CastResult;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot;
@@ -30,11 +31,19 @@ public class InstanceStave {
 
     public InstanceStave(@Nonnull ItemStack itemStack) {
         this.itemStack = itemStack;
-        final Map<SpellSlot, InstancePlate> map = DataTypeMethods.getCustom(
-            itemStack.getItemMeta(),
-            Keys.PDC_STAVE_STORAGE,
-            PersistentStaveDataType.TYPE
-        );
+        final Map<SpellSlot, InstancePlate> map;
+        try {
+            map = DataTypeMethods.getCustom(
+                itemStack.getItemMeta(),
+                Keys.PDC_STAVE_STORAGE,
+                PersistentStaveDataType.TYPE
+            );
+        } catch (IllegalStateException e) {
+            // 物品 PDC 不可信（作弊/损坏数据）：反序列化失败时按空法杖失败关闭，
+            // 避免异常穿透到施法事件链
+            CrystamaeHistoria.getInstance().getLogger().warning("法杖 PDC 数据损坏，按空法杖处理: " + e.getMessage());
+            return;
+        }
         if (map != null) {
             spellInstanceMap.putAll(map);
         }

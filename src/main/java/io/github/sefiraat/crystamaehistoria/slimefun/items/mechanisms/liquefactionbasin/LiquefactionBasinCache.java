@@ -248,11 +248,20 @@ public class LiquefactionBasinCache extends DisplayStandHolder {
     private void processChargedPlate(Item item, ChargedPlate plate) {
         final ItemStack itemStack = item.getItemStack();
         final ItemMeta itemMeta = itemStack.getItemMeta();
-        final InstancePlate instancePlate = DataTypeMethods.getCustom(
-            itemMeta,
-            Keys.PDC_PLATE_STORAGE,
-            PersistentPlateDataType.TYPE
-        );
+        final InstancePlate instancePlate;
+        try {
+            instancePlate = DataTypeMethods.getCustom(
+                itemMeta,
+                Keys.PDC_PLATE_STORAGE,
+                PersistentPlateDataType.TYPE
+            );
+        } catch (IllegalStateException e) {
+            // PDC 数据损坏/伪造（不可信物品输入）：按无效板处理，吞没并告警
+            CrystamaeHistoria.getInstance().getLogger().warning(
+                "液化池收到 PDC 数据损坏的充能法术板，已销毁: " + e.getMessage());
+            item.remove();
+            return;
+        }
 
         if (instancePlate == null) {
             CrystamaeHistoria.getInstance().getLogger().warning(

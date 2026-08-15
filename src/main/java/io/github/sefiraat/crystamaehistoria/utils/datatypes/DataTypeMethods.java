@@ -42,7 +42,13 @@ public class DataTypeMethods {
     @Nullable
     @ParametersAreNonnullByDefault
     public static <T, Z> Z getCustom(PersistentDataHolder holder, NamespacedKey key, PersistentDataType<T, Z> type) {
-        return holder.getPersistentDataContainer().get(key, type);
+        try {
+            return holder.getPersistentDataContainer().get(key, type);
+        } catch (IllegalArgumentException e) {
+            // 存储的原语类型与期望不符（改造客户端/数据损坏可构造错误类型的标签）：
+            // Bukkit 会抛 IllegalArgumentException，此处按"无数据"失败关闭，避免穿透到各调用方
+            return null;
+        }
     }
 
     /**
@@ -55,7 +61,11 @@ public class DataTypeMethods {
      */
     @ParametersAreNonnullByDefault
     public static <T, Z> Z getCustom(PersistentDataHolder holder, NamespacedKey key, PersistentDataType<T, Z> type, Z defaultVal) {
-        return holder.getPersistentDataContainer().getOrDefault(key, type, defaultVal);
+        try {
+            return holder.getPersistentDataContainer().getOrDefault(key, type, defaultVal);
+        } catch (IllegalArgumentException e) {
+            return defaultVal;
+        }
     }
 
     /**
@@ -68,7 +78,11 @@ public class DataTypeMethods {
      */
     @ParametersAreNonnullByDefault
     public static <T, Z> boolean hasCustom(PersistentDataHolder holder, NamespacedKey key, PersistentDataType<T, Z> type) {
-        return holder.getPersistentDataContainer().has(key, type);
+        try {
+            return holder.getPersistentDataContainer().has(key, type);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     /**

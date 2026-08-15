@@ -105,7 +105,14 @@ public class PoseChangerListener implements Listener {
                     final ItemMeta itemMeta = heldItem.getItemMeta();
 
                     if (player.isSneaking()) {
-                        final PoseCloner.StoredPose pose = DataTypeMethods.getCustom(itemMeta, clonedPoseKey, PersistentPoseType.TYPE);
+                        final PoseCloner.StoredPose pose;
+                        try {
+                            pose = DataTypeMethods.getCustom(itemMeta, clonedPoseKey, PersistentPoseType.TYPE);
+                        } catch (IllegalStateException ex) {
+                            // 物品 PDC 不可信：姿态数据损坏时按无造型处理，不穿透到事件链
+                            player.sendMessage(ThemeType.WARNING.getColor() + "没有已保存的造型");
+                            return;
+                        }
 
                         if (pose == null) {
                             player.sendMessage(ThemeType.WARNING.getColor() + "没有已保存的造型");
@@ -128,7 +135,13 @@ public class PoseChangerListener implements Listener {
     private void changeMode(@Nonnull Player player, @Nonnull ItemStack heldItem, boolean pose) {
         final ItemMeta itemMeta = heldItem.getItemMeta();
         if (!pose) {
-            final PoseType poseType = PoseType.valueOf(PersistentDataAPI.getString(itemMeta, poseKey, "HEAD"));
+            // PDC 中的姿态类型名不可信：非法值回退 HEAD，避免 valueOf 抛异常
+            PoseType poseType;
+            try {
+                poseType = PoseType.valueOf(PersistentDataAPI.getString(itemMeta, poseKey, "HEAD"));
+            } catch (IllegalArgumentException e) {
+                poseType = PoseType.HEAD;
+            }
             final PoseType nextType = poseType.getNext();
             final String message = MessageFormat.format(
                 "{0}造型类型: {1}{2}",
@@ -143,7 +156,13 @@ public class PoseChangerListener implements Listener {
             PersistentDataAPI.setString(itemMeta, poseKey, nextType.toString());
             player.sendActionBar(Component.text(message));
         } else {
-            final ChangeType changeType = ChangeType.valueOf(PersistentDataAPI.getString(itemMeta, changeKey, "RESET"));
+            // 同上：更改类型名来自 PDC，不可信，非法值回退 RESET
+            ChangeType changeType;
+            try {
+                changeType = ChangeType.valueOf(PersistentDataAPI.getString(itemMeta, changeKey, "RESET"));
+            } catch (IllegalArgumentException e) {
+                changeType = ChangeType.RESET;
+            }
             final ChangeType nextType = changeType.getNext();
             final String message = MessageFormat.format(
                 "{0}更改类型: {1}{2}",

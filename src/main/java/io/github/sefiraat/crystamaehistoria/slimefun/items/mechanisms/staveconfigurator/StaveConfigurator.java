@@ -140,14 +140,20 @@ public class StaveConfigurator extends MenuBlock {
                     final int slot = getSlot(spellSlot);
                     final ItemStack plate = blockMenu.getItemInSlot(slot);
                     if (plate != null && SlimefunItem.getByItem(plate) instanceof ChargedPlate) {
-                        final InstancePlate instancePlate = DataTypeMethods.getCustom(
-                            plate.getItemMeta(),
-                            Keys.PDC_PLATE_STORAGE,
-                            PersistentPlateDataType.TYPE
-                        );
+                        final InstancePlate instancePlate;
+                        try {
+                            instancePlate = DataTypeMethods.getCustom(
+                                plate.getItemMeta(),
+                                Keys.PDC_PLATE_STORAGE,
+                                PersistentPlateDataType.TYPE
+                            );
+                        } catch (IllegalStateException e) {
+                            // 不可信物品输入：PDC 数据损坏/伪造的充能板不能进入映射。退还该物品
+                            blockMenu.dropItems(blockMenu.getLocation(), slot);
+                            continue;
+                        }
                         if (instancePlate == null) {
-                            // 不可信物品输入：无 PDC 数据的充能板（如 /sf cheat 产物）不能进入映射，
-                            // 否则 EnumMap.put(null) 抛 NPE 中断绑定流程。退还该物品
+                            // 无 PDC 数据的充能板（如 /sf cheat 产物）同样退还
                             blockMenu.dropItems(blockMenu.getLocation(), slot);
                             continue;
                         }
