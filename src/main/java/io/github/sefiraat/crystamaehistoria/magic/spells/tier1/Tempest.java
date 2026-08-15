@@ -6,10 +6,12 @@ import io.github.sefiraat.crystamaehistoria.magic.spells.core.SpellCoreBuilder;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.liquefactionbasin.RecipeSpell;
 import io.github.sefiraat.crystamaehistoria.stories.definition.StoryType;
 import io.github.sefiraat.crystamaehistoria.utils.GeneralUtils;
+import io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -60,7 +62,12 @@ public class Tempest extends Spell {
     @ParametersAreNonnullByDefault
     public void beforeProjectileHit(CastInformation castInformation) {
         for (LivingEntity livingEntity : getTargets(castInformation, getProjectileAoe(castInformation), true)) {
-            livingEntity.setFireTicks(40);
+            // 与 CallLightning 的同型回调对齐：点火前校验领地（ATTACK 权限），
+            // 否则可在他人领地点燃实体（后续火焰伤害绕过施法者归属）
+            final Interaction interaction = livingEntity instanceof Player ? Interaction.ATTACK_PLAYER : Interaction.ATTACK_ENTITY;
+            if (GeneralUtils.hasPermission(castInformation.getCaster(), livingEntity.getLocation(), interaction)) {
+                livingEntity.setFireTicks(40);
+            }
         }
     }
 
