@@ -43,7 +43,8 @@ public class ExaltedSeaBreeze extends ExaltedItem {
         for (int i = 0; i < 4; i++) {
             final int x = ThreadLocalRandom.current().nextInt(-5, 6);
             final int z = ThreadLocalRandom.current().nextInt(-5, 6);
-            Block block = location.add(x, -1.5, z).getBlock();
+            // 从同一基准取随机点：原实现 location.add 原地修改，偏移逐次累积（同 ExaltedHarvester）
+            Block block = location.clone().add(x, -1.5, z).getBlock();
             Material material = MATERIAL_MAP.get(block.getType());
             if (material != null) {
                 block.setType(material);

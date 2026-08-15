@@ -25,7 +25,9 @@ public class ExaltedHarvester extends ExaltedItem {
         for (int i = 0; i < this.range; i++) {
             final int x = ThreadLocalRandom.current().nextInt(-this.range, this.range + 1);
             final int z = ThreadLocalRandom.current().nextInt(-this.range, this.range + 1);
-            Block block = location.add(x, -1.5, z).getBlock();
+            // 从同一基准取随机点：原实现 location.add 原地修改，偏移逐次累积，
+            // 随机点越走越远（y 每次再 -1.5，作用范围严重漂移）
+            Block block = location.clone().add(x, -1.5, z).getBlock();
             if (block.getBlockData() instanceof Ageable) {
                 Ageable ageable = (Ageable) block.getBlockData();
                 Material material = block.getType();
