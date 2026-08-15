@@ -4,9 +4,10 @@
 
 ## 版本发布记录
 
-- [1.21.11-2](release/1.21.11-2.md)：8 轮系统审计修订版（70+ 项稳定性/安全性/正确性修复，
-  详见 [audit/](audit/README.md)）；无数据格式变更，旧存档兼容。
-- [1.21.11-1](release/1.21.11-1.md)：迁移至 Paper 1.21.11 + Slimefun 5.0.0（REF/Slimefun4.1），
+- [0.1.0](release/0.1.0.md)：**版本序列自 0.1.0 起算**。28 轮系统审计修订版（117+ 项
+  稳定性/安全性/正确性修复，8 次服务器回归验证，详见 [audit/](audit/README.md)）；
+  无数据格式变更，旧存档兼容。
+- [1.21.11-1](release/1.21.11-1.md)（历史）：迁移至 Paper 1.21.11 + Slimefun 5.0.0（REF/Slimefun4.1），
   移除 bstats / GuizhanLibPlugin / InfinityLib / EffectLib / MorePersistentDataTypes 及全部第三方可选插件集成。
 
 ## 专项分析
