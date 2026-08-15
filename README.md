@@ -6,18 +6,15 @@
 
 ## 下载
 
-> 注：1.21.11 迁移版（本仓库）已移除自动更新器（依赖的 GuizhanLibPlugin 已剔除），
-> 请通过构建产物手动更新。
+本仓库为 Paper 1.21.11 + Slimefun 5.0.0 迁移版（版本序列自 0.1.0 起算，含 28 轮系统审计修复）。
+已移除自动更新器（依赖的 GuizhanLibPlugin 已剔除），请通过以下方式获取构建：
 
-点击这里下载 CrystamaeHistoria
-: [下载 CrystamaeHistoria](https://builds.guizhanss.net/SlimefunGuguProject/CrystamaeHistoria/master)
+- **本地构建**：`mvn package`（需 Java 21；Slimefun 依赖安装见 [note/README.md](note/README.md) 维护要点 1）
+- **CI 构建**：本仓库 GitHub Actions（Java CI）产物
 
 <p align="center">
-  <a href="https://github.com/SlimefunGuguProject/CrystamaeHistoria/actions/workflows/maven.yml">
-    <img src="https://github.com/SlimefunGuguProject/CrystamaeHistoria/actions/workflows/maven.yml/badge.svg" alt="Java CI"/>
-  </a>
-  <a href="https://builds.guizhanss.net/SlimefunGuguProject/CrystamaeHistoria/master">
-    <img src="https://builds.guizhanss.net/f/SlimefunGuguProject/CrystamaeHistoria/master/badge.svg" alt="Build status"/>
+  <a href="https://github.com/hershate/CrystamaeHistoria-1.21.11/actions/workflows/maven.yml">
+    <img src="https://github.com/hershate/CrystamaeHistoria-1.21.11/actions/workflows/maven.yml/badge.svg" alt="Java CI"/>
   </a>
 </p>
 

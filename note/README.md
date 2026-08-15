@@ -31,3 +31,14 @@
    且所有附属集成必须有运行时守卫（参见 `SupportedPluginManager`），保证未安装时行为不变。
 7. **验证环境**：`F:/paper-test-1.21.11` 存有 Paper 1.21.11 build 132 测试服务端
    （plugins 内已放 Slimefun 5.0.0 与本插件），可直接启动回归。
+8. **不可信输入红线**（28 轮审计沉淀，改代码前必读，详见 [audit/](audit/README.md)）：
+   - 物品/实体/区块 PDC 与 BlockStorage 一律视为不可信（改造客户端可注入任意 NBT）——
+     解析必须失败关闭（拒绝/跳过/保守默认），禁止裸 `valueOf`/`fromString`/拆箱；
+   - 事件回调（弹射物/闪电/落块命中、tick、召唤物周期）可晚于施法者下线——
+     禁止链式 `getCasterAsPlayer().xxx`，用 UUID 重载或降级路径；
+   - 周期回调必须带断路器（异常即停用/终止该次效果 + 限流日志），防日志风暴；
+   - 直接监听 PlayerInteract 系事件须 `ignoreCancelled = true`
+     （checkCooldown 例外——LOWEST 前置否决）；
+   - 施法/消耗类操作先结算后执行（扣费在前，效果在后）；
+   - Location 键缓存（cacheMap 等）必须在 onBreak 清理；共享状态禁止放
+     SlimefunItem 实例字段（单例多方块污染）。
