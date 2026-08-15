@@ -27,6 +27,7 @@
 | 13 | 剩余 tier1 法术逐文件精读（[round-13](round-13.md)） | ✅ 完成（1 commit：6aaf782；67 类全覆盖） |
 | 14 | 交叉复审：故事系统核心 + tools 残余（[round-14](round-14.md)） | ✅ 完成（1 commit：489c23d） |
 | 15 | 收尾覆盖：PlayerStatistics/ConfigManager/剩余 utils（[round-15](round-15.md)） | ✅ 完成（1 commit：339abbe；**全部 265 文件类别覆盖完毕**） |
+| 16 | 核心引擎终审：Spell 分发/加载器（[round-16](round-16.md)） | ✅ 完成（1 commit：d65dbec） |
 
 ## 已修复问题汇总
 
