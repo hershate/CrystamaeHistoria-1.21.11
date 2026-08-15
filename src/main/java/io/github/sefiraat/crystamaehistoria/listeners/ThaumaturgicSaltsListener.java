@@ -18,7 +18,7 @@ import org.bukkit.inventory.ItemStack;
 
 public class ThaumaturgicSaltsListener implements Listener {
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent e) {
         // 右键会为主手/副手各派发一次事件，副手事件重复进入会重复清空液化池
         if (e.getHand() == EquipmentSlot.OFF_HAND) {

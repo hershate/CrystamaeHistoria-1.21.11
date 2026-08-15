@@ -157,7 +157,7 @@ public class MiscListener implements Listener {
         return false;
     }
 
-    @EventHandler(priority = EventPriority.LOWEST)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onUseScoop(PlayerInteractEvent event) {
         // 右键会为主手/副手各派发一次事件：副手事件同样读主手荧光勺，
         // 不调光勺每点击一次会触发两次 adjustLight（亮度双重跳变），忽略副手事件

@@ -40,7 +40,7 @@ public class PoseChangerListener implements Listener {
     private final NamespacedKey changeKey = Keys.newKey("change_Type");
     private final NamespacedKey clonedPoseKey = Keys.newKey("stored_pose");
 
-    @EventHandler(priority = EventPriority.LOW)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent e) {
         final Player player = e.getPlayer();
         final ItemStack heldItem = player.getInventory().getItemInMainHand();
@@ -52,7 +52,7 @@ public class PoseChangerListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.LOW)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPoseChange(PlayerInteractAtEntityEvent e) {
         final Player player = e.getPlayer();
         final ItemStack heldItem = player.getInventory().getItemInMainHand();

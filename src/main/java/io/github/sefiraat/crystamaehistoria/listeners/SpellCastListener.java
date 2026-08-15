@@ -22,7 +22,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 public class SpellCastListener implements Listener {
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent e) {
         // 右键交互会为主手与副手各派发一次事件；法杖只读主手，
         // 副手事件重复进入会因冷却触发"施法失败"提示，覆盖刚成功的 action bar 消息
