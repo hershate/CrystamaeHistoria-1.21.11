@@ -18,7 +18,7 @@ public class ParticleDisplayRunnable extends BukkitRunnable {
             final SlimefunItem item = SlimefunItem.getByItem(player.getInventory().getItemInMainHand());
             final Block block = player.getLocation().getBlock();
             if (!(item instanceof LuminescenceScoop)) {
-                return;
+                continue;
             }
             for (int x = -5; x < 6; x++) {
                 for (int y = -5; y < 6; y++) {
