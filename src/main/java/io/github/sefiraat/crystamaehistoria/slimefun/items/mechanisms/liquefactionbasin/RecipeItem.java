@@ -6,7 +6,6 @@ import io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType;
 import io.github.thebusybiscuit.slimefun4.utils.SlimefunUtils;
 import lombok.Getter;
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -55,9 +54,15 @@ public class RecipeItem {
     @ParametersAreNonnullByDefault
     public boolean recipeMatches(List<StoryType> testTypes, List<Integer> testAmounts, ItemStack inputItem, UUID uuid) {
         int i = 0;
-        if (uuid != null && additionalRequirement != null) {
-            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(uuid);
-            if (offlinePlayer.isOnline() && !additionalRequirement.test(Bukkit.getPlayer(uuid))) {
+        if (additionalRequirement != null) {
+            // 失败关闭：带玩家前置条件的配方（尊贵物品的等级门槛/时间/天气/群系条件）
+            // 必须能实际验证时才允许合成。原实现在 activePlayer 缺失或离线时直接跳过检查，
+            // 导致进度门槛可被绕过（放置者下线后任何自动化投喂都能合成门槛物品）
+            if (uuid == null) {
+                return false;
+            }
+            final Player player = Bukkit.getPlayer(uuid);
+            if (player == null || !additionalRequirement.test(player)) {
                 return false;
             }
         }

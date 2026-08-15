@@ -1,5 +1,6 @@
 package io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.liquefactionbasin;
 
+import io.github.sefiraat.crystamaehistoria.CrystamaeHistoria;
 import io.github.sefiraat.crystamaehistoria.slimefun.machines.TickingMenuBlock;
 import io.github.sefiraat.crystamaehistoria.stories.definition.StoryType;
 import io.github.sefiraat.crystamaehistoria.utils.ParticleUtils;
@@ -134,11 +135,22 @@ public class LiquefactionBasin extends TickingMenuBlock {
             LiquefactionBasinCache cache = new LiquefactionBasinCache(blockMenu, this.maxVolume);
             Config c = BlockStorage.getLocationInfo(blockMenu.getLocation());
 
-            for (String key : c.getKeys()) {
-                if (key.startsWith(LiquefactionBasinCache.CH_LEVEL_PREFIX)) {
-                    String id = key.replace(LiquefactionBasinCache.CH_LEVEL_PREFIX, "");
-                    int amount = Integer.parseInt(c.getString(key));
-                    cache.getContentMap().put(StoryType.valueOf(id), amount);
+            if (c != null) {
+                for (String key : c.getKeys()) {
+                    if (key.startsWith(LiquefactionBasinCache.CH_LEVEL_PREFIX)) {
+                        // BlockStorage 为持久化数据，不可信：损坏的键值不应阻断缓存注册（否则机械永久失效）
+                        final String id = key.replace(LiquefactionBasinCache.CH_LEVEL_PREFIX, "");
+                        try {
+                            int amount = Integer.parseInt(c.getString(key));
+                            if (amount > 0) {
+                                cache.getContentMap().put(StoryType.valueOf(id), amount);
+                            }
+                        } catch (IllegalArgumentException e) {
+                            // 含 NumberFormatException（其子类）：数值或枚举名损坏
+                            CrystamaeHistoria.getInstance().getLogger().warning(
+                                "液化池 " + blockMenu.getLocation() + " 的存储数据损坏，已跳过键 " + key);
+                        }
+                    }
                 }
             }
 

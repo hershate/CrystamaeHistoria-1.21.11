@@ -70,7 +70,11 @@ public class LiquefactionBasinCache extends DisplayStandHolder {
 
         final String activePlayerString = BlockStorage.getLocationInfo(blockMenu.getLocation(), Keys.BS_CP_ACTIVE_PLAYER);
         if (activePlayerString != null) {
-            this.activePlayer = UUID.fromString(activePlayerString);
+            try {
+                this.activePlayer = UUID.fromString(activePlayerString);
+            } catch (IllegalArgumentException e) {
+                // 持久化 UUID 损坏（BlockStorage 数据不可信）：保持 null，仅影响统计归属
+            }
         }
     }
 
