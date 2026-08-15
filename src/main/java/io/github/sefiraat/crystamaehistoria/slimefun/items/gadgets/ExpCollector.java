@@ -70,7 +70,8 @@ public class ExpCollector extends TickingMenuBlock {
             range,
             ExperienceOrb.class::isInstance
         );
-        int amount = volumeMap.get(block.getLocation());
+        // 缓存缺失时（BlockPlacer 放置、历史数据缺键等）按 0 处理，避免拆箱 NPE 使机械每 tick 报错
+        int amount = volumeMap.getOrDefault(block.getLocation(), 0);
         boolean hasUpdated = false;
         for (Entity entity : entities) {
             ExperienceOrb experienceOrb = (ExperienceOrb) entity;
@@ -117,13 +118,24 @@ public class ExpCollector extends TickingMenuBlock {
     @ParametersAreNonnullByDefault
     protected void onNewInstance(BlockMenu menu, Block block) {
         Location location = block.getLocation();
+        // BlockStorage 为持久化数据，不可信：损坏值不能阻断菜单实例化
         String owner = BlockStorage.getLocationInfo(location, ID_UUID);
         if (owner != null) {
-            blockOwnerMap.put(location, UUID.fromString(owner));
+            try {
+                blockOwnerMap.put(location, UUID.fromString(owner));
+            } catch (IllegalArgumentException e) {
+                // UUID 损坏时不登记所有者（仅影响经验领取归属）
+            }
         }
         String volumeString = BlockStorage.getLocationInfo(location, ID_VOLUME);
         if (volumeString != null) {
-            volumeMap.put(location, Integer.parseInt(volumeString));
+            try {
+                volumeMap.put(location, Integer.parseInt(volumeString));
+            } catch (NumberFormatException e) {
+                volumeMap.put(location, 0);
+            }
+        } else {
+            volumeMap.put(location, 0);
         }
 
         menu.addMenuOpeningHandler(player -> {
@@ -132,7 +144,7 @@ public class ExpCollector extends TickingMenuBlock {
             if (!(slimefunItem instanceof RefactingLens)) {
                 final UUID uuid = blockOwnerMap.get(location);
                 if (player.getUniqueId().equals(uuid)) {
-                    int amount = volumeMap.get(location);
+                    int amount = volumeMap.getOrDefault(location, 0);
                     if (amount > 0) {
                         volumeMap.put(location, 0);
                         player.giveExp(amount);
@@ -147,6 +159,10 @@ public class ExpCollector extends TickingMenuBlock {
     @Override
     protected void onBreak(BlockBreakEvent e, BlockMenu menu) {
         BlockStorage.clearBlockInfo(e.getBlock());
+        // 破坏后清除内存条目，否则缓存随放置/破坏循环无界增长
+        final Location location = e.getBlock().getLocation();
+        volumeMap.remove(location);
+        blockOwnerMap.remove(location);
     }
 
     @Override
