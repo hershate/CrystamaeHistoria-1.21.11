@@ -46,7 +46,11 @@ public class PrismaticGilderCache extends AbstractCache {
 
         final String activePlayerString = BlockStorage.getLocationInfo(blockMenu.getLocation(), Keys.BS_CP_ACTIVE_PLAYER);
         if (activePlayerString != null) {
-            this.activePlayer = UUID.fromString(activePlayerString);
+            try {
+                this.activePlayer = UUID.fromString(activePlayerString);
+            } catch (IllegalArgumentException e) {
+                // 持久化 UUID 损坏（BlockStorage 数据不可信）：保持 null，仅影响统计归属
+            }
         }
     }
 
@@ -102,6 +106,12 @@ public class PrismaticGilderCache extends AbstractCache {
         ) {
 
             final BlockDefinition definition = CrystamaeHistoria.getStoriesManager().getBlockDefinitionMap().get(heldItem.getType());
+
+            // blocks.yml 可被编辑，且 metaBypass 白名单允许带 meta 的非典型物品拥有故事：
+            // 定义缺失时直接返回，不能 NPE
+            if (definition == null) {
+                return;
+            }
 
             if (this.fillAmount >= definition.getBlockTier().tier) {
                 final ItemStack gildedStack = heldItem.asQuantity(1);

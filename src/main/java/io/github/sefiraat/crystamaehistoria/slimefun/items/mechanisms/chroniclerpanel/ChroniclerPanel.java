@@ -90,7 +90,10 @@ public class ChroniclerPanel extends TickingMenuBlock {
         super.onBreak(event, blockMenu);
         Location location = blockMenu.getLocation();
         ChroniclerPanelCache chroniclerPanelCache = CACHES.remove(location);
-        chroniclerPanelCache.kill();
+        if (chroniclerPanelCache != null) {
+            chroniclerPanelCache.kill();
+        }
+        // 掉落必须无条件执行：缓存缺失（如构造时曾异常）不能吞掉玩家输入槽内的物品
         blockMenu.dropItems(location, INPUT_SLOT);
     }
 

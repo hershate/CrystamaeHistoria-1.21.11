@@ -51,14 +51,25 @@ public class ChroniclerPanelCache extends AbstractCache {
         super(blockMenu);
         this.tier = tier;
 
+        // BlockStorage 为持久化数据，不可信：损坏的值不能阻断缓存构造（否则机械注册失败后永久失效）
         final String workingOnString = BlockStorage.getLocationInfo(blockMenu.getLocation(), Keys.BS_CP_WORKING_ON);
         if (workingOnString != null) {
-            setWorking(blockMenu.getBlock(), Material.valueOf(workingOnString));
+            try {
+                setWorking(blockMenu.getBlock(), Material.valueOf(workingOnString));
+            } catch (IllegalArgumentException e) {
+                CrystamaeHistoria.getInstance().getLogger().warning(
+                    "记录者面板 " + blockMenu.getLocation() + " 的存储材质数据损坏（" + workingOnString + "），已重置工作状态");
+                BlockStorage.addBlockInfo(blockMenu.getLocation(), Keys.BS_CP_WORKING_ON, null);
+            }
         }
 
         final String activePlayerString = BlockStorage.getLocationInfo(blockMenu.getLocation(), Keys.BS_CP_ACTIVE_PLAYER);
         if (activePlayerString != null) {
-            this.activePlayer = UUID.fromString(activePlayerString);
+            try {
+                this.activePlayer = UUID.fromString(activePlayerString);
+            } catch (IllegalArgumentException e) {
+                // UUID 损坏时保持 activePlayer 为 null（仅影响统计归属）
+            }
         }
     }
 
@@ -91,17 +102,27 @@ public class ChroniclerPanelCache extends AbstractCache {
         if (armorStandUUID == null) {
             final String uuidString = BlockStorage.getLocationInfo(getLocation(), "ch_display_stand");
             if (uuidString != null) {
-                armorStandUUID = UUID.fromString(uuidString);
-            } else {
-                final Block block = blockMenu.getBlock();
-                final ArmorStand armorStand = (ArmorStand) block.getWorld().spawnEntity(getLocation().add(0.5, -0.6, 0.5), EntityType.ARMOR_STAND);
-                ArmourStandUtils.setDisplay(armorStand);
-                BlockStorage.addBlockInfo(block.getLocation(), "ch_display_stand", armorStand.getUniqueId().toString());
-                armorStandUUID = armorStand.getUniqueId();
-                return armorStand;
+                try {
+                    armorStandUUID = UUID.fromString(uuidString);
+                } catch (IllegalArgumentException e) {
+                    // 持久化 UUID 损坏，走重建分支
+                    armorStandUUID = null;
+                }
             }
         }
-        return (ArmorStand) Bukkit.getEntity(armorStandUUID);
+        if (armorStandUUID != null) {
+            final Entity entity = Bukkit.getEntity(armorStandUUID);
+            if (entity instanceof ArmorStand) {
+                return (ArmorStand) entity;
+            }
+            // 记录的展示架已不存在（被杀/清除），重建并覆盖记录，避免后续每次调用 NPE
+        }
+        final Block block = blockMenu.getBlock();
+        final ArmorStand armorStand = (ArmorStand) block.getWorld().spawnEntity(getLocation().add(0.5, -0.6, 0.5), EntityType.ARMOR_STAND);
+        ArmourStandUtils.setDisplay(armorStand);
+        BlockStorage.addBlockInfo(block.getLocation(), "ch_display_stand", armorStand.getUniqueId().toString());
+        armorStandUUID = armorStand.getUniqueId();
+        return armorStand;
     }
 
     protected Location getLocation() {
@@ -182,8 +203,15 @@ public class ChroniclerPanelCache extends AbstractCache {
     }
 
     private void pushOutItem() {
-        final Location pushLocation = this.blockMiddle.clone().subtract(0, 1, 0);
-        pushLocation.getWorld().dropItem(pushLocation, this.blockMenu.getItemInSlot(ChroniclerPanel.INPUT_SLOT).clone());
+        final ItemStack inputItem = this.blockMenu.getItemInSlot(ChroniclerPanel.INPUT_SLOT);
+        if (inputItem == null || inputItem.getType() == Material.AIR) {
+            return;
+        }
+        // blockMiddle 仅在 setWorking 后赋值：面板从未工作时（例如直接塞入已满故事的物品）为 null，
+        // 原实现会 NPE 导致该 tick 报错且物品永远卡死在槽位
+        final Location base = this.blockMiddle != null ? this.blockMiddle : blockMenu.getLocation().clone().add(0.5, 0.5, 0.5);
+        final Location pushLocation = base.clone().subtract(0, 1, 0);
+        pushLocation.getWorld().dropItem(pushLocation, inputItem.clone());
         this.blockMenu.replaceExistingItem(ChroniclerPanel.INPUT_SLOT, null);
     }
 

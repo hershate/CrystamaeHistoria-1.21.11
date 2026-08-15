@@ -56,7 +56,11 @@ public class RealisationAltarCache extends AbstractCache {
 
         final String activePlayerString = BlockStorage.getLocationInfo(blockMenu.getLocation(), Keys.BS_CP_ACTIVE_PLAYER);
         if (activePlayerString != null) {
-            this.activePlayer = UUID.fromString(activePlayerString);
+            try {
+                this.activePlayer = UUID.fromString(activePlayerString);
+            } catch (IllegalArgumentException e) {
+                // 持久化 UUID 损坏（BlockStorage 数据不可信）：保持 null，仅影响统计归属
+            }
         }
     }
 
@@ -153,6 +157,11 @@ public class RealisationAltarCache extends AbstractCache {
     @ParametersAreNonnullByDefault
     private boolean processItem(ItemStack itemStack) {
         final BlockDefinition definition = CrystamaeHistoria.getStoriesManager().getBlockDefinitionMap().get(itemStack.getType());
+        if (definition == null) {
+            // blocks.yml 可被编辑：物品带故事标记但材质已无定义时直接退回，不能 NPE 卡死 tick
+            reject(itemStack);
+            return false;
+        }
         if (definition.getBlockTier().tier <= this.tier + 1) {
             if (GeneralUtils.testChance(1, 6)) {
                 final int x = ThreadLocalRandom.current().nextInt(-3, 4);
@@ -160,6 +169,11 @@ public class RealisationAltarCache extends AbstractCache {
                 final Block potentialBlock = blockMenu.getBlock().getRelative(x, 0, z);
                 if (potentialBlock.isEmpty() && potentialBlock.getRelative(BlockFace.DOWN).getType().isSolid()) {
                     final List<Story> storyList = StoryUtils.getAllStories(itemStack);
+                    if (storyList.isEmpty()) {
+                        // 数据损坏（有故事槽位标记但无故事内容）：退回物品，避免 get(0) 越界
+                        reject(itemStack);
+                        return false;
+                    }
                     final Story story = storyList.get(0);
                     final boolean isGilded = GildingUtils.isGilded(itemStack);
 
@@ -169,7 +183,9 @@ public class RealisationAltarCache extends AbstractCache {
                         new RealisedCrystalState(story.getRarity(), story.getId(), isGilded)
                     );
                     if (StoryUtils.removeStory(itemStack, story) == 0) {
-                        PlayerStatistics.addRealisation(activePlayer, definition);
+                        if (activePlayer != null) {
+                            PlayerStatistics.addRealisation(activePlayer, definition);
+                        }
                         itemStack.setAmount(0);
                     } else {
                         StoriesManager.rebuildStoriedStack(itemStack);
@@ -191,7 +207,12 @@ public class RealisationAltarCache extends AbstractCache {
         final List<Story> stories = new ArrayList<>();
         for (Map.Entry<BlockPosition, RealisedCrystalState> entry : crystalStoryMap.entrySet()) {
             RealisedCrystalState state = entry.getValue();
-            Story story = CrystamaeHistoria.getStoriesManager().getStory(state.storyId, state.storyRarity).copy();
+            // generic-stories.yml 可被编辑：故事查不到时跳过该条目，不能让落盘整体失败
+            final Story source = CrystamaeHistoria.getStoriesManager().getStory(state.storyId, state.storyRarity);
+            if (source == null) {
+                continue;
+            }
+            Story story = source.copy();
             story.setBlockPosition(entry.getKey());
             story.setGilded(state.gilded);
             stories.add(story);
@@ -237,6 +258,10 @@ public class RealisationAltarCache extends AbstractCache {
         );
         if (stories != null) {
             for (Story story : stories) {
+                // 持久化数据不可信：缺少方块位置的故事条目不能进入映射（否则 tryGrow 中 NPE）
+                if (story.getBlockPosition() == null) {
+                    continue;
+                }
                 crystalStoryMap.put(
                     story.getBlockPosition(),
                     new RealisedCrystalState(story.getRarity(), story.getId(), story.isGilded())

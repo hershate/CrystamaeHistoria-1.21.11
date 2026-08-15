@@ -1,5 +1,6 @@
 package io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.prismaticgilder;
 
+import io.github.sefiraat.crystamaehistoria.CrystamaeHistoria;
 import io.github.sefiraat.crystamaehistoria.slimefun.machines.TickingMenuBlock;
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
@@ -134,7 +135,13 @@ public class PrismaticGilder extends TickingMenuBlock {
             PrismaticGilderCache cache = new PrismaticGilderCache(blockMenu, 5);
             String s = BlockStorage.getLocationInfo(blockMenu.getLocation(), PrismaticGilderCache.AMOUNT);
             if (s != null) {
-                cache.setFillAmount(Integer.parseInt(s));
+                // BlockStorage 为持久化数据，不可信：损坏值不能阻断缓存注册（否则机械永久失效）
+                try {
+                    cache.setFillAmount(Integer.parseInt(s));
+                } catch (NumberFormatException e) {
+                    CrystamaeHistoria.getInstance().getLogger().warning(
+                        "棱镜镀金器 " + blockMenu.getLocation() + " 的存储数量数据损坏（" + s + "），已按 0 处理");
+                }
             }
             cacheMap.put(blockMenu.getLocation(), cache);
         }
