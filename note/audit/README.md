@@ -22,7 +22,7 @@
 | 轮次 | 方面 | 状态 |
 |------|------|------|
 | 10 | gadgets 深审（[round-10](round-10.md)） | ✅ 完成（2 commit：b41eaf6/96e8671；诅咒之土状态污染、碎裂虚空物品不落盘等） |
-| 11 | artistic/exhalted/uniques 物品深审 | 待做 |
+| 11 | artistic/exhalted/materials 物品深审（[round-11](round-11.md)） | ✅ 完成（2 commit：f9ed746/03cb3dc） |
 | 12 | mobgoals 召唤物 AI 目标类 | 待做 |
 | 13 | 剩余 tier1 法术逐文件精读 | 待做 |
 
@@ -57,3 +57,5 @@
 | 8 | `tier1/StripMine.java`、`commands/{TestSpell,TestWand}.java` | 视线空值 tick 回调 NPE（round-5 观察 2 更正：raycast 有消费方）；test-spell 负强度负伤害；命令参数裸抛异常 | 空值守卫 + 1-5/1-2 边界 + 友好提示 | `9082276` |
 | 10 | `gadgets/CursedEarth.java`、`gadgets/FragmentedVoid.java` | **多方块共享刷怪计数器（频率随方块数失控）**；**吸收物品绕过脏标记不落盘（重启丢失）** | per-location 映射 + markDirty | `b41eaf6` |
 | 10 | `gadgets/{MobFan,MobLamp,MobMat,MobTrap,GreenHouseGlass,MysteriousTicker,TrophyDisplay}.java` | BlockPlacer 缺键每 tick NPE×4 类；映射泄漏×4 类；TrophyDisplay 跨实例死状态 | 判空失败关闭 + 破坏清理 + 删死代码 | `96e8671` |
+| 11 | `artistic/ImbuedStand.java`、`exhalted/{ExaltedHarvester,ExaltedSeaBreeze}.java` | 他人领地生成盔甲架；**随机点累积漂移（作用范围失控）** | 领地校验 + clone 基准 | `f9ed746` |
+| 11 | `materials/PowderedEssence.java` | 他人领地骨粉催熟 | INTERACT_BLOCK 校验 | `03cb3dc` |
