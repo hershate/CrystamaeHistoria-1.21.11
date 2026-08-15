@@ -1,0 +1,8 @@
+bench	variant	median_ns_op	min_ns_op	p95_ns_op
+spellEnabled	new_field_isEnabled	0.30
+spellEnabled	old_yaml_getBoolean	8.73
+spellMemoryScan.empty	new_isEmpty_earlyExit	0.00
+spellMemoryScan.empty	old_keyset_copy	4.44
+spellMemoryScan.full100	new_entryset_scan	199.79
+spellMemoryScan.full100	old_entryset_copy	1803.56
+spellMemoryScan.full100	old_keyset_copy_plus_get	1544.90
