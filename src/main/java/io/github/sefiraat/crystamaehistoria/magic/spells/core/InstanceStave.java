@@ -50,6 +50,17 @@ public class InstanceStave {
     }
 
     public void buildLore() {
+        final ItemMeta itemMeta = this.itemStack.getItemMeta();
+        buildLore(itemMeta);
+        this.itemStack.setItemMeta(itemMeta);
+    }
+
+    /**
+     * 将法术栏位 lore 写入给定 meta（不触发 getItemMeta/setItemMeta 往返）。
+     * 与其他 meta 修改（如 PDC 写回）共用同一次往返，省一次 ItemMeta 克隆与应用。
+     */
+    @ParametersAreNonnullByDefault
+    public void buildLore(ItemMeta itemMeta) {
         final String[] lore = new String[]{
             "可以进行法术绑定的法杖",
         };
@@ -73,9 +84,7 @@ public class InstanceStave {
         }
         finalLore.add("");
         finalLore.add(ThemeType.applyThemeToString(ThemeType.CLICK_INFO, ThemeType.STAVE.getLoreLine()));
-        final ItemMeta itemMeta = this.itemStack.getItemMeta();
         itemMeta.setLore(finalLore);
-        this.itemStack.setItemMeta(itemMeta);
     }
 
     @ParametersAreNonnullByDefault

@@ -114,8 +114,8 @@ public class StaveConfigurator extends MenuBlock {
                 PersistentStaveDataType.TYPE,
                 staveInstance.getSpellInstanceMap()
             );
+            staveInstance.buildLore(itemMeta);
             stave.setItemMeta(itemMeta);
-            staveInstance.buildLore();
             return false;
         });
 
@@ -166,8 +166,8 @@ public class StaveConfigurator extends MenuBlock {
                     PersistentStaveDataType.TYPE,
                     staveInstance.getSpellInstanceMap()
                 );
+                staveInstance.buildLore(staveMeta);
                 stave.setItemMeta(staveMeta);
-                staveInstance.buildLore();
                 clearPlates(blockMenu);
             }
             return false;

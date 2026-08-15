@@ -99,8 +99,10 @@ public class MiscListener implements Listener {
         // 必须检查触发事件的那只手：原实现固定读主手，副手持冷却物品交互时
         // （事件为 OFF_HAND 派发）主手若无冷却则直接放行，构成冷却绕过
         final ItemStack itemStack = event.getItem();
+        // 材质预检：冷却 PDC 的唯一写入方是折射透镜（SPYGLASS，RefractingLensListener），
+        // 其余材质的右键交互零成本跳过，免去每次交互的 ItemMeta 克隆 + PDC 读取
         if (itemStack != null
-            && itemStack.getType() != Material.AIR
+            && itemStack.getType() == Material.SPYGLASS
             && (event.getAction() == Action.RIGHT_CLICK_AIR
             || event.getAction() == Action.RIGHT_CLICK_BLOCK)
             && GeneralUtils.isOnCooldown(itemStack)
@@ -165,13 +167,18 @@ public class MiscListener implements Listener {
             return;
         }
         final Player player = event.getPlayer();
-            final SlimefunItem item = SlimefunItem.getByItem(player.getInventory().getItemInMainHand());
-
+        // 材质预检：全部调光勺（4 档）材质只有 LANTERN/SOUL_LANTERN，
+        // 其余物品的交互零成本跳过，免去每次交互的 getByItem 元数据查询
+        final ItemStack mainHand = player.getInventory().getItemInMainHand();
+        final Material mainHandType = mainHand.getType();
+        if (mainHandType == Material.LANTERN || mainHandType == Material.SOUL_LANTERN) {
+            final SlimefunItem item = SlimefunItem.getByItem(mainHand);
             if (item instanceof LuminescenceScoop) {
                 LuminescenceScoop scoop = (LuminescenceScoop) item;
                 if (scoop.isAdjustable()) {
                     scoop.adjustLight(player);
                 }
             }
+        }
     }
 }

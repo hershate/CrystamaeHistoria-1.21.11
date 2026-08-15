@@ -44,6 +44,8 @@ public class SpellCastListener implements Listener {
             CastInformation castInformation = new CastInformation(player, stave.getLevel());
             CastResult castResult = staveInstance.tryCastSpell(slot, castInformation);
             if (castResult == CastResult.CAST_SUCCESS) {
+                // PDC 写回与 lore 更新共用一次 getItemMeta/setItemMeta 往返
+                // （旧实现各做一次，成功路径多付一整轮 ItemMeta 克隆与应用）
                 ItemMeta itemMeta = stack.getItemMeta();
                 DataTypeMethods.setCustom(
                     itemMeta,
@@ -51,8 +53,8 @@ public class SpellCastListener implements Listener {
                     PersistentStaveDataType.TYPE,
                     staveInstance.getSpellInstanceMap()
                 );
+                staveInstance.buildLore(itemMeta);
                 stack.setItemMeta(itemMeta);
-                staveInstance.buildLore();
                 player.sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(
                     ThemeType.SUCCESS.getColor() + "释放法术: " + castInformation.getSpellType().getSpell().getName()
                 ));
