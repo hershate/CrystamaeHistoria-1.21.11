@@ -5,9 +5,11 @@ import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
+import io.github.thebusybiscuit.slimefun4.core.handlers.BlockBreakHandler;
 import lombok.Getter;
 import me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config;
 import me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker;
+import me.mrCookieSlime.Slimefun.api.BlockStorage;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -15,10 +17,13 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class CursedEarth extends SlimefunItem {
@@ -31,8 +36,13 @@ public class CursedEarth extends SlimefunItem {
     private final List<EntityType> spawns;
     @Getter
     private final Particle.DustOptions dustOptions;
-    @Getter
-    private int currentTick = 0;
+
+    /**
+     * 每方块独立的刷怪计时。原实现用单个实例字段：SlimefunItem 为单例，
+     * N 块诅咒之土共享同一计数器，计数以 N 倍速推进——刷怪频率随方块数
+     * 失控（多方块状态污染）。破坏时清理条目。
+     */
+    private final Map<Location, Integer> tickCounters = new HashMap<>();
 
     @ParametersAreNonnullByDefault
     public CursedEarth(ItemGroup category,
@@ -53,7 +63,17 @@ public class CursedEarth extends SlimefunItem {
 
     @Override
     public void preRegister() {
-        addItemHandler(onTick());
+        addItemHandler(onTick(), onBlockBreak());
+    }
+
+    private BlockBreakHandler onBlockBreak() {
+        return new BlockBreakHandler(false, false) {
+            @Override
+            @ParametersAreNonnullByDefault
+            public void onPlayerBreak(BlockBreakEvent event, ItemStack item, List<ItemStack> drops) {
+                tickCounters.remove(event.getBlock().getLocation());
+            }
+        };
     }
 
     private BlockTicker onTick() {
@@ -66,7 +86,14 @@ public class CursedEarth extends SlimefunItem {
             @Override
             public void tick(Block block, SlimefunItem slimefunItem, Config config) {
                 final Location location = block.getLocation().add(0.5, 1.5, 0.5);
-                if (currentTick == ticksToSpawn) {
+                if (block.isEmpty()) {
+                    // 方块已不存在：清理计数与 BlockStorage 信息，防止残留
+                    tickCounters.remove(block.getLocation());
+                    BlockStorage.clearBlockInfo(block.getLocation());
+                    return;
+                }
+                int currentTick = tickCounters.getOrDefault(block.getLocation(), 0);
+                if (currentTick >= ticksToSpawn) {
                     final Block blockA = block.getRelative(BlockFace.UP);
                     final Block blockB = blockA.getRelative(BlockFace.UP);
                     if (blockA.getLightLevel() <= lightLevel
@@ -85,6 +112,7 @@ public class CursedEarth extends SlimefunItem {
                 } else {
                     currentTick++;
                 }
+                tickCounters.put(block.getLocation(), currentTick);
                 ParticleUtils.displayParticleEffect(
                     location,
                     1,

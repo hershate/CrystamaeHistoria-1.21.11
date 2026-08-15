@@ -64,7 +64,12 @@ public class FragmentedVoid extends SlimefunItem {
                 final Location location = block.getLocation().clone().add(0.5, 0.5, 0.5);
                 final Collection<Item> itemsToConsume = location.getWorld().getNearbyEntitiesByType(Item.class, location, 1.25);
                 final BlockMenu blockMenu = BlockStorage.getInventory(block);
+                // 无方块数据（BlockPlacer 放置等）时跳过吸收，避免 NPE
+                if (blockMenu == null) {
+                    return;
+                }
 
+                boolean absorbed = false;
                 for (Item item : itemsToConsume) {
                     if (item.getPickupDelay() <= 0 && !SlimefunUtils.hasNoPickupFlag(item)) {
                         final ItemStack itemStack = item.getItemStack();
@@ -75,7 +80,12 @@ public class FragmentedVoid extends SlimefunItem {
                         } else {
                             item.remove();
                         }
+                        absorbed = true;
                     }
+                }
+                if (absorbed) {
+                    // 直接经 toInventory() 写入绕过了菜单的脏标记：不标脏则内容不落盘，重启后物品丢失
+                    blockMenu.markDirty();
                 }
 
                 final Collection<Item> items = location.getWorld().getNearbyEntitiesByType(Item.class, location, FragmentedVoid.this.range);
