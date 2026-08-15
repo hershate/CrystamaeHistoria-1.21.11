@@ -275,9 +275,9 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
         final ChatColor passive = ThemeType.PASSIVE.getColor();
 
         final String crysta = MessageFormat.format("{0}每次施法消耗充能: {1}{2}", color, passive, spellCore.getCrystaCost());
-        final String crystaMulti = MessageFormat.format("{0}施法消耗{1}随着法杖等级提升而增加", color, spellCore.isDamageMultiplied() ? "会" : "不会");
+        final String crystaMulti = MessageFormat.format("{0}施法消耗{1}随着法杖等级提升而增加", color, spellCore.isCrystaMultiplied() ? "会" : "不会");
         final String cooldown = MessageFormat.format("{0}冷却时间(秒): {1}{2}", color, passive, spell.getSpellCore().getCooldownSeconds());
-        final String cooldownDivided = MessageFormat.format("{0}冷却时间{1}随着法杖等级提升而减少", color, spellCore.isDamageMultiplied() ? "不会" : "会");
+        final String cooldownDivided = MessageFormat.format("{0}冷却时间{1}随着法杖等级提升而减少", color, spellCore.isCooldownDivided() ? "会" : "不会");
 
 
         return CustomItemStack.create(
@@ -300,8 +300,8 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
         final String damageMessage = MessageFormat.format("{0}伤害: {1}{2}", color, passive, spellCore.getDamageAmount());
         final String damageMulti = MessageFormat.format("{0}伤害{1}随着法杖等级提升而增加", color, spellCore.isDamageMultiplied() ? "会" : "不会");
 
-        final String healMessage = MessageFormat.format("{0}治疗量: {1}{2}", color, passive, spellCore.getDamageAmount());
-        final String healMulti = MessageFormat.format("{0}治疗量{1}随着法杖等级提升而增加", color, spellCore.isDamageMultiplied() ? "会" : "不会");
+        final String healMessage = MessageFormat.format("{0}治疗量: {1}{2}", color, passive, spellCore.getHealAmount());
+        final String healMulti = MessageFormat.format("{0}治疗量{1}随着法杖等级提升而增加", color, spellCore.isHealMultiplied() ? "会" : "不会");
 
         if (spellCore.isDamagingSpell()) {
             lore.add(damageMessage);
@@ -339,7 +339,7 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
         final String healingSpell = MessageFormat.format("{0}治疗: {1}会进行治疗、附带正面效果", color, passive);
         final String effectingSpell = MessageFormat.format("{0}特效: {1}会附带药水效果", color, passive);
         final String tickingSpell1 = MessageFormat.format("{0}多重: {1}该法术会释放 {2}{3}{4} 次", color, passive, notice, ticks, passive);
-        final String tickingSpell2 = MessageFormat.format("{0}施法次数{1}随着法杖等级提升而增加", passive, spellCore.isDamageMultiplied() ? "会" : "不会");
+        final String tickingSpell2 = MessageFormat.format("{0}施法次数{1}随着法杖等级提升而增加", passive, spellCore.isNumberOfTicksMultiplied() ? "会" : "不会");
 
         final String projectileSpell1 = MessageFormat.format("{0}弹射物: {1}该法术会发射弹射物", color, passive);
         final String projectileSpell2 = MessageFormat.format("{0}命中后会附带后续效果", passive);
@@ -381,7 +381,7 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
         final String multiMessage = MessageFormat.format("{0}范围{1}随着法杖等级提升而增加", passive, spell.getSpellCore().isRangeMultiplied() ? "会" : "不会");
         final String noRange = passive + "不会受到范围的影响";
 
-        if (spell.getSpellCore().getKnockbackAmount() > 0) {
+        if (spell.getSpellCore().getRange() > 0) {
             lore.add(message);
             lore.add(multiMessage);
         } else {
@@ -427,8 +427,8 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
 
         final String aoeMessage = MessageFormat.format("{0}弹射物溅射范围: {1}{2}", color, passive, spellCore.getProjectileAoeRange());
         final String aoeMultiMessage = MessageFormat.format("{0}溅射范围{1}随着法杖等级提升而增加", passive, spellCore.isProjectileAoeMultiplied() ? "会" : "不会");
-        final String knockbackMessage = MessageFormat.format("{0}弹射物击退: {1}{2}", color, passive, spellCore.getKnockbackAmount());
-        final String knockbackMultiMessage = MessageFormat.format("{0}击退等级{1}随着法杖等级提升而增加", passive, spellCore.isKnockbackMultiplied() ? "会" : "不会");
+        final String knockbackMessage = MessageFormat.format("{0}弹射物击退: {1}{2}", color, passive, spellCore.getProjectileKnockbackAmount());
+        final String knockbackMultiMessage = MessageFormat.format("{0}击退等级{1}随着法杖等级提升而增加", passive, spellCore.isProjectileKnockbackMultiplied() ? "会" : "不会");
 
         final List<String> lore = new ArrayList<>();
 
