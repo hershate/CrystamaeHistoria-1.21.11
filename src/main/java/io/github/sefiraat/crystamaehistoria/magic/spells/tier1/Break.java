@@ -25,6 +25,10 @@ public class Break extends Spell {
     public void cast(CastInformation castInformation) {
         Player player = castInformation.getCasterAsPlayer();
         Block block = player.getTargetBlockExact((int) getRange(castInformation));
+        // 视线范围内无方块（例如看向天空）时 getTargetBlockExact 返回 null，跳过本次效果
+        if (block == null) {
+            return;
+        }
         GeneralUtils.tryBreakBlock(castInformation.getCaster(), block);
     }
 

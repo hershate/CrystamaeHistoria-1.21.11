@@ -58,7 +58,9 @@ public class PhilosophersStone extends Spell {
     public void cast(CastInformation castInformation) {
         final Player player = castInformation.getCasterAsPlayer();
         final Block block = player.getTargetBlockExact((int) getRange(castInformation));
-        if (GeneralUtils.hasPermission(player, block, Interaction.BREAK_BLOCK)
+        // 视线范围内无方块时 getTargetBlockExact 返回 null，跳过本次效果
+        if (block != null
+            && GeneralUtils.hasPermission(player, block, Interaction.BREAK_BLOCK)
             && block.getType().getHardness() != -1
             && !block.getType().isAir()
         ) {
@@ -72,8 +74,22 @@ public class PhilosophersStone extends Spell {
             } else {
                 material = MATERIALS_COMMON.get(ThreadLocalRandom.current().nextInt(0, MATERIALS_COMMON.size()));
             }
-            final List<Integer> list = (List<Integer>) CrystamaeHistoria.getConfigManager().getBlockColors().getList(material.name());
-            final Color color = Color.fromRGB(list.get(0), list.get(1), list.get(2));
+            // block_colors.yml 可被编辑：目标材质缺颜色配置时退回白色，不能 NPE
+            final List<?> colorList = CrystamaeHistoria.getConfigManager().getBlockColors().getList(material.name());
+            final Color color;
+            if (colorList != null && colorList.size() >= 3
+                && colorList.get(0) instanceof Number
+                && colorList.get(1) instanceof Number
+                && colorList.get(2) instanceof Number
+            ) {
+                color = Color.fromRGB(
+                    ((Number) colorList.get(0)).intValue(),
+                    ((Number) colorList.get(1)).intValue(),
+                    ((Number) colorList.get(2)).intValue()
+                );
+            } else {
+                color = Color.WHITE;
+            }
             final Particle.DustOptions dustOptionsToBlock = new Particle.DustOptions(color, 1);
             ParticleUtils.drawCube(dustOptionsToBlock, location, location.clone().add(1, 1, 1), 0.25);
             block.setType(material);

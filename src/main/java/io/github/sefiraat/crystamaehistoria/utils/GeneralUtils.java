@@ -147,18 +147,23 @@ public final class GeneralUtils {
     @ParametersAreNonnullByDefault
     public boolean pullEntity(UUID caster, Location pullToLocation, Entity pushed, double force) {
         Vector vector = pushed.getLocation().toVector()
-                              .subtract(pullToLocation.toVector())
-                              .normalize()
-                              .multiply(-force);
+                              .subtract(pullToLocation.toVector());
+        // 重合位置零向量归一化会产生 NaN 速度，直接跳过
+        if (vector.lengthSquared() == 0) {
+            return false;
+        }
+        vector.normalize().multiply(-force);
         return pushEntity(caster, vector, pushed);
     }
 
     @ParametersAreNonnullByDefault
     public void pullEntity(Location pullToLocation, Entity pushed, double force) {
         Vector vector = pushed.getLocation().toVector()
-                              .subtract(pullToLocation.toVector())
-                              .normalize()
-                              .multiply(-force);
+                              .subtract(pullToLocation.toVector());
+        if (vector.lengthSquared() == 0) {
+            return;
+        }
+        vector.normalize().multiply(-force);
         pushEntity(vector, pushed);
     }
 
@@ -237,9 +242,11 @@ public final class GeneralUtils {
     @ParametersAreNonnullByDefault
     public boolean pushEntity(UUID caster, Location pushFromLocation, Entity pushed, double force) {
         Vector vector = pushed.getLocation().toVector()
-                              .subtract(pushFromLocation.toVector())
-                              .normalize()
-                              .multiply(force);
+                              .subtract(pushFromLocation.toVector());
+        if (vector.lengthSquared() == 0) {
+            return false;
+        }
+        vector.normalize().multiply(force);
         return pushEntity(caster, vector, pushed);
     }
 
