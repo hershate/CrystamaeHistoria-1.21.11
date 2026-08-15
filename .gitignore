@@ -1,5 +1,6 @@
 /bin/
-/lib/
+/lib/*
+!lib/Slimefun-5.0.0.jar
 /.settings/
 /target/
 /.idea/
