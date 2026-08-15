@@ -49,13 +49,20 @@ public class DoubleArrayDataType implements PersistentDataType<byte[], double[]>
     @Override
     public double[] fromPrimitive(@Nonnull byte[] primitive, @Nonnull PersistentDataAdapterContext context) {
         try (ByteArrayInputStream bis = new ByteArrayInputStream(primitive); DataInputStream dis = new DataInputStream(bis)) {
-            double[] doubles = new double[dis.readInt()];
+            final int length = dis.readInt();
+            // 长度字段来自持久化数据（不可信）：负值会 NegativeArraySizeException，
+            // 超大值会 OOM；必须与实际字节数一致才接受
+            if (length < 0 || length > (primitive.length - Integer.BYTES) / Double.BYTES) {
+                throw new IllegalStateException("double 数组数据损坏：声明长度 " + length
+                    + " 与实际数据量不符（字节数 " + primitive.length + "）");
+            }
+            double[] doubles = new double[length];
             for (int i = 0; i < doubles.length; i++) {
                 doubles[i] = dis.readDouble();
             }
             return doubles;
         } catch (IOException e) {
-            throw new UncheckedIOException("无法反序列化 double 数组", e);
+            throw new IllegalStateException("无法反序列化 double 数组（数据损坏或被截断）", e);
         }
     }
 }
