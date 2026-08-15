@@ -4,7 +4,9 @@ import io.github.sefiraat.crystamaehistoria.magic.DisplayItem;
 import io.github.sefiraat.crystamaehistoria.slimefun.Materials;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.gadgets.ExpCollector;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.liquefactionbasin.LiquefactionBasin;
+import io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.liquefactionbasin.LiquefactionBasinCache;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.prismaticgilder.PrismaticGilder;
+import io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.prismaticgilder.PrismaticGilderCache;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.tools.RefactingLens;
 import io.github.sefiraat.crystamaehistoria.stories.definition.StoryType;
 import io.github.sefiraat.crystamaehistoria.utils.GeneralUtils;
@@ -25,6 +27,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
@@ -35,6 +38,10 @@ public class RefractingLensListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent e) {
+        // 右键会为主手/副手各派发一次事件，副手事件重复进入会重复生成展示物品
+        if (e.getHand() == EquipmentSlot.OFF_HAND) {
+            return;
+        }
         final Player player = e.getPlayer();
         final SlimefunItem slimefunItem = SlimefunItem.getByItem(player.getInventory().getItemInMainHand());
         final Block block = e.getClickedBlock();
@@ -59,7 +66,12 @@ public class RefractingLensListener implements Listener {
     private void liquefactionBasin(Player player, SlimefunItem blockItem, Block clickedBlock) {
         final Location location = clickedBlock.getLocation().add(0.5, 1, 0.5);
         final LiquefactionBasin basin = (LiquefactionBasin) blockItem;
-        final Map<StoryType, Integer> cacheMap = basin.getCacheMap().get(clickedBlock.getLocation()).getContentMap();
+        final LiquefactionBasinCache cache = basin.getCacheMap().get(clickedBlock.getLocation());
+        // 缓存缺失窗口（BlockPlacer 放置/首 tick 之前）不能 NPE
+        if (cache == null) {
+            return;
+        }
+        final Map<StoryType, Integer> cacheMap = cache.getContentMap();
 
         final double space = 0.5;
         final int numberToDisplay = cacheMap.size();
@@ -95,7 +107,8 @@ public class RefractingLensListener implements Listener {
     private void expCollector(SlimefunItem blockItem, Block clickedBlock) {
         final ExpCollector collector = (ExpCollector) blockItem;
         final Location location = clickedBlock.getLocation();
-        final int volume = collector.getVolumeMap().get(clickedBlock.getLocation());
+        // 缓存缺失时按 0 展示，避免 Integer 拆箱 NPE
+        final int volume = collector.getVolumeMap().getOrDefault(clickedBlock.getLocation(), 0);
         final ItemStack itemStack = new ItemStack(Material.EXPERIENCE_BOTTLE);
         final DisplayItem displayItem = new DisplayItem(
             itemStack,
@@ -112,7 +125,12 @@ public class RefractingLensListener implements Listener {
     private void prismaticGilder(SlimefunItem blockItem, Block clickedBlock) {
         final PrismaticGilder gilder = (PrismaticGilder) blockItem;
         final Location location = clickedBlock.getLocation();
-        final int volume = gilder.getCacheMap().get(location).getFillAmount();
+        final PrismaticGilderCache cache = gilder.getCacheMap().get(location);
+        // 缓存缺失窗口不能 NPE
+        if (cache == null) {
+            return;
+        }
+        final int volume = cache.getFillAmount();
         final ItemStack itemStack = Skulls.CRYSTAL_PRISMATIC.getPlayerHead();
         final DisplayItem displayItem = new DisplayItem(
             itemStack,

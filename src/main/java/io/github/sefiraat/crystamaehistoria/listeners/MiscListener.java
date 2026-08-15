@@ -28,6 +28,7 @@ import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.player.PlayerBedLeaveEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 public class MiscListener implements Listener {
@@ -95,8 +96,11 @@ public class MiscListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void checkCooldown(PlayerInteractEvent event) {
-        ItemStack itemStack = event.getPlayer().getInventory().getItemInMainHand();
-        if (itemStack.getType() != Material.AIR
+        // 必须检查触发事件的那只手：原实现固定读主手，副手持冷却物品交互时
+        // （事件为 OFF_HAND 派发）主手若无冷却则直接放行，构成冷却绕过
+        final ItemStack itemStack = event.getItem();
+        if (itemStack != null
+            && itemStack.getType() != Material.AIR
             && (event.getAction() == Action.RIGHT_CLICK_AIR
             || event.getAction() == Action.RIGHT_CLICK_BLOCK)
             && GeneralUtils.isOnCooldown(itemStack)
@@ -155,6 +159,11 @@ public class MiscListener implements Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onUseScoop(PlayerInteractEvent event) {
+        // 右键会为主手/副手各派发一次事件：副手事件同样读主手荧光勺，
+        // 不调光勺每点击一次会触发两次 adjustLight（亮度双重跳变），忽略副手事件
+        if (event.getHand() == EquipmentSlot.OFF_HAND) {
+            return;
+        }
         final Player player = event.getPlayer();
             final SlimefunItem item = SlimefunItem.getByItem(player.getInventory().getItemInMainHand());
 
