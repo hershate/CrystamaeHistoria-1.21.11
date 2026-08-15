@@ -1,0 +1,6 @@
+bench	variant	median_ns_op
+raycast50.miss	old_exact_plus_face	102.77
+raycast50.miss	new_single_raytrace	61.14
+raycast50.hit5	old_exact_plus_face	346.54
+raycast50.hit5	new_single_raytrace	177.60
+stavePdc.deserialize	full_meta_plus_pdc	5369.10

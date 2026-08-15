@@ -1,0 +1,6 @@
+name: CHPerfBench
+version: 1.0.0
+main: ch.perfbench.CHPerfBench
+api-version: '1.21'
+depend: [Slimefun, CrystamaeHistoria]
+description: CrystamaeHistoria 服务器内性能基准（第 2 轮）
