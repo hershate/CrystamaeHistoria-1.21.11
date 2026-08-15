@@ -54,6 +54,12 @@ public class RealisationAltarCache extends AbstractCache {
      * 免每 tick 的 Location 克隆+偏移两次分配。调用方不修改该实例。
      */
     private Location pickupLocation;
+    /**
+     * 故事判定备忘录：物品实例未变且未被本机械修改时（processItem 显式置空失效），
+     * isStoried && !hasRemainingStorySlots 判定恒定——稳态每 tick 一次引用比较。
+     */
+    private ItemStack verdictItem;
+    private boolean verdictReady;
 
     @ParametersAreNonnullByDefault
     public RealisationAltarCache(BlockMenu blockMenu, int tier) {
@@ -82,13 +88,19 @@ public class RealisationAltarCache extends AbstractCache {
             return;
         }
 
-        // 单次 getItemMeta 贯穿两条判定（旧实现各读一次元数据，每 tick 每台多付一整轮克隆）
-        final ItemMeta inputMeta = inputItem.getItemMeta();
-        if (StoryUtils.isStoried(inputMeta) && !StoryUtils.hasRemainingStorySlots(inputMeta)) {
+        // 判定备忘录：同一物品实例直接复用上次判定（processItem 修改后显式失效）
+        if (inputItem != verdictItem) {
+            final ItemMeta inputMeta = inputItem.getItemMeta();
+            verdictItem = inputItem;
+            verdictReady = StoryUtils.isStoried(inputMeta) && !StoryUtils.hasRemainingStorySlots(inputMeta);
+        }
+        if (verdictReady) {
             rejectOverage(inputItem);
             if (processItem(inputItem)) {
                 saveMap();
             }
+            // processItem 可能修改/消耗物品（removeStory/reject/setAmount(0)）：失效备忘录
+            verdictItem = null;
         }
     }
 

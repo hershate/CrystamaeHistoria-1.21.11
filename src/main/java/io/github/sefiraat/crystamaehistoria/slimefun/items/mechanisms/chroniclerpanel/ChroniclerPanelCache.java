@@ -47,6 +47,16 @@ public class ChroniclerPanelCache extends AbstractCache {
     private boolean lightDimming = true;
     private UUID armorStandUUID;
     private Location pickupLocation;
+    /**
+     * 故事判定备忘录：物品实例未变且未被本机械修改时（makeStoried/processStack 等
+     * 修改点显式置空失效），storied/可记录/剩余槽位的判定结果恒定。
+     * 稳态每 tick 从元数据克隆 + 故事上限 JSON 解析降为一次引用比较。
+     */
+    private ItemStack verdictItem;
+    private boolean verdictStoried;
+    private boolean verdictCanBeStoried;
+    private boolean verdictHasRemaining;
+    private int verdictRemaining;
 
     @ParametersAreNonnullByDefault
     public ChroniclerPanelCache(BlockMenu blockMenu, int tier) {
@@ -155,12 +165,12 @@ public class ChroniclerPanelCache extends AbstractCache {
             return;
         }
 
-        // 单次 getItemMeta 贯穿判定链（canBeStoried/isStoried/hasRemainingStorySlots
-        // 旧实现各自读取物品元数据，稳态每 tick 每台 3 次克隆降为 1 次）
-        ItemMeta inputMeta = inputItem.getItemMeta();
-        final boolean storied = StoryUtils.isStoried(inputMeta);
+        // 判定备忘录：同一物品实例直接复用上次判定（修改点显式失效）
+        if (inputItem != verdictItem) {
+            refreshVerdict(inputItem);
+        }
 
-        if (!StoryUtils.canBeStoried(inputItem, this.tier + 1, storied)) {
+        if (!verdictCanBeStoried) {
             reject(inputItem);
             shutdown();
             return;
@@ -168,14 +178,13 @@ public class ChroniclerPanelCache extends AbstractCache {
 
         rejectOverage(inputItem);
 
-        if (!storied) {
+        if (!verdictStoried) {
             StoryUtils.makeStoried(inputItem);
-            // makeStoried 重写了物品元数据（写入故事上限），重取以读取新值；
-            // 仅新放入物品的首个 tick 走此分支
-            inputMeta = inputItem.getItemMeta();
+            // makeStoried 写入了新的故事上限，立即重判（仅新物品的首个 tick）
+            refreshVerdict(inputItem);
         }
 
-        if (!StoryUtils.hasRemainingStorySlots(inputMeta)) {
+        if (!verdictHasRemaining) {
             if (this.tier >= 5) {
                 pushOutItem();
             }
@@ -281,12 +290,26 @@ public class ChroniclerPanelCache extends AbstractCache {
         ArmourStandUtils.panelAnimationReset(getDisplayStand(), block);
     }
 
+    /**
+     * 以单次元数据读取刷新故事判定备忘录（canBeStoried 的 storied 标记取
+     * makeStoried 之前的值，与原时序一致）。
+     */
+    private void refreshVerdict(ItemStack inputItem) {
+        final ItemMeta meta = inputItem.getItemMeta();
+        verdictItem = inputItem;
+        verdictStoried = StoryUtils.isStoried(meta);
+        verdictCanBeStoried = StoryUtils.canBeStoried(inputItem, this.tier + 1, verdictStoried);
+        verdictRemaining = StoryUtils.getMaxStoryAmount(meta) - StoryUtils.getStoryAmount(meta);
+        verdictHasRemaining = verdictRemaining > 0;
+    }
+
     @ParametersAreNonnullByDefault
     private void processStack(ItemStack i) {
         summonParticles();
         // If this block isn't storied, make it storied then add the initial story set
-        if (StoryUtils.hasRemainingStorySlots(i)) {
-            final int remaining = StoryUtils.getRemainingStoryAmount(i);
+        // （process() 已在同一 tick 内完成同一判定且其间无修改，直接用备忘录值）
+        if (verdictHasRemaining) {
+            final int remaining = verdictRemaining;
             final int req = blockDefinition.getBlockTier().chroniclingChance;
             if (GeneralUtils.testChance(req, 10000)) {
                 // We can chronicle a story
@@ -303,6 +326,8 @@ public class ChroniclerPanelCache extends AbstractCache {
                 }
                 StoriesManager.rebuildStoriedStack(i);
                 blockMenu.getBlock().getWorld().strikeLightningEffect(blockMiddle);
+                // requestNewStory 等可能修改了物品元数据：失效备忘录，下 tick 重判
+                verdictItem = null;
             }
         }
     }
