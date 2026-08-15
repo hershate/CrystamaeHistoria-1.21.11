@@ -36,7 +36,14 @@ public class SatchelInstance {
     }
 
     public void setAmounts(@Nonnull StoryRarity rarity, int[] amounts) {
-        this.amounts.put(rarity, amounts);
+        // 入参来自 PDC 反序列化（持久化数据不可信）：长度必须为 9，负值按 0 处理
+        final int[] sanitized = new int[9];
+        if (amounts != null) {
+            for (int i = 0; i < sanitized.length && i < amounts.length; i++) {
+                sanitized[i] = Math.max(0, amounts[i]);
+            }
+        }
+        this.amounts.put(rarity, sanitized);
     }
 
     public void addAmount(@Nonnull StoryRarity rarity, @Nonnull StoryType type, int amount) {
@@ -51,7 +58,8 @@ public class SatchelInstance {
     public void removeAmount(@Nonnull StoryRarity rarity, @Nonnull StoryType type, int amount) {
         final int[] values = this.amounts.get(rarity);
         final int oldAmount = values[type.getId() - 1];
-        values[type.getId() - 1] = oldAmount - amount;
+        // 下界钳制为 0：防御历史损坏数据或未来新调用路径导致的负数污染
+        values[type.getId() - 1] = Math.max(0, oldAmount - Math.max(0, amount));
         this.amounts.put(rarity, values);
     }
 
