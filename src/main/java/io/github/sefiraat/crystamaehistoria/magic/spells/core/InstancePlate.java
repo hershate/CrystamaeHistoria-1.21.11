@@ -107,7 +107,10 @@ public class InstancePlate {
     }
 
     public void addCrysta(int amount) {
-        this.crysta += amount;
+        // 溢出防御：无上限累积（每次充值受池容量约束但可无限次）在极端长周期下
+        // 会越过 int 上限变负，法术板将永久不可用——钳制在上限
+        final long newCrysta = (long) this.crysta + amount;
+        this.crysta = newCrysta > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) newCrysta;
     }
 
     public void removeCrysta(int amount) {

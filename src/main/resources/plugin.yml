@@ -15,6 +15,6 @@ softdepend:
   - Netheopoiesis
 commands:
   crystamaehistoria:
-    description: /historia
-    usage: /historia <sub>
+    description: 魔法水晶编年史主命令（法术/故事图鉴、测试工具）
+    usage: /crystamaehistoria <sub>（别名 /ch、/hist）
     aliases: [ ch, hist ]
