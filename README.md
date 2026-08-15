@@ -6,7 +6,8 @@
 
 ## 下载
 
-**自动更新**: 汉化版构建#1及以后版本包含自动更新功能，默认开启。
+> 注：1.21.11 迁移版（本仓库）已移除自动更新器（依赖的 GuizhanLibPlugin 已剔除），
+> 请通过构建产物手动更新。
 
 点击这里下载 CrystamaeHistoria
 : [下载 CrystamaeHistoria](https://builds.guizhanss.net/SlimefunGuguProject/CrystamaeHistoria/master)
