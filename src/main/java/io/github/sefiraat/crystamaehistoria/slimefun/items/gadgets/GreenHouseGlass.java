@@ -45,10 +45,15 @@ public class GreenHouseGlass extends TickingBlockNoGui {
 
     @Override
     protected void onFirstTick(@Nonnull Block block, @Nonnull SlimefunItem slimefunItem, @Nonnull Config config) {
-        blockOwnerMap.put(
-            block.getLocation(),
-            UUID.fromString(BlockStorage.getLocationInfo(block.getLocation(), "CH_UUID"))
-        );
+        // 键缺失（BlockPlacer 放置等）或损坏时失败关闭，避免每 tick 重抛
+        final String ownerString = BlockStorage.getLocationInfo(block.getLocation(), "CH_UUID");
+        if (ownerString != null) {
+            try {
+                blockOwnerMap.put(block.getLocation(), UUID.fromString(ownerString));
+            } catch (IllegalArgumentException e) {
+                // UUID 损坏：不登记
+            }
+        }
     }
 
     @Override
@@ -99,6 +104,7 @@ public class GreenHouseGlass extends TickingBlockNoGui {
 
     @Override
     protected void onBreak(@Nonnull BlockBreakEvent blockBreakEvent, @Nonnull ItemStack itemStack, @Nonnull List<ItemStack> list) {
-        // No on break
+        // 破坏后清除内存条目，否则随放置/破坏循环无界增长
+        blockOwnerMap.remove(blockBreakEvent.getBlock().getLocation());
     }
 }

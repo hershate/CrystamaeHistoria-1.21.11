@@ -54,10 +54,15 @@ public class MobMat extends TickingBlockNoGui {
 
     @Override
     protected void onFirstTick(@Nonnull Block block, @Nonnull SlimefunItem slimefunItem, @Nonnull Config config) {
-        blockOwnerMap.put(
-            block.getLocation(),
-            UUID.fromString(BlockStorage.getLocationInfo(block.getLocation(), "CH_UUID"))
-        );
+        // 键缺失（BlockPlacer 放置等）或损坏时失败关闭：异常会阻断 firstTick 标记写入，导致每 tick 重抛
+        final String ownerString = BlockStorage.getLocationInfo(block.getLocation(), "CH_UUID");
+        if (ownerString != null) {
+            try {
+                blockOwnerMap.put(block.getLocation(), UUID.fromString(ownerString));
+            } catch (IllegalArgumentException e) {
+                // UUID 损坏：不登记所有者（伤害退回无归属路径）
+            }
+        }
     }
 
     @Override
@@ -94,5 +99,7 @@ public class MobMat extends TickingBlockNoGui {
     @Override
     protected void onBreak(@Nonnull BlockBreakEvent blockBreakEvent, @Nonnull ItemStack itemStack, @Nonnull List<ItemStack> list) {
         BlockStorage.clearBlockInfo(blockBreakEvent.getBlock());
+        // 破坏后清除内存条目，否则随放置/破坏循环无界增长
+        blockOwnerMap.remove(blockBreakEvent.getBlock().getLocation());
     }
 }

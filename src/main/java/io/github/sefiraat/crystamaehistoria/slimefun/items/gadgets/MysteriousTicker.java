@@ -4,17 +4,20 @@ import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
+import io.github.thebusybiscuit.slimefun4.core.handlers.BlockBreakHandler;
 import me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config;
 import me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker;
 import me.mrCookieSlime.Slimefun.api.BlockStorage;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
@@ -55,7 +58,17 @@ public class MysteriousTicker extends SlimefunItem {
 
     @Override
     public void preRegister() {
-        addItemHandler(onTick());
+        addItemHandler(onTick(), onBlockBreak());
+    }
+
+    private BlockBreakHandler onBlockBreak() {
+        return new BlockBreakHandler(false, false) {
+            @Override
+            @ParametersAreNonnullByDefault
+            public void onPlayerBreak(BlockBreakEvent event, ItemStack item, List<ItemStack> drops) {
+                tickMap.remove(event.getBlock().getLocation());
+            }
+        };
     }
 
     private BlockTicker onTick() {
@@ -68,7 +81,10 @@ public class MysteriousTicker extends SlimefunItem {
             @Override
             public void tick(Block block, SlimefunItem slimefunItem, Config config) {
                 if (block.isEmpty()) {
+                    // 方块已不存在：同步清理 BlockStorage 与计数条目（原实现泄漏 tickMap 条目）
                     BlockStorage.clearBlockInfo(block.getLocation());
+                    tickMap.remove(block.getLocation());
+                    return;
                 }
                 Integer currentTick = tickMap.get(block.getLocation());
                 if (currentTick == null) {

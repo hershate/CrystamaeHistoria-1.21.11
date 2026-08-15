@@ -55,8 +55,18 @@ public class MobLamp extends SlimefunItem {
 
                 @Override
                 public void tick(Block block, SlimefunItem slimefunItem, Config config) {
+                    // 键缺失（BlockPlacer 放置等）或损坏时失败关闭；UUID 解析移出循环（原先每怪物重复解析）
+                    final String ownerString = BlockStorage.getLocationInfo(block.getLocation(), "CH_UUID");
+                    if (ownerString == null) {
+                        return;
+                    }
+                    final UUID uuid;
+                    try {
+                        uuid = UUID.fromString(ownerString);
+                    } catch (IllegalArgumentException e) {
+                        return;
+                    }
                     for (Monster monster : block.getWorld().getNearbyEntitiesByType(Monster.class, block.getLocation(), radius)) {
-                        UUID uuid = UUID.fromString(BlockStorage.getLocationInfo(block.getLocation(), "CH_UUID"));
                         GeneralUtils.pushEntity(
                             uuid,
                             block.getLocation().clone().add(0.5, 0.5, 0.5),

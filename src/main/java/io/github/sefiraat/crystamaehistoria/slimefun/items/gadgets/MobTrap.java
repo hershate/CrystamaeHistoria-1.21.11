@@ -110,5 +110,7 @@ public class MobTrap extends TickingBlockNoGui {
     @Override
     protected void onBreak(@Nonnull BlockBreakEvent blockBreakEvent, @Nonnull ItemStack itemStack, @Nonnull List<ItemStack> list) {
         BlockStorage.clearBlockInfo(blockBreakEvent.getBlock());
+        // 破坏后清除内存条目，否则随放置/破坏循环无界增长
+        potionEffectTypeMap.remove(blockBreakEvent.getBlock().getLocation());
     }
 }

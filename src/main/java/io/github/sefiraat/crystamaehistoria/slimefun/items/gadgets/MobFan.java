@@ -82,13 +82,30 @@ public class MobFan extends TickingMenuBlock {
     @Override
     @ParametersAreNonnullByDefault
     protected void tick(Block block, BlockMenu blockMenu) {
-        final BlockFace direction = BlockFace.valueOf(BlockStorage.getLocationInfo(block.getLocation(), ID_DIRECTION));
-        final Vector facingVector = direction.getDirection();
-        final UUID owner = UUID.fromString(BlockStorage.getLocationInfo(block.getLocation(), ID_UUID));
-
-        if (direction == BlockFace.SELF) {
+        // BlockStorage 为持久化数据，不可信：键缺失（BlockPlacer 放置等）时跳过本 tick
+        final String directionName = BlockStorage.getLocationInfo(block.getLocation(), ID_DIRECTION);
+        final String ownerString = BlockStorage.getLocationInfo(block.getLocation(), ID_UUID);
+        if (directionName == null) {
             return;
         }
+        final BlockFace direction;
+        try {
+            direction = BlockFace.valueOf(directionName);
+        } catch (IllegalArgumentException e) {
+            return;
+        }
+        final UUID owner;
+        try {
+            owner = ownerString != null ? UUID.fromString(ownerString) : null;
+        } catch (IllegalArgumentException e) {
+            return;
+        }
+
+        if (direction == BlockFace.SELF || owner == null) {
+            // 无所有者记录时无法做领地校验：失败关闭（不能退回无校验的推挤，否则绕过保护）
+            return;
+        }
+        final Vector facingVector = direction.getDirection();
 
         final Location location = block.getLocation();
         final RayTraceResult result = location.getWorld().rayTraceBlocks(
@@ -156,7 +173,13 @@ public class MobFan extends TickingMenuBlock {
     @Override
     @ParametersAreNonnullByDefault
     protected void onNewInstance(BlockMenu menu, Block b) {
-        BlockFace direction = BlockFace.valueOf(BlockStorage.getLocationInfo(b.getLocation(), ID_DIRECTION));
+        final String directionName = BlockStorage.getLocationInfo(b.getLocation(), ID_DIRECTION);
+        final BlockFace direction;
+        try {
+            direction = directionName != null ? BlockFace.valueOf(directionName) : BlockFace.SELF;
+        } catch (IllegalArgumentException e) {
+            return;
+        }
         setDirection(menu, direction);
 
         menu.addMenuClickHandler(SET_NORTH, (player, i, itemStack, clickAction) -> setDirection(menu, BlockFace.NORTH));

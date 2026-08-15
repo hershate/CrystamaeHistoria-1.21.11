@@ -39,8 +39,6 @@ import java.util.function.Consumer;
 
 public class TrophyDisplay extends Stand {
 
-    private Consumer<Location> locationConsumer = null;
-
     @ParametersAreNonnullByDefault
     public TrophyDisplay(ItemGroup category, SlimefunItemStack item, RecipeType recipeType, ItemStack[] recipe) {
         super(category, item, recipeType, recipe);
@@ -85,7 +83,6 @@ public class TrophyDisplay extends Stand {
             }
             BlockStorage.addBlockInfo(blockClicked, PDC_ITEM, null);
             itemMap.remove(blockClicked.getLocation());
-            this.locationConsumer = null;
             return;
         }
 
@@ -99,7 +96,6 @@ public class TrophyDisplay extends Stand {
             final ItemStack clone = itemStack.asQuantity(1);
             final Trophy trophy = (Trophy) slimefunItem;
 
-            this.locationConsumer = trophy.getDisplayConsumer();
             itemStack.setAmount(itemStack.getAmount() - 1);
             addItem(blockClicked, clone, slimefunItem.getItemName());
         } else if (definition != null && material != Material.AIR) {
@@ -114,7 +110,6 @@ public class TrophyDisplay extends Stand {
                 itemMeta.setDisplayName(ThemeType.RANK_BLOCK_SME.getColor() + materialName + " Trophy");
                 clone.setItemMeta(itemMeta);
                 addItem(blockClicked, clone, ThemeType.RANK_BLOCK_SME.getColor() + materialName);
-                this.locationConsumer = this::defaultConsumer;
             }
         }
     }
@@ -135,9 +130,5 @@ public class TrophyDisplay extends Stand {
                 trophy.getDisplayConsumer().accept(item.getLocation());
             }
         }
-    }
-
-    public void defaultConsumer(@Nonnull Location location) {
-        ParticleUtils.displayParticleEffect(location.add(0, 0.2, 0), Particle.WAX_ON, 0.2, 3);
     }
 }
