@@ -114,6 +114,13 @@ public class SpellMemory {
             long expiry = projectileMap.get(magicProjectile).getSecondValue();
             if (System.currentTimeMillis() > expiry || forceRemoveAll) {
                 magicProjectile.kill();
+            } else if (magicProjectile.getProjectile() == null) {
+                // 实体已消失（命中后事件时序差、区块卸载等）：清理条目，避免残留与后续空引用
+                magicProjectile.kill();
+            } else {
+                // 驱动弹射物的 tick 消费者（如 StarFall/Chaos/Hellscape 的拖尾粒子）。
+                // 上游从未驱动该回调，导致注册的弹射物周期效果一直未生效
+                magicProjectile.run();
             }
         }
     }

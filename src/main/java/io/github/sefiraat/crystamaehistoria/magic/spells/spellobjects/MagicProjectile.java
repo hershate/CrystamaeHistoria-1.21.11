@@ -86,7 +86,14 @@ public class MagicProjectile {
 
     public void run() {
         if (consumer != null) {
-            consumer.accept(this);
+            try {
+                consumer.accept(this);
+            } catch (Exception e) {
+                // 断路器：tick 消费者异常时禁用该消费者，避免剩余生命周期内每秒重复抛异常
+                CrystamaeHistoria.getInstance().getLogger()
+                    .log(java.util.logging.Level.WARNING, "弹射物 tick 回调执行异常，已停用该回调", e);
+                consumer = null;
+            }
         }
     }
 }
