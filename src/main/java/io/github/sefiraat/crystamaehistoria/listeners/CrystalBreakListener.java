@@ -57,7 +57,11 @@ public class CrystalBreakListener implements Listener {
                 final StoryRarity rarity = state.getStoryRarity();
                 final String id = state.getStoryId();
                 final Story story = CrystamaeHistoria.getStoriesManager().getStory(id, rarity);
-                story.getStoryShardProfile().dropShards(rarity, block.getLocation(), state.isGilded() && manual);
+                // generic-stories.yml 可被编辑：故事已被删除时不产出碎片，但仍须清状态并落盘，
+                // 不能 NPE 中断破坏事件链
+                if (story != null) {
+                    story.getStoryShardProfile().dropShards(rarity, block.getLocation(), state.isGilded() && manual);
+                }
                 cache.saveMap();
                 return true;
             }

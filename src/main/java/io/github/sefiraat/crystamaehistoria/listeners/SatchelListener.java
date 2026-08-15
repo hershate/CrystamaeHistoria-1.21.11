@@ -55,7 +55,9 @@ public class SatchelListener implements Listener {
                         e.setCancelled(true);
                         return;
                     } else {
-                        player.sendMessage(ThemeType.WARNING.getColor() + "你的水晶收纳袋还没有初始化, 需要打开一次.");
+                        // tryAddItem 失败有两种原因（未初始化 / 收纳袋等级不足），
+                        // 原文案只提示初始化，与实现不符
+                        player.sendMessage(ThemeType.WARNING.getColor() + "水晶收纳袋无法收纳该水晶: 尚未初始化(需要打开一次)或收纳袋等级不足.");
                     }
                 }
             }
