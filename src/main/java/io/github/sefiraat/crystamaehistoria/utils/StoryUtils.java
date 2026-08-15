@@ -43,10 +43,19 @@ public class StoryUtils {
      */
     @ParametersAreNonnullByDefault
     public static boolean canBeStoried(ItemStack itemStack, int tier) {
+        return canBeStoried(itemStack, tier, isStoried(itemStack));
+    }
+
+    /**
+     * 同 {@link #canBeStoried(ItemStack, int)}，但接受调用方已读取的 storied 标记，
+     * 避免同一 tick 内多次 getItemMeta 克隆（机械每 tick 判定链使用）。
+     */
+    @ParametersAreNonnullByDefault
+    public static boolean canBeStoried(ItemStack itemStack, int tier, boolean storied) {
         final Material material = itemStack.getType();
         final BlockDefinition definition = CrystamaeHistoria.getStoriesManager().getBlockDefinitionMap().get(material);
 
-        return definition != null && definition.getBlockTier().tier <= tier && isAllowed(itemStack);
+        return definition != null && definition.getBlockTier().tier <= tier && isAllowed(itemStack, storied);
     }
 
     private static final Set<Material> metaBypass = EnumSet.of(
@@ -72,10 +81,10 @@ public class StoryUtils {
     );
 
     @ParametersAreNonnullByDefault
-    private static boolean isAllowed(ItemStack itemStack) {
+    private static boolean isAllowed(ItemStack itemStack, boolean storied) {
         SlimefunItem slimefunItem = SlimefunItem.getByItem(itemStack);
         if (slimefunItem == null) {
-            return metaBypass.contains(itemStack.getType()) || isStoried(itemStack) || !itemStack.hasItemMeta();
+            return metaBypass.contains(itemStack.getType()) || storied || !itemStack.hasItemMeta();
         } else {
             return itemStack.getType() == Material.SPAWNER;
         }
@@ -90,7 +99,15 @@ public class StoryUtils {
      */
     @ParametersAreNonnullByDefault
     public static boolean isStoried(@Nonnull ItemStack itemStack) {
-        return PersistentDataAPI.hasBoolean(itemStack.getItemMeta(), Keys.PDC_IS_STORIED);
+        return isStoried(itemStack.getItemMeta());
+    }
+
+    /**
+     * 同 {@link #isStoried(ItemStack)}，但接受调用方已读取的 ItemMeta，
+     * 避免机械每 tick 判定链的重复克隆。
+     */
+    public static boolean isStoried(@Nullable ItemMeta itemMeta) {
+        return itemMeta != null && PersistentDataAPI.hasBoolean(itemMeta, Keys.PDC_IS_STORIED);
     }
 
     /**
@@ -169,7 +186,14 @@ public class StoryUtils {
      */
     @ParametersAreNonnullByDefault
     public static boolean hasRemainingStorySlots(ItemStack itemStack) {
-        return getRemainingStoryAmount(itemStack) > 0;
+        return hasRemainingStorySlots(itemStack.getItemMeta());
+    }
+
+    /**
+     * 同 {@link #hasRemainingStorySlots(ItemStack)}，但接受调用方已读取的 ItemMeta。
+     */
+    public static boolean hasRemainingStorySlots(@Nullable ItemMeta itemMeta) {
+        return getMaxStoryAmount(itemMeta) - getStoryAmount(itemMeta) > 0;
     }
 
     /**
@@ -193,6 +217,28 @@ public class StoryUtils {
         // 异常或缺失一律按 0 处理（无剩余槽位），避免每 tick 异常卡死机械
         try {
             final JsonObject limits = getStoryLimits(itemStack);
+            if (limits == null || !limits.has(Keys.JS_S_AVAILABLE_STORIES)
+                || !limits.get(Keys.JS_S_AVAILABLE_STORIES).isJsonPrimitive()
+            ) {
+                return 0;
+            }
+            return limits.get(Keys.JS_S_AVAILABLE_STORIES).getAsInt();
+        } catch (RuntimeException e) {
+            return 0;
+        }
+    }
+
+    /**
+     * 同 {@link #getMaxStoryAmount(ItemStack)}，但接受调用方已读取的 ItemMeta。
+     */
+    public static int getMaxStoryAmount(@Nullable ItemMeta itemMeta) {
+        // PDC 中的 JsonObject 不可信（改造客户端可伪造部分键/非数字/坏 JSON）：
+        // 异常或缺失一律按 0 处理（无剩余槽位），避免每 tick 异常卡死机械
+        try {
+            if (itemMeta == null) {
+                return 0;
+            }
+            final JsonObject limits = PersistentDataAPI.getJsonObject(itemMeta, Keys.PDC_POTENTIAL_STORIES, null);
             if (limits == null || !limits.has(Keys.JS_S_AVAILABLE_STORIES)
                 || !limits.get(Keys.JS_S_AVAILABLE_STORIES).isJsonPrimitive()
             ) {

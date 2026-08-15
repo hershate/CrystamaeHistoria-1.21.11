@@ -30,6 +30,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -48,6 +49,11 @@ public class RealisationAltarCache extends AbstractCache {
     @Getter
     private final Map<BlockPosition, RealisedCrystalState> crystalStoryMap = new HashMap<>();
     private final int tier;
+    /**
+     * 实体拾取扫描中心（机械上方 1 格）。机械位置放置后固定，懒初始化缓存——
+     * 免每 tick 的 Location 克隆+偏移两次分配。调用方不修改该实例。
+     */
+    private Location pickupLocation;
 
     @ParametersAreNonnullByDefault
     public RealisationAltarCache(BlockMenu blockMenu, int tier) {
@@ -76,7 +82,9 @@ public class RealisationAltarCache extends AbstractCache {
             return;
         }
 
-        if (inputItem.getType() != Material.AIR && StoryUtils.isStoried(inputItem) && !StoryUtils.hasRemainingStorySlots(inputItem)) {
+        // 单次 getItemMeta 贯穿两条判定（旧实现各读一次元数据，每 tick 每台多付一整轮克隆）
+        final ItemMeta inputMeta = inputItem.getItemMeta();
+        if (StoryUtils.isStoried(inputMeta) && !StoryUtils.hasRemainingStorySlots(inputMeta)) {
             rejectOverage(inputItem);
             if (processItem(inputItem)) {
                 saveMap();
@@ -86,7 +94,7 @@ public class RealisationAltarCache extends AbstractCache {
 
     private void tryInsertItem() {
         final Collection<Entity> entities = getWorld().getNearbyEntities(
-            getLocation().clone().add(0.5, 1, 0.5),
+            getPickupLocation(),
             0.3,
             0.3,
             0.3,
@@ -294,6 +302,13 @@ public class RealisationAltarCache extends AbstractCache {
 
     protected Location getLocation() {
         return blockMenu.getLocation();
+    }
+
+    private Location getPickupLocation() {
+        if (pickupLocation == null) {
+            pickupLocation = blockMenu.getLocation().add(0.5, 1, 0.5);
+        }
+        return pickupLocation;
     }
 
     public class RealisedCrystalState {

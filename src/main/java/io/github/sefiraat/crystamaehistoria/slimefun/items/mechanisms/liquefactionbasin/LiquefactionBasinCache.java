@@ -61,6 +61,18 @@ public class LiquefactionBasinCache extends DisplayStandHolder {
 
     private final double maxVolume;
     private final Map<StoryType, Integer> contentMap = new EnumMap<>(StoryType.class);
+    /**
+     * 实体拾取扫描中心（机械中心）。机械位置放置后固定，懒初始化缓存——
+     * 免每 tick 的 Location 克隆+偏移两次分配。调用方不修改该实例。
+     */
+    private Location pickupLocation;
+
+    private Location getPickupLocation() {
+        if (pickupLocation == null) {
+            pickupLocation = getLocation().add(0.5, 0.5, 0.5);
+        }
+        return pickupLocation;
+    }
 
     @ParametersAreNonnullByDefault
     public LiquefactionBasinCache(BlockMenu blockMenu, double maxVolume) {
@@ -88,7 +100,7 @@ public class LiquefactionBasinCache extends DisplayStandHolder {
     @ParametersAreNonnullByDefault
     public void consumeItems() {
         final Collection<Entity> entities = getWorld().getNearbyEntities(
-            getLocation().clone().add(0.5, 0.5, 0.5),
+            getPickupLocation(),
             0.3,
             0.3,
             0.3,

@@ -26,6 +26,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -45,6 +46,7 @@ public class ChroniclerPanelCache extends AbstractCache {
     private Location blockMiddle;
     private boolean lightDimming = true;
     private UUID armorStandUUID;
+    private Location pickupLocation;
 
     @ParametersAreNonnullByDefault
     public ChroniclerPanelCache(BlockMenu blockMenu, int tier) {
@@ -129,6 +131,18 @@ public class ChroniclerPanelCache extends AbstractCache {
         return blockMenu.getLocation().clone();
     }
 
+    /**
+     * 实体拾取扫描中心（机械上方 0.5 格）。机械位置放置后固定，
+     * 懒初始化缓存——免每 tick 的 Location 克隆+偏移两次分配。
+     * 调用方（getNearbyEntities）不修改该实例。
+     */
+    private Location getPickupLocation() {
+        if (pickupLocation == null) {
+            pickupLocation = blockMenu.getLocation().add(0.5, 0.5, 0.5);
+        }
+        return pickupLocation;
+    }
+
     protected void process() {
         final Block block = blockMenu.getBlock();
         final ItemStack inputItem = blockMenu.getItemInSlot(ChroniclerPanel.INPUT_SLOT);
@@ -141,7 +155,12 @@ public class ChroniclerPanelCache extends AbstractCache {
             return;
         }
 
-        if (!StoryUtils.canBeStoried(inputItem, this.tier + 1)) {
+        // 单次 getItemMeta 贯穿判定链（canBeStoried/isStoried/hasRemainingStorySlots
+        // 旧实现各自读取物品元数据，稳态每 tick 每台 3 次克隆降为 1 次）
+        ItemMeta inputMeta = inputItem.getItemMeta();
+        final boolean storied = StoryUtils.isStoried(inputMeta);
+
+        if (!StoryUtils.canBeStoried(inputItem, this.tier + 1, storied)) {
             reject(inputItem);
             shutdown();
             return;
@@ -149,11 +168,14 @@ public class ChroniclerPanelCache extends AbstractCache {
 
         rejectOverage(inputItem);
 
-        if (!StoryUtils.isStoried(inputItem)) {
+        if (!storied) {
             StoryUtils.makeStoried(inputItem);
+            // makeStoried 重写了物品元数据（写入故事上限），重取以读取新值；
+            // 仅新放入物品的首个 tick 走此分支
+            inputMeta = inputItem.getItemMeta();
         }
 
-        if (!StoryUtils.hasRemainingStorySlots(inputItem)) {
+        if (!StoryUtils.hasRemainingStorySlots(inputMeta)) {
             if (this.tier >= 5) {
                 pushOutItem();
             }
@@ -176,7 +198,7 @@ public class ChroniclerPanelCache extends AbstractCache {
 
     private void tryInsertItem() {
         final Collection<Entity> entities = getWorld().getNearbyEntities(
-            getLocation().clone().add(0.5, 0.5, 0.5),
+            getPickupLocation(),
             0.3,
             0.3,
             0.3,
