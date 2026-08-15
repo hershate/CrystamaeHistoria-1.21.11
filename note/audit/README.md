@@ -13,7 +13,7 @@
 | 4 | PDC 反序列化与不可信数据（[round-4](round-4.md)） | ✅ 完成（LOCATION 反序列化白名单等 3 commit：9db17c0/52e6e3c/1746e4c） |
 | 5 | 法术系统安全（[round-5](round-5.md)） | ✅ 完成（弹射物消费者驱动缺失等 3 commit：2693226/3be2e43/39506dc；round-1 遗留项闭合） |
 | 6 | 监听器闭合（[round-6](round-6.md)） | ✅ 完成（副手冷却绕过等 3 commit：a5d1041/c787589/80c6c1d；round-1 遗留项闭合） |
-| 7 | 无界集合与内存增长（高负载长跑）、异常吞没、日志风暴 | 待做 |
+| 7 | 无界集合与内存增长、异常吞没、日志风暴（[round-7](round-7.md)） | ✅ 完成（2 commit：f26ae63/22dafe8） |
 | 8 | 功能与表述一致性（README/note 声明 vs 实际实现） | 待做 |
 
 ## 已修复问题汇总
@@ -42,3 +42,5 @@
 | 6 | `listeners/{Misc,RefractingLens,ThaumaturgicSalts}Listener.java` | **副手固定读主手构成物品冷却绕过**；调光勺双跳变；透镜双展示；盐重复清池；三机械缓存缺失 NPE | event.getItem() + 忽略副手 + 判空 | `a5d1041` |
 | 6 | `listeners/{CrystalBreak,Satchel}Listener.java` | 故事删除后碎晶 NPE 中断破坏链（不掉落不落盘）；收纳袋失败提示与实现不符 | 跳碎片仍清状态落盘 + 双原因提示 | `c787589` |
 | 6 | `gadgets/ExpCollector.java` | volumeMap 三处拆箱缺键 NPE（机械每 tick 死亡）；UUID/parseInt 无防御；**onBreak 不清条目无界增长** | getOrDefault + try/catch + 破坏清理 | `80c6c1d` |
+| 7 | `mechanisms/TickingBlockNoGui.java`、`types/Stand.java` | **firstTickMap 与 Stand 双映射从不移除（无界增长）**；损坏 UUID 每 tick 异常；跨世界 distance IAE | 破坏清理 + try/catch + 同世界判定 | `f26ae63` |
+| 7 | `InstancePlate.java`、`liquefactionbasin/LiquefactionBasinCache.java` | 施法异常日志可被高频施放刷爆；canCraftSatchel 死代码（NPE 隐患） | 每法术仅首次记录 + 删除死代码 | `22dafe8` |
