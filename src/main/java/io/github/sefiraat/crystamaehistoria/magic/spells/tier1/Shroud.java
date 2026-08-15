@@ -36,7 +36,7 @@ public class Shroud extends Spell {
         Location location = castInformation.getCastLocation();
         double range = getRange(castInformation);
         for (Entity entity : location.getWorld().getNearbyEntities(location, range, range, range)) {
-            if (entity instanceof LivingEntity && entity.getUniqueId() != castInformation.getCaster()) {
+            if (entity instanceof LivingEntity && !entity.getUniqueId().equals(castInformation.getCaster())) {
                 LivingEntity livingEntity = (LivingEntity) entity;
                 final Interaction interaction = livingEntity instanceof Player ? Interaction.ATTACK_PLAYER : Interaction.ATTACK_ENTITY;
                 if (GeneralUtils.hasPermission(castInformation.getCaster(), entity.getLocation(), interaction)) {

@@ -52,7 +52,7 @@ public class Tracer extends Spell {
         final Location location = player.getLocation().add(0, 1.5, 0);
         final Collection<LivingEntity> entityList = location.getNearbyLivingEntities(getRange(castInformation));
         for (LivingEntity livingEntity : entityList) {
-            if (livingEntity.getUniqueId() == castInformation.getCaster()) {
+            if (livingEntity.getUniqueId().equals(castInformation.getCaster())) {
                 continue;
             }
 

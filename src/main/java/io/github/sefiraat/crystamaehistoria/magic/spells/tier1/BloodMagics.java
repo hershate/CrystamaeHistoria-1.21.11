@@ -41,7 +41,7 @@ public class BloodMagics extends Spell {
         final Collection<Entity> entities = location.getWorld().getNearbyEntities(location, size, size, size);
         for (Entity entity : entities) {
             if (entity instanceof LivingEntity
-                && entity.getUniqueId() != castInformation.getCaster()
+                && !entity.getUniqueId().equals(castInformation.getCaster())
             ) {
                 final LivingEntity livingEntity = (LivingEntity) entity;
                 GeneralUtils.damageEntity(

@@ -60,7 +60,7 @@ public class SpellEffectListener implements Listener {
         List<Entity> passengers = magicProjectile.getProjectile().getPassengers();
         if (event.getHitEntity() != null && !passengers.isEmpty()) {
             for (Entity entity : passengers) {
-                if (entity.getUniqueId() == event.getHitEntity().getUniqueId()) {
+                if (entity.getUniqueId().equals(event.getHitEntity().getUniqueId())) {
                     return;
                 }
             }
@@ -118,7 +118,7 @@ public class SpellEffectListener implements Listener {
         final Interaction interaction = hitEntity instanceof Player ? Interaction.ATTACK_PLAYER : Interaction.ATTACK_ENTITY;
         if (player != null && GeneralUtils.hasPermission(player, hitEntity.getLocation(), interaction)) {
             return hitEntity instanceof LivingEntity
-                && hitEntity.getUniqueId() != castInformation.getCaster();
+                && !hitEntity.getUniqueId().equals(castInformation.getCaster());
         }
         return false;
     }

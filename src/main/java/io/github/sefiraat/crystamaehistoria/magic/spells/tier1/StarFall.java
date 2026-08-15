@@ -41,7 +41,7 @@ public class StarFall extends Spell {
         for (Entity entity : entities) {
             if (GeneralUtils.testChance(1, 5)
                 && entity instanceof LivingEntity
-                && entity.getUniqueId() != castInformation.getCaster()
+                && !entity.getUniqueId().equals(castInformation.getCaster())
             ) {
                 final Location spawnLocation = entity.getLocation().clone().add(0, 100, 0);
                 final Location destination = spawnLocation.clone().subtract(0, 100, 0);

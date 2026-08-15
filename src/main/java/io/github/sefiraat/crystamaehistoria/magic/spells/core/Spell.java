@@ -273,7 +273,7 @@ public abstract class Spell {
         Location location = castInformation.getDamageLocation();
         if (range > 0) {
             for (Entity entity : location.getWorld().getNearbyEntities(location, range, range, range)) {
-                if (entity instanceof LivingEntity && entity.getUniqueId() != castInformation.getCaster() && (entity != castInformation.getMainTarget() || includeMain)) {
+                if (entity instanceof LivingEntity && !entity.getUniqueId().equals(castInformation.getCaster()) && (entity != castInformation.getMainTarget() || includeMain)) {
                     livingEntities.add((LivingEntity) entity);
                 }
             }

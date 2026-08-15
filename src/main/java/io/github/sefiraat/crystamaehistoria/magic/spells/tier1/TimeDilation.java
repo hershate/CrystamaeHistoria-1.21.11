@@ -50,7 +50,7 @@ public class TimeDilation extends Spell {
         }
         // Effects
         for (Entity entity : location.getWorld().getNearbyEntities(location, effectRange, effectRange, effectRange)) {
-            if (entity instanceof LivingEntity && entity.getUniqueId() != castInformation.getCaster()) {
+            if (entity instanceof LivingEntity && !entity.getUniqueId().equals(castInformation.getCaster())) {
                 LivingEntity livingEntity = (LivingEntity) entity;
                 applyNegativeEffects(livingEntity, castInformation);
             }

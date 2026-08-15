@@ -45,7 +45,7 @@ public class Gyroscopic extends Spell {
         for (Entity entity : location.getWorld().getNearbyEntities(location, effectRange, effectRange, effectRange)) {
             if (entity instanceof LivingEntity
                 && GeneralUtils.hasPermission(castInformation.getCaster(), entity.getLocation(), Interaction.INTERACT_ENTITY)
-                && entity.getUniqueId() != castInformation.getCaster()
+                && !entity.getUniqueId().equals(castInformation.getCaster())
             ) {
                 Location newLocation = entity.getLocation().clone();
                 newLocation.setYaw(entity.getLocation().getYaw() + 10F);

@@ -47,12 +47,12 @@ public class ChillWind extends Spell {
         // Effects
         for (Entity entity : location.getWorld().getNearbyEntities(location, effectRange, effectRange, effectRange)) {
             if (entity instanceof LivingEntity
-                && entity.getUniqueId() != castInformation.getCaster()
+                && !entity.getUniqueId().equals(castInformation.getCaster())
             ) {
                 LivingEntity livingEntity = (LivingEntity) entity;
                 livingEntity.setFreezeTicks(Math.min(livingEntity.getMaxFreezeTicks(), livingEntity.getFreezeTicks() + 20));
                 if (livingEntity.getFreezeTicks() == livingEntity.getMaxFreezeTicks()) {
-                    applyPositiveEffects(livingEntity, castInformation);
+                    applyNegativeEffects(livingEntity, castInformation);
                 }
             }
         }

@@ -50,7 +50,7 @@ public class Quake extends Spell {
             castLocation.getWorld().spawnParticle(Particle.DUST, spawnLocation, 1, directionalXOffset, 2, directionalZOffset, dustOptions);
         }
         for (Entity entity : castLocation.getWorld().getNearbyEntities(castLocation, range, 2, range)) {
-            if (entity instanceof LivingEntity && entity.getUniqueId() != castInformation.getCaster()) {
+            if (entity instanceof LivingEntity && !entity.getUniqueId().equals(castInformation.getCaster())) {
                 LivingEntity livingEntity = (LivingEntity) entity;
                 applyNegativeEffects(livingEntity, castInformation);
                 GeneralUtils.damageEntity(livingEntity, castInformation.getCaster(), getDamage(castInformation));
