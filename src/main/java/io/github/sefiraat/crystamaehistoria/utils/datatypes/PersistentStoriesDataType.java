@@ -62,9 +62,24 @@ public class PersistentStoriesDataType implements PersistentDataType<PersistentD
     public List<Story> fromPrimitive(PersistentDataContainer[] primitive, PersistentDataAdapterContext context) {
         List<Story> list = new ArrayList<>();
         for (PersistentDataContainer container : primitive) {
-            String id = container.get(Keys.STORY_ID, PersistentDataType.STRING);
-            StoryRarity rarity = StoryRarity.getById(container.get(Keys.STORY_RARITY, PersistentDataType.INTEGER));
-            list.add(CrystamaeHistoria.getStoriesManager().getStory(id, rarity));
+            // PDC 内容不可信且 generic-stories.yml 可被编辑：
+            // 缺键/非法稀有度/已删除的故事一律跳过，原实现会把 null 塞入列表导致下游连锁 NPE
+            final String id = container.get(Keys.STORY_ID, PersistentDataType.STRING);
+            if (id == null) {
+                continue;
+            }
+            final Integer rarityId = container.get(Keys.STORY_RARITY, PersistentDataType.INTEGER);
+            if (rarityId == null) {
+                continue;
+            }
+            final StoryRarity rarity = StoryRarity.getById(rarityId);
+            if (rarity == null) {
+                continue;
+            }
+            final Story story = CrystamaeHistoria.getStoriesManager().getStory(id, rarity);
+            if (story != null) {
+                list.add(story);
+            }
         }
         return list;
     }

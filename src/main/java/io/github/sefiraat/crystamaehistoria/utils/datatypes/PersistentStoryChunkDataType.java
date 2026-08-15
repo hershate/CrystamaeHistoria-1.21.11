@@ -71,14 +71,45 @@ public class PersistentStoryChunkDataType implements PersistentDataType<Persiste
     public List<Story> fromPrimitive(PersistentDataContainer[] primitive, PersistentDataAdapterContext context) {
         List<Story> list = new ArrayList<>();
         for (PersistentDataContainer container : primitive) {
+            // 区块 PDC 为持久化数据，不可信：任一字段缺失/损坏时跳过该条目，
+            // 原实现会在拆箱、getStory(id, null) 的 switch 空指针、世界缺失等处连锁 NPE
             final String id = container.get(Keys.STORY_ID, PersistentDataType.STRING);
-            final StoryRarity rarity = StoryRarity.getById(container.get(Keys.STORY_RARITY, PersistentDataType.INTEGER));
-            final long locationLong = container.get(Keys.RESOLUTION_STORY_LOCATION, PersistentDataType.LONG);
-            final UUID worldUuid = container.get(Keys.RESOLUTION_STORY_WORLD, PersistentUUIDDataType.TYPE);
+            if (id == null) {
+                continue;
+            }
+            final Integer rarityId = container.get(Keys.STORY_RARITY, PersistentDataType.INTEGER);
+            if (rarityId == null) {
+                continue;
+            }
+            final StoryRarity rarity = StoryRarity.getById(rarityId);
+            if (rarity == null) {
+                continue;
+            }
+            final Long locationLong = container.get(Keys.RESOLUTION_STORY_LOCATION, PersistentDataType.LONG);
+            if (locationLong == null) {
+                continue;
+            }
+            final UUID worldUuid;
+            try {
+                worldUuid = container.get(Keys.RESOLUTION_STORY_WORLD, PersistentUUIDDataType.TYPE);
+            } catch (IllegalArgumentException e) {
+                // UUID 数组长度非法等损坏情形
+                continue;
+            }
+            if (worldUuid == null) {
+                continue;
+            }
             final World world = Bukkit.getWorld(worldUuid);
+            if (world == null) {
+                continue;
+            }
+            final Story source = CrystamaeHistoria.getStoriesManager().getStory(id, rarity);
+            if (source == null) {
+                continue;
+            }
             final BlockPosition position = new BlockPosition(world, locationLong);
             final Boolean gilded = container.get(Keys.STORY_IS_GILDED, DataType.BOOLEAN);
-            final Story story = CrystamaeHistoria.getStoriesManager().getStory(id, rarity).copy();
+            final Story story = source.copy();
             story.setBlockPosition(position);
             story.setGilded(gilded != null && gilded);
             list.add(story);

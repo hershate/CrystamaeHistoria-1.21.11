@@ -97,17 +97,18 @@ public class PersistentPoseType implements PersistentDataType<PersistentDataCont
     @Nonnull
     @ParametersAreNonnullByDefault
     public PoseCloner.StoredPose fromPrimitive(PersistentDataContainer primitive, PersistentDataAdapterContext context) {
-        double[] head = primitive.get(HEAD, DataType.DOUBLE_ARRAY);
-        double[] body = primitive.get(BODY, DataType.DOUBLE_ARRAY);
-        double[] leftArm = primitive.get(LEFT_ARM, DataType.DOUBLE_ARRAY);
-        double[] rightArm = primitive.get(RIGHT_ARM, DataType.DOUBLE_ARRAY);
-        double[] leftLeg = primitive.get(LEFT_LEG, DataType.DOUBLE_ARRAY);
-        double[] rightLeg = primitive.get(RIGHT_LEG, DataType.DOUBLE_ARRAY);
-        boolean isSmall = primitive.get(SMALL, DataType.BOOLEAN);
-        boolean isVisible = primitive.get(VISIBLE, DataType.BOOLEAN);
-        boolean plateVisible = primitive.get(PLATE, DataType.BOOLEAN);
-        boolean armsVisible = primitive.get(ARMS, DataType.BOOLEAN);
-        boolean hasGravity = primitive.get(GRAVITY, DataType.BOOLEAN);
+        // 姿态数据来自持久化 PDC（物品可携带，不可信）：逐字段校验，损坏时抛出带上下文的异常而非 NPE/AIOOBE
+        double[] head = requireAngleArray(primitive, HEAD, "head");
+        double[] body = requireAngleArray(primitive, BODY, "body");
+        double[] leftArm = requireAngleArray(primitive, LEFT_ARM, "left_arm");
+        double[] rightArm = requireAngleArray(primitive, RIGHT_ARM, "right_arm");
+        double[] leftLeg = requireAngleArray(primitive, LEFT_LEG, "left_leg");
+        double[] rightLeg = requireAngleArray(primitive, RIGHT_LEG, "right_leg");
+        boolean isSmall = requireBoolean(primitive, SMALL, "small");
+        boolean isVisible = requireBoolean(primitive, VISIBLE, "visible");
+        boolean plateVisible = requireBoolean(primitive, PLATE, "plate");
+        boolean armsVisible = requireBoolean(primitive, ARMS, "arms");
+        boolean hasGravity = requireBoolean(primitive, GRAVITY, "gravity");
         return new PoseCloner.StoredPose(
             new EulerAngle(head[0], head[1], head[2]),
             new EulerAngle(body[0], body[1], body[2]),
@@ -121,5 +122,24 @@ public class PersistentPoseType implements PersistentDataType<PersistentDataCont
             armsVisible,
             hasGravity
         );
+    }
+
+    @Nonnull
+    @ParametersAreNonnullByDefault
+    private static double[] requireAngleArray(PersistentDataContainer primitive, NamespacedKey key, String name) {
+        final double[] values = primitive.get(key, DataType.DOUBLE_ARRAY);
+        if (values == null || values.length < 3) {
+            throw new IllegalStateException("姿态数据损坏：缺少 " + name + " 角度分量");
+        }
+        return values;
+    }
+
+    @ParametersAreNonnullByDefault
+    private static boolean requireBoolean(PersistentDataContainer primitive, NamespacedKey key, String name) {
+        final Boolean value = primitive.get(key, DataType.BOOLEAN);
+        if (value == null) {
+            throw new IllegalStateException("姿态数据损坏：缺少 " + name + " 标志");
+        }
+        return value;
     }
 }

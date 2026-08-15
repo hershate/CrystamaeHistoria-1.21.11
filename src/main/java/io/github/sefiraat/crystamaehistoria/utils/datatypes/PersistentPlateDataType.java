@@ -51,12 +51,24 @@ public class PersistentPlateDataType implements PersistentDataType<PersistentDat
     @Nonnull
     @ParametersAreNonnullByDefault
     public InstancePlate fromPrimitive(PersistentDataContainer primitive, PersistentDataAdapterContext context) {
-        InstancePlate instancePlate = new InstancePlate(
-            primitive.get(Keys.PLATE_TIER, PersistentDataType.INTEGER),
-            SpellType.valueOf(primitive.get(Keys.PLATE_SPELL, PersistentDataType.STRING)),
-            primitive.get(Keys.PLATE_CHARGES, PersistentDataType.INTEGER)
-        );
-        instancePlate.setCooldown(primitive.get(Keys.PLATE_COOLDOWN, PersistentDataType.LONG));
+        // PDC 内容不可信（/sf cheat 或改造客户端可构造缺键/非法值的法术板）：
+        // 原实现在缺键时拆箱 NPE、非法法术名时裸抛 IllegalArgumentException，
+        // 现统一转为带上下文的失败关闭异常
+        final Integer tier = primitive.get(Keys.PLATE_TIER, PersistentDataType.INTEGER);
+        final String spellId = primitive.get(Keys.PLATE_SPELL, PersistentDataType.STRING);
+        final Integer charges = primitive.get(Keys.PLATE_CHARGES, PersistentDataType.INTEGER);
+        final Long cooldown = primitive.get(Keys.PLATE_COOLDOWN, PersistentDataType.LONG);
+        if (tier == null || spellId == null || charges == null || cooldown == null) {
+            throw new IllegalStateException("充能法术板数据损坏：PDC 键缺失");
+        }
+        final SpellType spellType;
+        try {
+            spellType = SpellType.valueOf(spellId);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("充能法术板数据损坏：未知法术 " + spellId, e);
+        }
+        InstancePlate instancePlate = new InstancePlate(tier, spellType, charges);
+        instancePlate.setCooldown(cooldown);
         return instancePlate;
     }
 }

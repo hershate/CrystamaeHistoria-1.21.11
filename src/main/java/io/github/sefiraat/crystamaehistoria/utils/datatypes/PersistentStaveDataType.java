@@ -63,8 +63,22 @@ public class PersistentStaveDataType implements PersistentDataType<PersistentDat
     public Map<SpellSlot, InstancePlate> fromPrimitive(PersistentDataContainer[] primitive, PersistentDataAdapterContext context) {
         Map<SpellSlot, InstancePlate> plateStorageMap = new EnumMap<>(SpellSlot.class);
         for (PersistentDataContainer container : primitive) {
-            final SpellSlot spellSlot = SpellSlot.valueOf(container.get(Keys.STAVE_SLOT, PersistentDataType.STRING));
+            // PDC 内容不可信：槽位名缺失/非法、法术板数据缺失都会在原实现中抛
+            // NPE/IllegalArgumentException（EnumMap.put(null) 亦为 NPE），统一失败关闭
+            final String slotName = container.get(Keys.STAVE_SLOT, PersistentDataType.STRING);
+            if (slotName == null) {
+                throw new IllegalStateException("法杖数据损坏：槽位键缺失");
+            }
+            final SpellSlot spellSlot;
+            try {
+                spellSlot = SpellSlot.valueOf(slotName);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalStateException("法杖数据损坏：未知槽位 " + slotName, e);
+            }
             final InstancePlate instancePlate = container.get(Keys.STAVE_PLATE, PersistentPlateDataType.TYPE);
+            if (instancePlate == null) {
+                throw new IllegalStateException("法杖数据损坏：槽位 " + slotName + " 缺少法术板数据");
+            }
             plateStorageMap.put(spellSlot, instancePlate);
         }
         return plateStorageMap;

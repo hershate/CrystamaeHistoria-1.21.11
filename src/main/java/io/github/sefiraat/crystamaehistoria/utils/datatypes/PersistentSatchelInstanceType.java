@@ -67,12 +67,17 @@ public class PersistentSatchelInstanceType implements PersistentDataType<Persist
     @Override
     @Nonnull
     public SatchelInstance fromPrimitive(@Nonnull PersistentDataContainer primitive, @Nonnull PersistentDataAdapterContext context) {
-        final long id = primitive.get(SATCHEL_ID, DataType.LONG);
-        final int tier = primitive.get(SATCHEL_TIER, DataType.INTEGER);
+        // PDC 内容不可信（改造客户端可构造缺键收纳袋）：原实现缺键时拆箱 NPE，
+        // 且 null 用户名会在下次保存时以 null 写 STRING 键直接抛异常。缺失字段一律取保守默认值
+        final Long storedId = primitive.get(SATCHEL_ID, DataType.LONG);
+        final Integer storedTier = primitive.get(SATCHEL_TIER, DataType.INTEGER);
         final String name = primitive.get(SATCHEL_LAST_USER, DataType.STRING);
-        final SatchelInstance instance = new SatchelInstance(id, tier);
+        final SatchelInstance instance = new SatchelInstance(
+            storedId != null ? storedId : 0L,
+            storedTier != null && storedTier >= 1 ? storedTier : 1
+        );
 
-        instance.setLastUser(name);
+        instance.setLastUser(name != null ? name : "未知");
 
         instance.setAmounts(StoryRarity.UNIQUE, primitive.get(UNIQUE, DataType.INTEGER_ARRAY));
         instance.setAmounts(StoryRarity.COMMON, primitive.get(COMMON, DataType.INTEGER_ARRAY));
