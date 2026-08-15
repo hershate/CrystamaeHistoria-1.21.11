@@ -23,7 +23,7 @@
 |------|------|------|
 | 10 | gadgets 深审（[round-10](round-10.md)） | ✅ 完成（2 commit：b41eaf6/96e8671；诅咒之土状态污染、碎裂虚空物品不落盘等） |
 | 11 | artistic/exhalted/materials 物品深审（[round-11](round-11.md)） | ✅ 完成（2 commit：f9ed746/03cb3dc） |
-| 12 | mobgoals 召唤物 AI 目标类 | 待做 |
+| 12 | mobgoals 召唤物 AI 目标类（[round-12](round-12.md)） | ✅ 完成（1 commit：1105890） |
 | 13 | 剩余 tier1 法术逐文件精读 | 待做 |
 
 ## 已修复问题汇总
@@ -59,3 +59,4 @@
 | 10 | `gadgets/{MobFan,MobLamp,MobMat,MobTrap,GreenHouseGlass,MysteriousTicker,TrophyDisplay}.java` | BlockPlacer 缺键每 tick NPE×4 类；映射泄漏×4 类；TrophyDisplay 跨实例死状态 | 判空失败关闭 + 破坏清理 + 删死代码 | `96e8671` |
 | 11 | `artistic/ImbuedStand.java`、`exhalted/{ExaltedHarvester,ExaltedSeaBreeze}.java` | 他人领地生成盔甲架；**随机点累积漂移（作用范围失控）** | 领地校验 + clone 基准 | `f9ed746` |
 | 11 | `materials/PowderedEssence.java` | 他人领地骨粉催熟 | INTERACT_BLOCK 校验 | `03cb3dc` |
+| 12 | `mobgoals/{AbstractGoal,HolyCowGoal,AbstractRidableGoal}.java` | 主人过传送门后 AI 每 tick 跨世界 distance IAE；他人骑乘时主人离线 getEyeLocation NPE | 同世界判定 + 离线退回常规 tick | `1105890` |
