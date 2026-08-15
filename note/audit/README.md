@@ -39,6 +39,7 @@
 | 25 | 消费时序与事件否决回滚（[round-25](round-25.md)） | ✅ 完成（1 commit：9cc3759；5 处交互监听补 ignoreCancelled，被否决交互不再施法/白扣） |
 | 26 | 经济数值溢出边界 + plugin.yml（[round-26](round-26.md)） | ✅ 完成（1 commit：4270d22；充能溢出钳制 + 命令帮助文本修正） |
 | 27 | 构建配置与产物结构（[round-27](round-27.md)） | ✅ 完成（纯核验轮：第三方类零打入、filtering/结构正确） |
+| 28 | 事件 API 评估 + 文档/git 一致性（[round-28](round-28.md)） | ✅ 完成（1 commit：0a95716；README 自动更新声明修正；上游 co-author 历史查明为继承） |
 
 ## 已修复问题汇总
 
