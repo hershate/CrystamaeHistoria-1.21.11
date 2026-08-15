@@ -34,6 +34,9 @@ import java.util.Optional;
 
 public class MobTrap extends TickingBlockNoGui {
 
+    /** 粒子颜色常量：原实现每 tick 新建 */
+    private static final Particle.DustOptions DUST_OPTIONS = new Particle.DustOptions(Color.AQUA, 1);
+
     @Getter
     private final Map<Location, PotionEffectType> potionEffectTypeMap = new HashMap<>();
 
@@ -83,8 +86,9 @@ public class MobTrap extends TickingBlockNoGui {
 
     @Override
     protected void onTick(@Nonnull Block block, @Nonnull SlimefunItem slimefunItem, @Nonnull Config config) {
-        final Location location = block.getLocation().add(0.5, 0.5, 0.5);
-        final Particle.DustOptions dustOptions = new Particle.DustOptions(Color.AQUA, 1);
+        // 每 tick 单次 getLocation 复用；粒子常量
+        final Location blockLocation = block.getLocation();
+        final Location location = blockLocation.clone().add(0.5, 0.5, 0.5);
         final Collection<Entity> entities = location.getWorld().getNearbyEntities(
             location,
             0.5,
@@ -92,12 +96,12 @@ public class MobTrap extends TickingBlockNoGui {
             0.5,
             LivingEntity.class::isInstance
         );
-        PotionEffectType type = potionEffectTypeMap.get(block.getLocation());
+        PotionEffectType type = potionEffectTypeMap.get(blockLocation);
         if (type != null) {
             for (Entity entity : entities) {
                 final LivingEntity livingEntity = (LivingEntity) entity;
                 livingEntity.addPotionEffect(new PotionEffect(type, 40, 0));
-                ParticleUtils.displayParticleEffect(location, 1, 3, dustOptions);
+                ParticleUtils.displayParticleEffect(location, 1, 3, DUST_OPTIONS);
             }
         }
     }

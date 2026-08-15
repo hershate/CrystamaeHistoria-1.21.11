@@ -26,6 +26,11 @@ import java.util.function.Consumer;
 public class MysteriousTicker extends SlimefunItem {
 
     private final Set<Material> materials;
+    /**
+     * 抽取用数组缓存：原实现每次随机变换都 materials.toArray(new Material[]{})
+     * 复制整个数组——材质集合构造后固定，预生成一次。
+     */
+    private final Material[] materialArray;
     private final Map<Location, Integer> tickMap = new HashMap<>();
     private final int ticks;
     private final Consumer<Block> consumer;
@@ -52,6 +57,7 @@ public class MysteriousTicker extends SlimefunItem {
     ) {
         super(category, item, recipeType, recipe);
         this.materials = tickingMaterials;
+        this.materialArray = tickingMaterials.toArray(new Material[0]);
         this.ticks = tickFrequency;
         this.consumer = consumer;
     }
@@ -80,20 +86,22 @@ public class MysteriousTicker extends SlimefunItem {
 
             @Override
             public void tick(Block block, SlimefunItem slimefunItem, Config config) {
+                // 每 tick 单次 getLocation 复用（查表/落盘/清理共用同一键）
+                final Location blockLocation = block.getLocation();
                 if (block.isEmpty()) {
                     // 方块已不存在：同步清理 BlockStorage 与计数条目（原实现泄漏 tickMap 条目）
-                    BlockStorage.clearBlockInfo(block.getLocation());
-                    tickMap.remove(block.getLocation());
+                    BlockStorage.clearBlockInfo(blockLocation);
+                    tickMap.remove(blockLocation);
                     return;
                 }
-                Integer currentTick = tickMap.get(block.getLocation());
+                Integer currentTick = tickMap.get(blockLocation);
                 if (currentTick == null) {
                     currentTick = ThreadLocalRandom.current().nextInt(ticks);
                 }
                 if (currentTick >= ticks) {
                     currentTick = 0;
                     block.setType(
-                        materials.toArray(new Material[]{})[ThreadLocalRandom.current().nextInt(materials.size())]
+                        materialArray[ThreadLocalRandom.current().nextInt(materialArray.length)]
                     );
                     if (MysteriousTicker.this.consumer != null) {
                         MysteriousTicker.this.consumer.accept(block);
@@ -101,7 +109,7 @@ public class MysteriousTicker extends SlimefunItem {
                 } else {
                     currentTick++;
                 }
-                tickMap.put(block.getLocation(), currentTick);
+                tickMap.put(blockLocation, currentTick);
             }
         };
     }

@@ -85,14 +85,16 @@ public class CursedEarth extends SlimefunItem {
 
             @Override
             public void tick(Block block, SlimefunItem slimefunItem, Config config) {
-                final Location location = block.getLocation().add(0.5, 1.5, 0.5);
+                // 每 tick 单次 getLocation 复用（计数表键与清理共用；中心点另克隆一次）
+                final Location blockLocation = block.getLocation();
+                final Location location = blockLocation.clone().add(0.5, 1.5, 0.5);
                 if (block.isEmpty()) {
                     // 方块已不存在：清理计数与 BlockStorage 信息，防止残留
-                    tickCounters.remove(block.getLocation());
-                    BlockStorage.clearBlockInfo(block.getLocation());
+                    tickCounters.remove(blockLocation);
+                    BlockStorage.clearBlockInfo(blockLocation);
                     return;
                 }
-                int currentTick = tickCounters.getOrDefault(block.getLocation(), 0);
+                int currentTick = tickCounters.getOrDefault(blockLocation, 0);
                 if (currentTick >= ticksToSpawn) {
                     final Block blockA = block.getRelative(BlockFace.UP);
                     final Block blockB = blockA.getRelative(BlockFace.UP);
@@ -112,7 +114,7 @@ public class CursedEarth extends SlimefunItem {
                 } else {
                     currentTick++;
                 }
-                tickCounters.put(block.getLocation(), currentTick);
+                tickCounters.put(blockLocation, currentTick);
                 ParticleUtils.displayParticleEffect(
                     location,
                     1,

@@ -26,7 +26,9 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class MobFan extends TickingMenuBlock {
@@ -46,6 +48,15 @@ public class MobFan extends TickingMenuBlock {
 
     @Getter
     private final double range;
+    /**
+     * 每 tick 的方向/所有者缓存：原实现每 tick 从 BlockStorage 读字符串并做
+     * valueOf/fromString 解析。两者仅在本类内变更（放置/GUI setDirection），
+     * 破坏时清理条目。
+     */
+    @Getter
+    private final Map<Location, BlockFace> directionMap = new HashMap<>();
+    @Getter
+    private final Map<Location, UUID> ownerMap = new HashMap<>();
 
     @ParametersAreNonnullByDefault
     public MobFan(ItemGroup category, SlimefunItemStack item, RecipeType recipeType, ItemStack[] recipe, double range) {
@@ -65,6 +76,9 @@ public class MobFan extends TickingMenuBlock {
             public void onPlayerPlace(BlockPlaceEvent event) {
                 BlockStorage.addBlockInfo(event.getBlock(), ID_UUID, event.getPlayer().getUniqueId().toString());
                 BlockStorage.addBlockInfo(event.getBlock(), ID_DIRECTION, BlockFace.SELF.name());
+                final Location location = event.getBlockPlaced().getLocation();
+                ownerMap.put(location, event.getPlayer().getUniqueId());
+                directionMap.put(location, BlockFace.SELF);
             }
         };
     }
@@ -75,6 +89,10 @@ public class MobFan extends TickingMenuBlock {
             @ParametersAreNonnullByDefault
             public void onPlayerBreak(BlockBreakEvent blockBreakEvent, ItemStack itemStack, List<ItemStack> list) {
                 BlockStorage.clearBlockInfo(blockBreakEvent.getBlock());
+                // 破坏后清除缓存条目，否则随放置/破坏循环无界增长
+                final Location location = blockBreakEvent.getBlock().getLocation();
+                directionMap.remove(location);
+                ownerMap.remove(location);
             }
         };
     }
@@ -82,32 +100,20 @@ public class MobFan extends TickingMenuBlock {
     @Override
     @ParametersAreNonnullByDefault
     protected void tick(Block block, BlockMenu blockMenu) {
-        // BlockStorage 为持久化数据，不可信：键缺失（BlockPlacer 放置等）时跳过本 tick
-        final String directionName = BlockStorage.getLocationInfo(block.getLocation(), ID_DIRECTION);
-        final String ownerString = BlockStorage.getLocationInfo(block.getLocation(), ID_UUID);
-        if (directionName == null) {
-            return;
-        }
-        final BlockFace direction;
-        try {
-            direction = BlockFace.valueOf(directionName);
-        } catch (IllegalArgumentException e) {
-            return;
-        }
-        final UUID owner;
-        try {
-            owner = ownerString != null ? UUID.fromString(ownerString) : null;
-        } catch (IllegalArgumentException e) {
-            return;
-        }
+        // 方向/所有者从内存缓存读取（onNewInstance/放置/GUI 写入，破坏清理）；
+        // 键缺失（BlockPlacer 放置等）时跳过本 tick，与原 BlockStorage 缺键语义一致
+        final Location blockLocation = block.getLocation();
+        final BlockFace direction = directionMap.get(blockLocation);
+        final UUID owner = ownerMap.get(blockLocation);
 
-        if (direction == BlockFace.SELF || owner == null) {
+        if (direction == null || direction == BlockFace.SELF || owner == null) {
             // 无所有者记录时无法做领地校验：失败关闭（不能退回无校验的推挤，否则绕过保护）
             return;
         }
         final Vector facingVector = direction.getDirection();
 
-        final Location location = block.getLocation();
+        // 复用同一 Location（rayTraceBlocks 会原位加 facingVector，与原实现一致）
+        final Location location = blockLocation;
         final RayTraceResult result = location.getWorld().rayTraceBlocks(
             location.add(facingVector),
             facingVector,
@@ -173,13 +179,26 @@ public class MobFan extends TickingMenuBlock {
     @Override
     @ParametersAreNonnullByDefault
     protected void onNewInstance(BlockMenu menu, Block b) {
-        final String directionName = BlockStorage.getLocationInfo(b.getLocation(), ID_DIRECTION);
+        final Location location = b.getLocation();
+        final String directionName = BlockStorage.getLocationInfo(location, ID_DIRECTION);
         final BlockFace direction;
         try {
             direction = directionName != null ? BlockFace.valueOf(directionName) : BlockFace.SELF;
         } catch (IllegalArgumentException e) {
             return;
         }
+        // 填充 tick 用的方向/所有者缓存（owner 损坏时登记 null → tick 失败关闭跳过）
+        final String ownerString = BlockStorage.getLocationInfo(location, ID_UUID);
+        UUID owner = null;
+        if (ownerString != null) {
+            try {
+                owner = UUID.fromString(ownerString);
+            } catch (IllegalArgumentException e) {
+                // UUID 损坏：不登记所有者（tick 失败关闭）
+            }
+        }
+        directionMap.put(location, direction);
+        ownerMap.put(location, owner);
         setDirection(menu, direction);
 
         menu.addMenuClickHandler(SET_NORTH, (player, i, itemStack, clickAction) -> setDirection(menu, BlockFace.NORTH));
@@ -194,6 +213,7 @@ public class MobFan extends TickingMenuBlock {
     @ParametersAreNonnullByDefault
     private boolean setDirection(BlockMenu blockMenu, BlockFace blockFace) {
         BlockStorage.addBlockInfo(blockMenu.getBlock(), ID_DIRECTION, blockFace.name());
+        directionMap.put(blockMenu.getLocation(), blockFace);
 
         blockMenu.replaceExistingItem(SET_UP, GuiElements.getDirectionalSlotPane(BlockFace.UP, false));
         blockMenu.replaceExistingItem(SET_DOWN, GuiElements.getDirectionalSlotPane(BlockFace.DOWN, false));

@@ -32,6 +32,12 @@ public class ExpCollector extends TickingMenuBlock {
     protected static final String ID_UUID = "CH_UUID";
     protected static final String ID_VOLUME = "EXP_VOLUME";
 
+    /**
+     * 粒子颜色配置为常量：原实现每 tick 新建 DustOptions + Color.fromRGB，
+     * 无经验球时也照常分配。
+     */
+    private static final Particle.DustOptions DUST_OPTIONS = new Particle.DustOptions(Color.fromRGB(20, 230, 5), 1);
+
     protected static final int[] BACKGROUND_SLOTS = {
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 19, 20, 24, 25, 26, 27, 28, 29, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44
     };
@@ -61,8 +67,9 @@ public class ExpCollector extends TickingMenuBlock {
     @Override
     @ParametersAreNonnullByDefault
     protected void tick(Block block, BlockMenu blockMenu) {
-        final Location location = block.getLocation().add(0.5, 0.5, 0.5);
-        final Particle.DustOptions dustOptions = new Particle.DustOptions(Color.fromRGB(20, 230, 5), 1);
+        // 每 tick 单次 getLocation 复用（查表/写入/落盘共用同一键；中心点另克隆一次）
+        final Location blockLocation = block.getLocation();
+        final Location location = blockLocation.clone().add(0.5, 0.5, 0.5);
         final Collection<Entity> entities = location.getWorld().getNearbyEntities(
             location,
             range,
@@ -71,7 +78,7 @@ public class ExpCollector extends TickingMenuBlock {
             ExperienceOrb.class::isInstance
         );
         // 缓存缺失时（BlockPlacer 放置、历史数据缺键等）按 0 处理，避免拆箱 NPE 使机械每 tick 报错
-        int amount = volumeMap.getOrDefault(block.getLocation(), 0);
+        int amount = volumeMap.getOrDefault(blockLocation, 0);
         boolean hasUpdated = false;
         for (Entity entity : entities) {
             ExperienceOrb experienceOrb = (ExperienceOrb) entity;
@@ -80,17 +87,17 @@ public class ExpCollector extends TickingMenuBlock {
                 amount = newAmount;
                 experienceOrb.remove();
                 hasUpdated = true;
-                ParticleUtils.displayParticleEffect(block.getLocation().add(0.5, 1, 0.5), 0.7, 3, dustOptions);
+                ParticleUtils.displayParticleEffect(blockLocation.clone().add(0.5, 1, 0.5), 0.7, 3, DUST_OPTIONS);
             }
         }
         if (hasUpdated) {
-            volumeMap.put(block.getLocation(), amount);
-            syncValue(block);
+            volumeMap.put(blockLocation, amount);
+            syncValue(block, blockLocation);
         }
     }
 
-    private void syncValue(Block block) {
-        BlockStorage.addBlockInfo(block, ID_VOLUME, String.valueOf(volumeMap.get(block.getLocation())));
+    private void syncValue(Block block, Location blockLocation) {
+        BlockStorage.addBlockInfo(block, ID_VOLUME, String.valueOf(volumeMap.get(blockLocation)));
     }
 
     @Override
@@ -149,7 +156,7 @@ public class ExpCollector extends TickingMenuBlock {
                         volumeMap.put(location, 0);
                         player.giveExp(amount);
                         ParticleUtils.displayParticleEffect(block.getLocation().add(0.5, 0.5, 0.5), Particle.WAX_ON, 1.5, Math.min(20, amount / 10));
-                        syncValue(block);
+                        syncValue(block, location);
                     }
                 }
             }

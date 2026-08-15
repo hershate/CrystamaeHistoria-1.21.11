@@ -32,6 +32,9 @@ import java.util.UUID;
 
 public class MobMat extends TickingBlockNoGui {
 
+    /** 粒子颜色常量：原实现每 tick 新建 */
+    private static final Particle.DustOptions DUST_OPTIONS = new Particle.DustOptions(Color.RED, 1);
+
     @Getter
     private final double damage;
     @Getter
@@ -67,9 +70,11 @@ public class MobMat extends TickingBlockNoGui {
 
     @Override
     protected void onTick(@Nonnull Block block, @Nonnull SlimefunItem slimefunItem, @Nonnull Config config) {
-        final Location location = block.getLocation().add(0.5, 0.5, 0.5);
-        final UUID uuid = blockOwnerMap.get(block.getLocation());
-        final Particle.DustOptions dustOptions = new Particle.DustOptions(Color.RED, 1);
+        // 每 tick 单次 getLocation 复用；粒子常量与玩家查找移出实体循环
+        final Location blockLocation = block.getLocation();
+        final Location location = blockLocation.clone().add(0.5, 0.5, 0.5);
+        final UUID uuid = blockOwnerMap.get(blockLocation);
+        final Player player = uuid != null ? Bukkit.getPlayer(uuid) : null;
         final Collection<Entity> entities = location.getWorld().getNearbyEntities(
             location,
             0.5,
@@ -79,13 +84,12 @@ public class MobMat extends TickingBlockNoGui {
         );
         for (Entity entity : entities) {
             final LivingEntity livingEntity = (LivingEntity) entity;
-            final Player player = Bukkit.getPlayer(uuid);
             if (!allowPlayerDrops || player == null) {
                 livingEntity.damage(damage);
             } else {
                 CrystamaeHistoria.getSupportedPluginManager().playerDamageWithoutAttribution(livingEntity, player, damage);
             }
-            ParticleUtils.displayParticleEffect(location, 1, 3, dustOptions);
+            ParticleUtils.displayParticleEffect(location, 1, 3, DUST_OPTIONS);
         }
     }
 
