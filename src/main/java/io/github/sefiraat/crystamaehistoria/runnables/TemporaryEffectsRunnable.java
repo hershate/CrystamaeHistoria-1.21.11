@@ -13,6 +13,7 @@ public class TemporaryEffectsRunnable extends BukkitRunnable {
         clearExpiredProjectiles(storage);
         clearMagicFallingBlocks(storage);
         clearMagicSummons(storage);
+        clearExpiredStrikes(storage);
         clearTempBlocks(storage);
         removeTempFlight(storage);
         removeFrozenTime(storage);
@@ -36,6 +37,10 @@ public class TemporaryEffectsRunnable extends BukkitRunnable {
 
     public void clearExpiredProjectiles(SpellMemory storage) {
         storage.removeProjectiles(false);
+    }
+
+    public void clearExpiredStrikes(SpellMemory storage) {
+        storage.removeStrikes(false);
     }
 
     public void removeTempFlight(SpellMemory storage) {

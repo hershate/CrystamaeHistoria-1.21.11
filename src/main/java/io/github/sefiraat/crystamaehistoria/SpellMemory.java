@@ -90,6 +90,10 @@ public class SpellMemory {
         removeEnderman(true);
         inhibitedEndermen.clear();
 
+        // Clear all registered lightning strikes that never fired their callbacks
+        removeStrikes(true);
+        strikeMap.clear();
+
         // Re-enable Chunk Spawning
         enableSpawningInArea(true);
         noSpawningAreas.clear();
@@ -141,8 +145,24 @@ public class SpellMemory {
         final Set<Map.Entry<BlockPosition, Long>> set = new HashSet<>(blocksToRemove.entrySet());
         for (Map.Entry<BlockPosition, Long> entry : set) {
             if (forceRemoveAll || entry.getValue() < time) {
-                entry.getKey().getBlock().setType(Material.AIR);
-                blocksToRemove.remove(entry.getKey());
+                try {
+                    entry.getKey().getBlock().setType(Material.AIR);
+                    blocksToRemove.remove(entry.getKey());
+                } catch (IllegalStateException e) {
+                    // BlockPosition 以 WeakReference 持有世界，世界卸载后 getBlock() 会抛出 IllegalStateException。
+                    // 此时保留条目，等待世界重新加载后的下一轮再清理（不能抛出，否则会中断本轮后续所有清理）
+                }
+            }
+        }
+    }
+
+    public void removeStrikes(boolean forceRemoveAll) {
+        long time = System.currentTimeMillis();
+        final Set<Map.Entry<UUID, Pair<CastInformation, Long>>> set = new HashSet<>(strikeMap.entrySet());
+        for (Map.Entry<UUID, Pair<CastInformation, Long>> entry : set) {
+            if (forceRemoveAll || entry.getValue().getSecondValue() < time) {
+                // 闪电视觉上转瞬即逝，此处仅清理未被 LightningStrikeEvent 消费掉的残留条目，防止泄漏
+                strikeMap.remove(entry.getKey());
             }
         }
     }
@@ -156,8 +176,9 @@ public class SpellMemory {
                 if (player != null) {
                     player.setAllowFlight(false);
                     player.setFlying(false);
-                    playersWithFlight.remove(entry.getKey());
                 }
+                // 玩家已离线时飞行状态随会话重置，条目同样必须移除，否则永久泄漏
+                playersWithFlight.remove(entry.getKey());
             }
         }
     }
@@ -170,8 +191,9 @@ public class SpellMemory {
                 Player player = Bukkit.getPlayer(entry.getKey());
                 if (player != null) {
                     player.resetPlayerTime();
-                    playersWithFrozenTime.remove(entry.getKey());
                 }
+                // 玩家已离线时个人时间随会话重置，条目同样必须移除，否则永久泄漏
+                playersWithFrozenTime.remove(entry.getKey());
             }
         }
     }
@@ -184,8 +206,9 @@ public class SpellMemory {
                 Player player = Bukkit.getPlayer(entry.getKey());
                 if (player != null) {
                     player.resetPlayerWeather();
-                    playersWithFrozenWeather.remove(entry.getKey());
                 }
+                // 玩家已离线时个人天气随会话重置，条目同样必须移除，否则永久泄漏
+                playersWithFrozenWeather.remove(entry.getKey());
             }
         }
     }
@@ -224,8 +247,10 @@ public class SpellMemory {
     public void removeSleepingBags() {
         final Set<Map.Entry<UUID, Location>> set = new HashSet<>(sleepingBags.entrySet());
         for (Map.Entry<UUID, Location> entry : set) {
-            final Block block = entry.getValue().getBlock();
-            block.setType(Material.AIR);
+            final Location location = entry.getValue();
+            if (location.isWorldLoaded()) {
+                location.getBlock().setType(Material.AIR);
+            }
         }
     }
 
