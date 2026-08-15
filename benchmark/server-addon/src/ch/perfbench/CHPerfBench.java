@@ -14,6 +14,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -21,8 +23,14 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.PrintWriter;
+import me.mrCookieSlime.Slimefun.api.BlockStorage;
+
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 服务器内基准（第 2 轮）：真实世界 raycast 与真实法杖 PDC 反序列化实测。
@@ -49,6 +57,7 @@ public final class CHPerfBench extends JavaPlugin {
             benchMachineTick(w);
             benchMachineTickMemo(w);
             benchStaveCast(w);
+            benchGadgetTick(w);
         } catch (Exception e) {
             getLogger().severe("基准失败: " + e);
             e.printStackTrace();
@@ -274,6 +283,71 @@ public final class CHPerfBench extends JavaPlugin {
             final ItemMeta m = stave.getItemMeta();
             PersistentStaveDataType.getSlotPlate(m, SpellSlot.RIGHT_CLICK);
             new InstanceStave(stave, m);
+        });
+    }
+
+    /** 第 7 轮：gadgets 每 tick 模式（真实 BlockStorage/真实方块） */
+    private void benchGadgetTick(PrintWriter w) {
+        World world = Bukkit.getWorlds().get(0);
+        Block block = world.getBlockAt(2000, 100, 2000);
+        block.setType(Material.STONE);
+        final String ownerUuid = "12345678-1234-1234-1234-123456789012";
+        BlockStorage.addBlockInfo(block, "CH_DIRECTION", "NORTH");
+        BlockStorage.addBlockInfo(block, "CH_UUID", ownerUuid);
+
+        // MobFan 前缀：旧（每 tick 字符串读取 + valueOf/fromString）vs 新（内存缓存查表）
+        time(w, "gadgetTick.mobFanPrefix", "old_bs_string_parse", 5_000, () -> {
+            final String d = BlockStorage.getLocationInfo(block.getLocation(), "CH_DIRECTION");
+            final String o = BlockStorage.getLocationInfo(block.getLocation(), "CH_UUID");
+            if (d == null) {
+                return;
+            }
+            try {
+                final BlockFace f = BlockFace.valueOf(d);
+                final UUID u = o != null ? UUID.fromString(o) : null;
+                if (f == BlockFace.SELF || u == null) {
+                    bh++;
+                }
+            } catch (IllegalArgumentException e) {
+                bh += 2;
+            }
+        });
+        final Map<Location, BlockFace> directionMap = new HashMap<>();
+        final Map<Location, UUID> ownerMap = new HashMap<>();
+        directionMap.put(block.getLocation(), BlockFace.NORTH);
+        ownerMap.put(block.getLocation(), UUID.fromString(ownerUuid));
+        time(w, "gadgetTick.mobFanPrefix", "new_map_lookup", 20_000, () -> {
+            final BlockFace f = directionMap.get(block.getLocation());
+            final UUID u = ownerMap.get(block.getLocation());
+            if (f == null || f == BlockFace.SELF || u == null) {
+                bh++;
+            }
+        });
+
+        // MysteriousTicker 材质抽取：旧（每次 toArray 复制）vs 新（预生成数组）
+        final Set<Material> materials = java.util.EnumSet.of(
+            Material.STONE, Material.COBBLESTONE, Material.ANDESITE, Material.GRANITE, Material.DIORITE);
+        time(w, "gadgetTick.materialPick", "old_toArray_copy", 200_000, () -> {
+            bh += materials.toArray(new Material[]{})[ThreadLocalRandom.current().nextInt(materials.size())].ordinal();
+        });
+        final Material[] materialArray = materials.toArray(new Material[0]);
+        time(w, "gadgetTick.materialPick", "new_cached_array", 2_000_000, () -> {
+            bh += materialArray[ThreadLocalRandom.current().nextInt(materialArray.length)].ordinal();
+        });
+
+        // 每 tick Location 分配模式：旧（4 次 getLocation + 2 次 clone().add）vs 新（1+1）
+        time(w, "gadgetTick.locationPattern", "old_multi_alloc", 200_000, () -> {
+            final Location center = block.getLocation().add(0.5, 0.5, 0.5);
+            bh += center.getBlockX();
+            bh += block.getLocation().hashCode();
+            bh += block.getLocation().hashCode();
+            bh += block.getLocation().add(0.5, 1, 0.5).getBlockX();
+        });
+        time(w, "gadgetTick.locationPattern", "new_single_alloc", 500_000, () -> {
+            final Location blockLocation = block.getLocation();
+            final Location center = blockLocation.clone().add(0.5, 0.5, 0.5);
+            bh += center.getBlockX();
+            bh += blockLocation.hashCode();
         });
     }
 
