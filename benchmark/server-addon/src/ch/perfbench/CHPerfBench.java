@@ -62,6 +62,7 @@ public final class CHPerfBench extends JavaPlugin {
             benchStaveCast(w);
             benchGadgetTick(w);
             benchStoryPick(w);
+            benchStatsPath(w);
         } catch (Exception e) {
             getLogger().severe("基准失败: " + e);
             e.printStackTrace();
@@ -397,6 +398,18 @@ public final class CHPerfBench extends JavaPlugin {
             } catch (Exception e) {
                 bh++;
             }
+        });
+    }
+
+    /** 第 9 轮：统计路径构建（每次施法 addUsage 双路径 + 每次记录 addChronicle） */
+    private void benchStatsPath(PrintWriter w) {
+        final UUID player = UUID.fromString("12345678-1234-1234-1234-123456789012");
+        final String spellId = "HEAL";
+        time(w, "statsPath.build", "old_messageformat", 200_000, () -> {
+            bh += java.text.MessageFormat.format("{0}.{1}.{2}.TIMES_CAST", player, SpellType.HEAL, spellId).length();
+        });
+        time(w, "statsPath.build", "new_concat", 2_000_000, () -> {
+            bh += (player + "." + SpellType.HEAL + "." + spellId + ".TIMES_CAST").length();
         });
     }
 
