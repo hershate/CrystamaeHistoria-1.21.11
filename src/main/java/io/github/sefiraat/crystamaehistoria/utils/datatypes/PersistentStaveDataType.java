@@ -9,6 +9,7 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.EnumMap;
 import java.util.Map;
@@ -82,5 +83,38 @@ public class PersistentStaveDataType implements PersistentDataType<PersistentDat
             plateStorageMap.put(spellSlot, instancePlate);
         }
         return plateStorageMap;
+    }
+
+    /**
+     * 单槽局部读取：只反序列化指定槽位的法术板（施法交互的失败路径——冷却/
+     * 缺晶能/空槽——不需要其余槽位数据，免去 3/4 的法术板反序列化）。
+     * 损坏守卫与 {@link #fromPrimitive} 同构：目标槽位数据损坏时失败关闭抛出；
+     * 其余槽位的槽位名缺失同样视为整杖损坏（与全量读取语义一致）。
+     *
+     * @return 该槽位的法术板；槽位未绑定时 null
+     */
+    @ParametersAreNonnullByDefault
+    @Nullable
+    public static InstancePlate getSlotPlate(org.bukkit.inventory.meta.ItemMeta itemMeta, SpellSlot slot) {
+        final PersistentDataContainer[] containers = itemMeta.getPersistentDataContainer()
+                                                             .get(Keys.PDC_STAVE_STORAGE, PersistentDataType.TAG_CONTAINER_ARRAY);
+        if (containers == null) {
+            return null;
+        }
+        for (PersistentDataContainer container : containers) {
+            final String slotName = container.get(Keys.STAVE_SLOT, PersistentDataType.STRING);
+            if (slotName == null) {
+                throw new IllegalStateException("法杖数据损坏：槽位键缺失");
+            }
+            if (!slot.name().equals(slotName)) {
+                continue;
+            }
+            final InstancePlate instancePlate = container.get(Keys.STAVE_PLATE, PersistentPlateDataType.TYPE);
+            if (instancePlate == null) {
+                throw new IllegalStateException("法杖数据损坏：槽位 " + slotName + " 缺少法术板数据");
+            }
+            return instancePlate;
+        }
+        return null;
     }
 }

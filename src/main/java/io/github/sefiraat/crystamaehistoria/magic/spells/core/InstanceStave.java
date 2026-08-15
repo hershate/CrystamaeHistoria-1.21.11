@@ -15,6 +15,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -30,11 +31,21 @@ public class InstanceStave {
     private final Map<SpellSlot, InstancePlate> spellInstanceMap = new EnumMap<>(SpellSlot.class);
 
     public InstanceStave(@Nonnull ItemStack itemStack) {
+        this(itemStack, itemStack.getItemMeta());
+    }
+
+    /**
+     * 以调用方持有的 meta 快照做全量反序列化（整个交互只克隆一次元数据时使用）。
+     */
+    public InstanceStave(@Nonnull ItemStack itemStack, @Nullable org.bukkit.inventory.meta.ItemMeta itemMeta) {
         this.itemStack = itemStack;
+        if (itemMeta == null) {
+            return;
+        }
         final Map<SpellSlot, InstancePlate> map;
         try {
             map = DataTypeMethods.getCustom(
-                itemStack.getItemMeta(),
+                itemMeta,
                 Keys.PDC_STAVE_STORAGE,
                 PersistentStaveDataType.TYPE
             );
@@ -47,6 +58,63 @@ public class InstanceStave {
         if (map != null) {
             spellInstanceMap.putAll(map);
         }
+    }
+
+    private InstanceStave(@Nonnull ItemStack itemStack, boolean skipRead) {
+        this.itemStack = itemStack;
+    }
+
+    /**
+     * 单槽工厂：只反序列化给定槽位的法术板（其余槽位不进入映射）。
+     * 用于施法交互的失败前置路径（冷却/缺晶能/空槽），免去 3/4 的法术板反序列化；
+     * 不可用于需要写回全部栏位的场合（写回用 {@link #forWriteBack}）。
+     * 接受调用方持有的 meta 快照，整个交互（前置读取 + 成功写回）只克隆一次。
+     */
+    @Nonnull
+    @ParametersAreNonnullByDefault
+    public static InstanceStave forSlot(ItemStack itemStack, SpellSlot slot, org.bukkit.inventory.meta.ItemMeta itemMeta) {
+        final InstanceStave stave = new InstanceStave(itemStack, false);
+        final InstancePlate plate;
+        try {
+            plate = PersistentStaveDataType.getSlotPlate(itemMeta, slot);
+        } catch (IllegalStateException e) {
+            CrystamaeHistoria.getInstance().getLogger().warning("法杖 PDC 数据损坏，按空法杖处理: " + e.getMessage());
+            return stave;
+        }
+        if (plate != null) {
+            stave.spellInstanceMap.put(slot, plate);
+        }
+        return stave;
+    }
+
+    /**
+     * 成功施法后的全量写回对象：全量重读并合并指定槽位已扣减的法术板。
+     * 复用调用方在施法前获取的 meta 快照（主线程单线程；法术回调不触碰施法者
+     * 手持物品的元数据——各法术仅作用于世界/实体）。
+     * 全量重读失败（PDC 损坏）时返回 null——调用方跳过写回保持原数据，
+     * 绝不能以空映射覆写法杖（会清掉其余槽位）。
+     */
+    @Nullable
+    @ParametersAreNonnullByDefault
+    public static InstanceStave forWriteBack(ItemStack itemStack, SpellSlot slot, InstancePlate mutatedPlate,
+                                              org.bukkit.inventory.meta.ItemMeta itemMeta) {
+        final Map<SpellSlot, InstancePlate> map;
+        try {
+            map = DataTypeMethods.getCustom(
+                itemMeta,
+                Keys.PDC_STAVE_STORAGE,
+                PersistentStaveDataType.TYPE
+            );
+        } catch (IllegalStateException e) {
+            CrystamaeHistoria.getInstance().getLogger().warning("法杖 PDC 数据损坏，跳过写回（保持原数据）: " + e.getMessage());
+            return null;
+        }
+        final InstanceStave stave = new InstanceStave(itemStack, false);
+        if (map != null) {
+            stave.spellInstanceMap.putAll(map);
+        }
+        stave.spellInstanceMap.put(slot, mutatedPlate);
+        return stave;
     }
 
     public void buildLore() {

@@ -40,21 +40,27 @@ public class SpellCastListener implements Listener {
             if (slot == null) {
                 return;
             }
-            InstanceStave staveInstance = new InstanceStave(stack);
+            // 单槽局部读取：冷却/缺晶能/空槽等失败前置路径只反序列化本槽法术板
+            // （免去其余槽位 3/4 的反序列化）；整个交互仅一次 getItemMeta 克隆，
+            // 成功后以同一 meta 快照全量重读合并写回
+            final ItemMeta staveMeta = stack.getItemMeta();
+            InstanceStave staveInstance = InstanceStave.forSlot(stack, slot, staveMeta);
             CastInformation castInformation = new CastInformation(player, stave.getLevel());
             CastResult castResult = staveInstance.tryCastSpell(slot, castInformation);
             if (castResult == CastResult.CAST_SUCCESS) {
-                // PDC 写回与 lore 更新共用一次 getItemMeta/setItemMeta 往返
-                // （旧实现各做一次，成功路径多付一整轮 ItemMeta 克隆与应用）
-                ItemMeta itemMeta = stack.getItemMeta();
-                DataTypeMethods.setCustom(
-                    itemMeta,
-                    Keys.PDC_STAVE_STORAGE,
-                    PersistentStaveDataType.TYPE,
-                    staveInstance.getSpellInstanceMap()
-                );
-                staveInstance.buildLore(itemMeta);
-                stack.setItemMeta(itemMeta);
+                final InstanceStave writeBack = InstanceStave.forWriteBack(
+                    stack, slot, staveInstance.getSpellInstanceMap().get(slot), staveMeta);
+                if (writeBack != null) {
+                    // 写回：PDC 与 lore 共用同一 meta 快照（法术回调不触碰手持物品元数据）
+                    DataTypeMethods.setCustom(
+                        staveMeta,
+                        Keys.PDC_STAVE_STORAGE,
+                        PersistentStaveDataType.TYPE,
+                        writeBack.getSpellInstanceMap()
+                    );
+                    writeBack.buildLore(staveMeta);
+                    stack.setItemMeta(staveMeta);
+                }
                 player.sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(
                     ThemeType.SUCCESS.getColor() + "释放法术: " + castInformation.getSpellType().getSpell().getName()
                 ));
