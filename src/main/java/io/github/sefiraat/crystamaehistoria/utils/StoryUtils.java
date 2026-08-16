@@ -120,16 +120,38 @@ public class StoryUtils {
     @ParametersAreNonnullByDefault
     public static void makeStoried(ItemStack itemStack) {
         // 单次元数据往返：故事上限与 storied 标记共用同一次克隆与应用
-        // （原实现 getStoryLimits 内部再克隆一次；getInitialStoryLimits 的及早求值顺序保持不变）
         final ItemMeta itemMeta = itemStack.getItemMeta();
         PersistentDataAPI.setBoolean(itemMeta, Keys.PDC_IS_STORIED, true);
-        // v2 扁平化：原 JSON 编码（gson 逐次解析；tier 只写不读）迁移为单 int 键，
-        // 已存在的 JSON（重复 makeStoried 场景保持原值）解析后落 int 并移除 JSON 键
-        final JsonObject limits = PersistentDataAPI.getJsonObject(
-            itemMeta, Keys.PDC_POTENTIAL_STORIES, getInitialStoryLimits(itemStack));
-        PersistentDataAPI.setInt(itemMeta, Keys.PDC_STORY_LIMIT, extractStoryLimit(limits));
+        // v2 扁平化：单 int 键替代 JSON 编码。重复 makeStoried 保持原掷值
+        // （既有 int → 沿用；否则既有 JSON（旧编码物品）解析迁移；否则新掷），
+        // 与旧实现"已存在 JSON 则保持"的语义一致；残留 JSON 键移除
+        final Integer existing = DataTypeMethods.getCustom(
+            itemMeta, Keys.PDC_STORY_LIMIT, org.bukkit.persistence.PersistentDataType.INTEGER);
+        final int count;
+        if (existing != null) {
+            count = existing;
+        } else {
+            final JsonObject legacy = PersistentDataAPI.getJsonObject(
+                itemMeta, Keys.PDC_POTENTIAL_STORIES, null);
+            count = legacy != null ? extractStoryLimit(legacy) : rollInitialStoryCount(itemStack.getType());
+        }
+        PersistentDataAPI.setInt(itemMeta, Keys.PDC_STORY_LIMIT, count);
         itemMeta.getPersistentDataContainer().remove(Keys.PDC_POTENTIAL_STORIES);
         itemStack.setItemMeta(itemMeta);
+    }
+
+    /** 新物品的故事潜力掷值（getInitialStoryLimits 的随机部分，锁入语义不变） */
+    private static int rollInitialStoryCount(Material material) {
+        final BlockDefinition definition = CrystamaeHistoria.getStoriesManager().getBlockDefinitionMap().get(material);
+        Preconditions.checkNotNull(
+            definition,
+            "The selected material does not have a story definition. This shouldn't happen, SefiDumb™"
+        );
+        return ThreadLocalRandom.current()
+            .nextInt(
+                definition.getBlockTier().minStories,
+                definition.getBlockTier().maxStories + 1
+            );
     }
 
     /**
