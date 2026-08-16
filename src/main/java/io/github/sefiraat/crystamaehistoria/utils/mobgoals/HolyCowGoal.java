@@ -24,12 +24,14 @@ public class HolyCowGoal extends AbstractGoal<Cow> {
     @Override
     public void tick() {
         final Player player = removeOffline();
+        // 目标读取缓存：本 tick 内多次判定共用一次实体记忆读取
+        final LivingEntity currentTarget = self.getTarget();
 
         if (player == null) {
             return;
         }
 
-        if (self.getTarget() != null && self.getTarget().equals(player)) {
+        if (currentTarget != null && currentTarget.equals(player)) {
             self.setTarget(null);
             return;
         }
@@ -59,7 +61,7 @@ public class HolyCowGoal extends AbstractGoal<Cow> {
             return;
         }
 
-        if (self.getTarget() != null && !self.getTarget().isDead()) {
+        if (currentTarget != null && !currentTarget.isDead()) {
             return;
         }
 
@@ -90,16 +92,19 @@ public class HolyCowGoal extends AbstractGoal<Cow> {
         }
 
         // 跨世界 distance 会抛 IllegalArgumentException：不同世界时跳过跟随（同 AbstractGoal）
+        // 距离以平方比较（免开方），阈值同平方
         if (getFollowsPlayer()
             && self.getLocation().getWorld() == player.getWorld()
-            && self.getLocation().distance(player.getLocation()) > getStayNearDistance()
         ) {
-            final Location location = player.getLocation().clone().add(
-                ThreadLocalRandom.current().nextDouble(-1.5, 1.5),
-                0,
-                ThreadLocalRandom.current().nextDouble(-1.5, 1.5)
-            );
-            self.getPathfinder().moveTo(location);
+            final double stayNear = getStayNearDistance();
+            if (self.getLocation().distanceSquared(player.getLocation()) > stayNear * stayNear) {
+                final Location location = player.getLocation().clone().add(
+                    ThreadLocalRandom.current().nextDouble(-1.5, 1.5),
+                    0,
+                    ThreadLocalRandom.current().nextDouble(-1.5, 1.5)
+                );
+                self.getPathfinder().moveTo(location);
+            }
         }
     }
 }

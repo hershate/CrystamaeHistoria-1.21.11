@@ -9,8 +9,6 @@ import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentUUIDDataTy
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Monster;
@@ -25,6 +23,12 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 public abstract class AbstractGoal<T extends Mob> implements Goal<T> {
+
+    /**
+     * 目标类型集常量：所有召唤物目标均为 TARGET；原实现每次调用分配新 EnumSet
+     * （注册与目标选择器重评估时反复调用）。内容恒定，共享只读。
+     */
+    private static final EnumSet<GoalType> GOAL_TYPES = EnumSet.of(GoalType.TARGET);
 
     @Getter
     protected final UUID owner;
@@ -62,13 +66,15 @@ public abstract class AbstractGoal<T extends Mob> implements Goal<T> {
     @Override
     public void tick() {
         final Player player = removeOffline();
+        // 目标读取缓存：本 tick 内多次判定共用一次实体记忆读取
+        final LivingEntity currentTarget = self.getTarget();
 
-        if (player == null || (self.getTarget() != null && self.getTarget().equals(player))) {
+        if (player == null || (currentTarget != null && currentTarget.equals(player))) {
             self.setTarget(null);
             return;
         }
 
-        if (!getTickCondition() || (self.getTarget() != null && !self.getTarget().isDead())) {
+        if (!getTickCondition() || (currentTarget != null && !currentTarget.isDead())) {
             return;
         }
 
@@ -101,16 +107,19 @@ public abstract class AbstractGoal<T extends Mob> implements Goal<T> {
 
         // 跨世界 distance 会抛 IllegalArgumentException（主人过传送门后 AI 每 tick 崩）：
         // 不同世界时跳过跟随逻辑（召唤物由 SpellMemory 过期清理兜底）
+        // 距离以平方比较（免开方），阈值同平方
         if (getFollowsPlayer()
             && self.getLocation().getWorld() == player.getWorld()
-            && self.getLocation().distance(player.getLocation()) > getStayNearDistance()
         ) {
-            final Location location = player.getLocation().clone().add(
-                ThreadLocalRandom.current().nextDouble(-1.5, 1.5),
-                0,
-                ThreadLocalRandom.current().nextDouble(-1.5, 1.5)
-            );
-            self.getPathfinder().moveTo(location);
+            final double stayNear = getStayNearDistance();
+            if (self.getLocation().distanceSquared(player.getLocation()) > stayNear * stayNear) {
+                final Location location = player.getLocation().clone().add(
+                    ThreadLocalRandom.current().nextDouble(-1.5, 1.5),
+                    0,
+                    ThreadLocalRandom.current().nextDouble(-1.5, 1.5)
+                );
+                self.getPathfinder().moveTo(location);
+            }
         }
 
         customActions(player);
@@ -119,13 +128,15 @@ public abstract class AbstractGoal<T extends Mob> implements Goal<T> {
 
     @Nullable
     public Player removeOffline() {
-        final OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(owner);
+        // 单次在线查询：getPlayer(uuid) 为 null ⇔ getOfflinePlayer(uuid).isOnline() 为 false
+        // （同一 UUID 语义等价，免去 OfflinePlayer 档案对象与两次额外查找）
+        final Player player = Bukkit.getPlayer(owner);
 
-        if (!offlinePlayer.isOnline()) {
+        if (player == null) {
             self.remove();
             return null;
         }
-        return offlinePlayer.getPlayer();
+        return player;
     }
 
     public boolean getTickCondition() {
@@ -161,7 +172,7 @@ public abstract class AbstractGoal<T extends Mob> implements Goal<T> {
     @Override
     @Nonnull
     public final EnumSet<GoalType> getTypes() {
-        return EnumSet.of(GoalType.TARGET);
+        return GOAL_TYPES;
     }
 
 }

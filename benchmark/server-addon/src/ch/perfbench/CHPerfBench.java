@@ -81,7 +81,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound12(w),
                 () -> benchRound13(w),
                 () -> benchRound15(w),
-                () -> benchRound16(w)
+                () -> benchRound16(w),
+                () -> benchRound17(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -1258,6 +1259,155 @@ public final class CHPerfBench extends JavaPlugin {
             }
             bh += lore.size();
         });
+    }
+
+    /**
+     * 第 17 轮：召唤物 AI 每 tick 路径。
+     * - mobGoal.ownerLookup：主人在线查询（旧三步 OfflinePlayer vs 新单次 getPlayer）
+     * - mobGoal.typesAlloc：GoalType 集合（旧每次 EnumSet.of vs 新共享常量）
+     * - mobGoal.targetReads：目标读取（旧 3 次 vs 新 1 次缓存）
+     * - ramGoal.blockScan：冲撞车块扫描（旧 75×BlockPosition + O(n²) contains 去重 vs 直接坐标遍历）
+     * - mobGoal.followDistance：跟随距离（distance 开方 vs distanceSquared）
+     * 等价性断言：类型集相等 / 块扫描坐标序列一致 / 离线主人两法同判 null / 距离判定采样一致。
+     */
+    private void benchRound17(PrintWriter w) {
+        final UUID owner = UUID.fromString("12345678-1234-1234-1234-123456789012");
+        final io.github.sefiraat.crystamaehistoria.utils.mobgoals.BoringGoal goal =
+            new io.github.sefiraat.crystamaehistoria.utils.mobgoals.BoringGoal(owner);
+
+        // —— 等价性 ——
+        final boolean eqTypes = java.util.EnumSet.of(com.destroystokyo.paper.entity.ai.GoalType.TARGET)
+            .equals(goal.getTypes());
+        // 离线主人（基准会话无玩家）：旧三步与新单次同判 null
+        final org.bukkit.entity.Player oldWay = Bukkit.getOfflinePlayer(owner).isOnline()
+            ? Bukkit.getOfflinePlayer(owner).getPlayer() : null;
+        final org.bukkit.entity.Player newWay = Bukkit.getPlayer(owner);
+        final boolean eqOwner = oldWay == null && newWay == null;
+        // 块扫描坐标序列（同序）：旧（去重列表）vs 新（直接遍历收集）
+        final World world = Bukkit.getWorlds().get(0);
+        final Location scanBase = new Location(world, 4000.5, 100.5, 4000.5);
+        final java.util.List<String> oldCoords = new java.util.ArrayList<>();
+        final java.util.List<String> newCoords = new java.util.ArrayList<>();
+        {
+            final Location location = scanBase;
+            final int radius = 2;
+            final java.util.List<io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition> blocks =
+                new java.util.ArrayList<>();
+            for (int x = location.getBlockX() - radius; x <= location.getBlockX() + radius; x++) {
+                for (int y = location.getBlockY(); y <= location.getBlockY() + radius; y++) {
+                    for (int z = location.getBlockZ() - radius; z <= location.getBlockZ() + radius; z++) {
+                        final io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition bp =
+                            new io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition(location.getWorld(), x, y, z);
+                        if (!blocks.contains(bp)) {
+                            blocks.add(bp);
+                        }
+                    }
+                }
+            }
+            for (final io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition bp : blocks) {
+                oldCoords.add(bp.getX() + "," + bp.getY() + "," + bp.getZ());
+            }
+            for (int x = location.getBlockX() - radius; x <= location.getBlockX() + radius; x++) {
+                for (int y = location.getBlockY(); y <= location.getBlockY() + radius; y++) {
+                    for (int z = location.getBlockZ() - radius; z <= location.getBlockZ() + radius; z++) {
+                        newCoords.add(x + "," + y + "," + z);
+                    }
+                }
+            }
+        }
+        final boolean eqScan = oldCoords.equals(newCoords);
+        // 距离判定采样：distance > t ⇔ distanceSquared > t²
+        boolean eqDist = true;
+        for (int i = 0; i < 64; i++) {
+            final Location a = new Location(world, i * 0.37, 100, i * 0.11);
+            final Location b = new Location(world, i * 0.31 + 3, 100, i * 0.29);
+            final double t = (i % 9) + 0.5;
+            if ((a.distance(b) > t) != (a.distanceSquared(b) > t * t)) {
+                eqDist = false;
+            }
+        }
+        getLogger().info("round17 等价性: types=" + eqTypes + " ownerOffline=" + eqOwner
+            + " scanOrder=" + eqScan + " distance=" + eqDist);
+
+        // —— 主人在线查询（离线常态：两法都走缓存未命中路径）——
+        time(w, "mobGoal.ownerLookup", "old_offlineplayer_3step", 200_000, () -> {
+            final org.bukkit.OfflinePlayer op = Bukkit.getOfflinePlayer(owner);
+            bh += op.isOnline() ? 1 : 0;
+        });
+        time(w, "mobGoal.ownerLookup", "new_getPlayer_single", 1_000_000, () -> {
+            if (Bukkit.getPlayer(owner) != null) {
+                bh++;
+            }
+        });
+
+        // —— GoalType 集合 ——
+        time(w, "mobGoal.typesAlloc", "old_enumset_of", 1_000_000, () ->
+            bh += java.util.EnumSet.of(com.destroystokyo.paper.entity.ai.GoalType.TARGET).size());
+        time(w, "mobGoal.typesAlloc", "new_shared_constant", 5_000_000, () ->
+            bh += goal.getTypes().size());
+
+        // —— 目标读取（真实实体记忆读取 ×3 vs ×1）——
+        final Zombie reader = world.spawn(new Location(world, 0, 220, 0), Zombie.class);
+        time(w, "mobGoal.targetReads", "old_triple_read", 500_000, () -> {
+            final org.bukkit.entity.LivingEntity t1 = reader.getTarget();
+            final boolean a = t1 != null && t1.equals(reader);
+            final org.bukkit.entity.LivingEntity t2 = reader.getTarget();
+            final boolean b = t2 != null && !t2.isDead();
+            bh += (a || b) ? 1 : 0;
+        });
+        time(w, "mobGoal.targetReads", "new_single_cached", 1_000_000, () -> {
+            final org.bukkit.entity.LivingEntity t = reader.getTarget();
+            final boolean a = t != null && t.equals(reader);
+            final boolean b = t != null && !t.isDead();
+            bh += (a || b) ? 1 : 0;
+        });
+        reader.remove();
+
+        // —— 冲撞车块扫描（枚举 + 取块 + 取 BlockData；破坏判定两法同侧不计）——
+        time(w, "ramGoal.blockScan", "old_blockposition_dedup", 2_000, () -> {
+            final Location location = scanBase;
+            final int radius = 2;
+            final java.util.List<io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition> blocks =
+                new java.util.ArrayList<>();
+            for (int x = location.getBlockX() - radius; x <= location.getBlockX() + radius; x++) {
+                for (int y = location.getBlockY(); y <= location.getBlockY() + radius; y++) {
+                    for (int z = location.getBlockZ() - radius; z <= location.getBlockZ() + radius; z++) {
+                        final io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition bp =
+                            new io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition(location.getWorld(), x, y, z);
+                        if (!blocks.contains(bp)) {
+                            blocks.add(bp);
+                        }
+                    }
+                }
+            }
+            for (final io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition bp : blocks) {
+                final Block block = bp.getBlock();
+                bh += block.getBlockData().getMaterial().ordinal();
+            }
+        });
+        time(w, "ramGoal.blockScan", "new_direct_coords", 5_000, () -> {
+            final Location location = scanBase;
+            final World wld = location.getWorld();
+            final int radius = 2;
+            final int baseX = location.getBlockX();
+            final int baseY = location.getBlockY();
+            final int baseZ = location.getBlockZ();
+            for (int x = baseX - radius; x <= baseX + radius; x++) {
+                for (int y = baseY; y <= baseY + radius; y++) {
+                    for (int z = baseZ - radius; z <= baseZ + radius; z++) {
+                        final Block block = wld.getBlockAt(x, y, z);
+                        bh += block.getBlockData().getMaterial().ordinal();
+                    }
+                }
+            }
+        });
+
+        // —— 跟随距离判定 ——
+        final Location a = new Location(world, 0, 100, 0);
+        final Location b = new Location(world, 6, 100, 8);
+        time(w, "mobGoal.followDistance", "old_distance_sqrt", 2_000_000, () -> bh += a.distance(b) > 5 ? 1 : 0);
+        time(w, "mobGoal.followDistance", "new_distanceSquared", 5_000_000, () ->
+            bh += a.distanceSquared(b) > 25 ? 1 : 0);
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
