@@ -24,11 +24,14 @@
 
 持续性能优化（红线：安全/稳定/兼容，量化见 [benchmark/](../benchmark/)，
 报告与索引见 [report/perf/](report/perf/README.md)）：
-第 1-9 轮完成并**闭合**（收敛判定见 [round-9](report/perf/round-9.md)）——
+第一轮第 1-9 轮完成并**闭合**（收敛判定见 [round-9](report/perf/round-9.md)）——
 施法前置校验 29x；SpellMemory 零复制 8x；施法触发懒 raycast；交互路径 ItemMeta
 削减 8.9x；机械 tick 判定备忘录 1010x；法杖单槽 PDC 读取 1.6x；gadgets 每 tick
 清扫 2.0-5.9x；故事选取索引 21x + 配置双解析消除 2.3x；统计路径 12.4x；
 v0.2.0 全套基准 + 10 分钟 soak 终验 0 异常 0 tick 落后。
+**第二轮循环**（完全重写授权）自 2026-08-16 起进行中：第 10 轮世界级高频事件
+路径 O(1) 化（弹射物/下落方块反查 20-38.5x、无敌内存注册表 4.3-5.7x、
+召唤物类型门控 5.0x），见 [round-10](report/perf/round-10.md)。
 
 ## 维护要点（改代码前必读）
 
