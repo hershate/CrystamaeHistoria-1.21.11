@@ -231,7 +231,7 @@ public class PlayerStatistics {
     @ParametersAreNonnullByDefault
     public static java.util.Set<String> getUnlockedSpellIdSet(UUID player) {
         final SetCache cache = SET_CACHE.computeIfAbsent(player, k -> new SetCache());
-        if (cache.spellsEpoch != statsEpoch) {
+        if (cache.spellsEpoch != membershipEpoch) {
             final java.util.Set<String> ids = new java.util.HashSet<>();
             final ConfigurationSection section = CrystamaeHistoria.getConfigManager().getPlayerStats()
                 .getConfigurationSection(player + "." + StatType.SPELL);
@@ -253,7 +253,7 @@ public class PlayerStatistics {
     @ParametersAreNonnullByDefault
     public static java.util.Set<Material> getUnlockedUniqueStorySet(UUID player) {
         final SetCache cache = SET_CACHE.computeIfAbsent(player, k -> new SetCache());
-        if (cache.storiesEpoch != statsEpoch) {
+        if (cache.storiesEpoch != membershipEpoch) {
             final java.util.Set<Material> materials = java.util.EnumSet.noneOf(Material.class);
             final ConfigurationSection section = CrystamaeHistoria.getConfigManager().getPlayerStats()
                 .getConfigurationSection(player + "." + StatType.STORY);
@@ -279,7 +279,7 @@ public class PlayerStatistics {
     @ParametersAreNonnullByDefault
     public static java.util.Set<Material> getGildedSet(UUID player) {
         final SetCache cache = SET_CACHE.computeIfAbsent(player, k -> new SetCache());
-        if (cache.gildedEpoch != statsEpoch) {
+        if (cache.gildedEpoch != membershipEpoch) {
             final java.util.Set<Material> materials = java.util.EnumSet.noneOf(Material.class);
             final ConfigurationSection section = CrystamaeHistoria.getConfigManager().getPlayerStats()
                 .getConfigurationSection(player + "." + StatType.STORY);
@@ -390,7 +390,7 @@ public class PlayerStatistics {
             }
         }
         cache.stories = unlocked;
-        cache.storiesEpoch = membershipEpoch;
+        cache.storiesEpoch = statsEpoch;
         return unlocked;
     }
 
@@ -433,7 +433,7 @@ public class PlayerStatistics {
             }
         }
         cache.spells = unlocked;
-        cache.spellsEpoch = membershipEpoch;
+        cache.spellsEpoch = statsEpoch;
         return unlocked;
     }
 
@@ -476,7 +476,7 @@ public class PlayerStatistics {
             }
         }
         cache.gilded = unlocked;
-        cache.gildedEpoch = membershipEpoch;
+        cache.gildedEpoch = statsEpoch;
         return unlocked;
     }
 
