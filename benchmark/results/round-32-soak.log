@@ -1,0 +1,388 @@
+Starting org.bukkit.craftbukkit.Main
+2026-08-16T18:35:22.371931900Z ServerMain WARN Advanced terminal features are not available in this environment
+[02:35:22 INFO]: [bootstrap] Running Java 21 (Java HotSpot(TM) 64-Bit Server VM 21.0.10+8-LTS-217; Oracle Corporation null) on Windows 11 10.0 (amd64)
+[02:35:22 INFO]: [bootstrap] Loading Paper 1.21.11-132-ver/1.21.11@c5eb079 (2026-05-11T11:43:09Z) for Minecraft 1.21.11
+[02:35:23 WARN]: [oshi.driver.windows.perfmon.PerfmonDisabled] Invalid registry value type detected for PerfOS counters. Should be REG_DWORD. Ignoring: HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\PerfOS\Performance\Disable Performance Counters.
+[02:35:23 INFO]: [PluginInitializerManager] Initializing plugins...
+[02:35:24 INFO]: [PluginInitializerManager] Initialized 2 plugins
+[02:35:24 INFO]: [PluginInitializerManager] Bukkit plugins (2):
+ - CrystamaeHistoria (0.7.0), Slimefun (5.0.0)
+[02:35:29 INFO]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, profilesHost=https://api.mojang.com, name=PROD]
+[02:35:29 ERROR]: Failed to request yggdrasil public key
+com.mojang.authlib.exceptions.MinecraftClientException: Failed to read from https://api.minecraftservices.com/publickeys due to PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at com.mojang.authlib.minecraft.client.MinecraftClient.readInputStream(MinecraftClient.java:111) ~[authlib-7.0.61.jar:?]
+	at com.mojang.authlib.minecraft.client.MinecraftClient.get(MinecraftClient.java:56) ~[authlib-7.0.61.jar:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilServicesKeyInfo.fetch(YggdrasilServicesKeyInfo.java:114) ~[authlib-7.0.61.jar:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilServicesKeyInfo$1.run(YggdrasilServicesKeyInfo.java:89) ~[authlib-7.0.61.jar:?]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572) ~[?:?]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317) ~[?:?]
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:304) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[?:?]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[?:?]
+Caused by: javax.net.ssl.SSLHandshakeException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.ssl.Alert.createSSLException(Alert.java:130) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:383) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:326) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:321) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.checkServerCerts(CertificateMessage.java:1287) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.onConsumeCertificate(CertificateMessage.java:1164) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.consume(CertificateMessage.java:1107) ~[?:?]
+	at java.base/sun.security.ssl.SSLHandshake.consume(SSLHandshake.java:393) ~[?:?]
+	at java.base/sun.security.ssl.HandshakeContext.dispatch(HandshakeContext.java:477) ~[?:?]
+	at java.base/sun.security.ssl.HandshakeContext.dispatch(HandshakeContext.java:448) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.dispatch(TransportContext.java:206) ~[?:?]
+	at java.base/sun.security.ssl.SSLTransport.decode(SSLTransport.java:172) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.decode(SSLSocketImpl.java:1506) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.readHandshakeRecord(SSLSocketImpl.java:1421) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:455) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:426) ~[?:?]
+	at java.base/sun.net.www.protocol.https.HttpsClient.afterConnect(HttpsClient.java:586) ~[?:?]
+	at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(AbstractDelegateHttpsURLConnection.java:187) ~[?:?]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream0(HttpURLConnection.java:1691) ~[?:?]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1615) ~[?:?]
+	at java.base/java.net.HttpURLConnection.getResponseCode(HttpURLConnection.java:531) ~[?:?]
+	at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.getResponseCode(HttpsURLConnectionImpl.java:307) ~[?:?]
+	at com.mojang.authlib.minecraft.client.MinecraftClient.readInputStream(MinecraftClient.java:82) ~[authlib-7.0.61.jar:?]
+	... 9 more
+Caused by: sun.security.validator.ValidatorException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.validator.PKIXValidator.doBuild(PKIXValidator.java:388) ~[?:?]
+	at java.base/sun.security.validator.PKIXValidator.engineValidate(PKIXValidator.java:271) ~[?:?]
+	at java.base/sun.security.validator.Validator.validate(Validator.java:256) ~[?:?]
+	at java.base/sun.security.ssl.X509TrustManagerImpl.checkTrusted(X509TrustManagerImpl.java:230) ~[?:?]
+	at java.base/sun.security.ssl.X509TrustManagerImpl.checkServerTrusted(X509TrustManagerImpl.java:132) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.checkServerCerts(CertificateMessage.java:1271) ~[?:?]
+	... 27 more
+Caused by: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.provider.certpath.SunCertPathBuilder.build(SunCertPathBuilder.java:148) ~[?:?]
+	at java.base/sun.security.provider.certpath.SunCertPathBuilder.engineBuild(SunCertPathBuilder.java:129) ~[?:?]
+	at java.base/java.security.cert.CertPathBuilder.build(CertPathBuilder.java:297) ~[?:?]
+	at java.base/sun.security.validator.PKIXValidator.doBuild(PKIXValidator.java:383) ~[?:?]
+	... 32 more
+[02:35:31 INFO]: Loaded 1470 recipes
+[02:35:31 INFO]: Loaded 1584 advancements
+[02:35:31 INFO]: [ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry] Initialising converters for DataConverter...
+[02:35:31 INFO]: [ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry] Finished initialising converters for DataConverter in 380.3ms
+[02:35:31 INFO]: Starting minecraft server version 1.21.11
+[02:35:31 INFO]: Loading properties
+[02:35:31 INFO]: This server is running Paper version 1.21.11-132-ver/1.21.11@c5eb079 (2026-05-11T11:43:09Z) (Implementing API version 1.21.11-R0.1-SNAPSHOT)
+[02:35:31 INFO]: [spark] This server bundles the spark profiler. For more information please visit https://docs.papermc.io/paper/profiling
+[02:35:31 INFO]: Server Ping Player Sample Count: 12
+[02:35:31 INFO]: Using 4 threads for Netty based IO
+[02:35:32 INFO]: [MoonriseCommon] Paper is using 8 worker threads, 1 I/O threads
+[02:35:32 INFO]: Default game type: SURVIVAL
+[02:35:32 INFO]: Generating keypair
+[02:35:32 INFO]: Starting Minecraft server on *:25565
+[02:35:32 INFO]: Paper: Using Java compression from Velocity.
+[02:35:32 INFO]: Paper: Using Java cipher from Velocity.
+[02:35:33 INFO]: [Slimefun] Loading server plugin Slimefun v5.0.0
+[02:35:33 INFO]: [CrystamaeHistoria] Loading server plugin CrystamaeHistoria v0.7.0
+[02:35:33 INFO]: Server permissions file permissions.yml is empty, ignoring it
+[02:35:33 WARN]: **** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!
+[02:35:33 WARN]: The server will make no attempt to authenticate usernames. Beware.
+[02:35:33 WARN]: While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.
+[02:35:33 WARN]: To change this, set "online-mode" to "true" in the server.properties file.
+[02:35:33 INFO]: Preparing level "world"
+[02:35:33 INFO]: Loading 0 persistent chunks for world 'minecraft:overworld'...
+[02:35:33 INFO]: Prepared spawn area in 2 ms
+[02:35:33 INFO]: Loading 0 persistent chunks for world 'minecraft:the_nether'...
+[02:35:33 INFO]: Prepared spawn area in 0 ms
+[02:35:33 INFO]: Loading 0 persistent chunks for world 'minecraft:the_end'...
+[02:35:33 INFO]: Prepared spawn area in 1 ms
+[02:35:33 INFO]: Done preparing level "world" (0.631s)
+[02:35:33 INFO]: [Slimefun] Enabling Slimefun v5.0.0
+[02:35:34 INFO]: [Slimefun] Paper was detected! Performance optimizations have been applied.
+[02:35:34 INFO]: [Slimefun] Creating directories...
+[02:35:34 INFO]: [Slimefun] Loading language files...
+[02:35:34 INFO]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, profilesHost=https://api.mojang.com, name=PROD]
+[02:35:34 ERROR]: Failed to request yggdrasil public key
+com.mojang.authlib.exceptions.MinecraftClientException: Failed to read from https://api.minecraftservices.com/publickeys due to PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at com.mojang.authlib.minecraft.client.MinecraftClient.readInputStream(MinecraftClient.java:111) ~[authlib-7.0.61.jar:?]
+	at com.mojang.authlib.minecraft.client.MinecraftClient.get(MinecraftClient.java:56) ~[authlib-7.0.61.jar:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilServicesKeyInfo.fetch(YggdrasilServicesKeyInfo.java:114) ~[authlib-7.0.61.jar:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilServicesKeyInfo$1.run(YggdrasilServicesKeyInfo.java:89) ~[authlib-7.0.61.jar:?]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572) ~[?:?]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317) ~[?:?]
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:304) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[?:?]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[?:?]
+Caused by: javax.net.ssl.SSLHandshakeException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.ssl.Alert.createSSLException(Alert.java:130) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:383) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:326) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:321) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.checkServerCerts(CertificateMessage.java:1287) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.onConsumeCertificate(CertificateMessage.java:1164) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.consume(CertificateMessage.java:1107) ~[?:?]
+	at java.base/sun.security.ssl.SSLHandshake.consume(SSLHandshake.java:393) ~[?:?]
+	at java.base/sun.security.ssl.HandshakeContext.dispatch(HandshakeContext.java:477) ~[?:?]
+	at java.base/sun.security.ssl.HandshakeContext.dispatch(HandshakeContext.java:448) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.dispatch(TransportContext.java:206) ~[?:?]
+	at java.base/sun.security.ssl.SSLTransport.decode(SSLTransport.java:172) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.decode(SSLSocketImpl.java:1506) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.readHandshakeRecord(SSLSocketImpl.java:1421) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:455) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:426) ~[?:?]
+	at java.base/sun.net.www.protocol.https.HttpsClient.afterConnect(HttpsClient.java:586) ~[?:?]
+	at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(AbstractDelegateHttpsURLConnection.java:187) ~[?:?]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream0(HttpURLConnection.java:1691) ~[?:?]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1615) ~[?:?]
+	at java.base/java.net.HttpURLConnection.getResponseCode(HttpURLConnection.java:531) ~[?:?]
+	at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.getResponseCode(HttpsURLConnectionImpl.java:307) ~[?:?]
+	at com.mojang.authlib.minecraft.client.MinecraftClient.readInputStream(MinecraftClient.java:82) ~[authlib-7.0.61.jar:?]
+	... 9 more
+Caused by: sun.security.validator.ValidatorException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.validator.PKIXValidator.doBuild(PKIXValidator.java:388) ~[?:?]
+	at java.base/sun.security.validator.PKIXValidator.engineValidate(PKIXValidator.java:271) ~[?:?]
+	at java.base/sun.security.validator.Validator.validate(Validator.java:256) ~[?:?]
+	at java.base/sun.security.ssl.X509TrustManagerImpl.checkTrusted(X509TrustManagerImpl.java:230) ~[?:?]
+	at java.base/sun.security.ssl.X509TrustManagerImpl.checkServerTrusted(X509TrustManagerImpl.java:132) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.checkServerCerts(CertificateMessage.java:1271) ~[?:?]
+	... 27 more
+Caused by: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.provider.certpath.SunCertPathBuilder.build(SunCertPathBuilder.java:148) ~[?:?]
+	at java.base/sun.security.provider.certpath.SunCertPathBuilder.engineBuild(SunCertPathBuilder.java:129) ~[?:?]
+	at java.base/java.security.cert.CertPathBuilder.build(CertPathBuilder.java:297) ~[?:?]
+	at java.base/sun.security.validator.PKIXValidator.doBuild(PKIXValidator.java:383) ~[?:?]
+	... 32 more
+[02:35:34 INFO]: [Slimefun] Loaded language "en"
+[02:35:34 INFO]: [Slimefun] Available languages: en, de, fr, it, es, ru, pl, uk, sv, nl, da, cs, ro, bg, pt, pt-BR, hu, lv, sk, vi, id, zh-CN, zh-TW, ja, ko, he, ar, tr, fa, th, tl
+[02:35:34 INFO]: [Slimefun] Using legacy storage for player data
+[02:35:34 INFO]: [Slimefun] Loading GEO-Resources...
+[02:35:35 INFO]: [Slimefun] Loading Tags...
+[02:35:35 INFO]: [Slimefun] Loading items...
+[02:35:36 INFO]: [Slimefun] Loading researches...
+[02:35:36 INFO]: [Slimefun] Loading Wiki pages...
+[02:35:36 INFO]: [Slimefun] Registering listeners...
+[02:35:36 INFO]: [Slimefun] Loading Third-Party plugin integrations...
+[02:35:36 INFO]: [Slimefun] Slimefun has finished loading in 2.36s
+[02:35:36 INFO]: [CrystamaeHistoria] Enabling CrystamaeHistoria v0.7.0
+[02:35:36 INFO]: [CrystamaeHistoria] ########################################
+[02:35:36 INFO]: [CrystamaeHistoria]      CrystamaeHistoria  Ä§·¨Ë®¾§±àÄêÊ·    
+[02:35:36 INFO]: [CrystamaeHistoria] ########################################
+[02:35:36 INFO]: [CrystamaeHistoria] ÒÑ¼ÓÔØ: 995 ¸ö¶ÀÌØµÄ·½¿é¹ÊÊÂ.
+[02:35:37 INFO]: [CrystamaeHistoria] Æô¶¯½×¶ÎºÄÊ±: ÅäÖÃ¼ÓÔØ 157.9ms | ¹ÊÊÂÓò¹¹½¨ 38.6ms | ¹ÜÀíÆ÷ 119.8ms | ·¨ÊõÅäÖÃ 69.5ms | ÎïÆ·×¢²á 249.0ms | ÃüÁî 1.60ms | ºÏ¼Æ 636.4ms
+[02:35:37 INFO]: [spark] Starting background profiler...
+[02:35:37 INFO]: [spark] The async-profiler engine is not supported for your os/arch (windows11/amd64), so the built-in Java engine will be used instead.
+[02:35:37 INFO]: Running delayed init tasks
+[02:35:37 INFO]: [Slimefun] Collecting Snapshots of all Recipes...
+[02:35:37 INFO]: [Slimefun] Found 1,470 Recipes!
+[02:35:37 INFO]: 
+[02:35:37 INFO]: [38;5;10m######################### - Slimefun v5.0.0 - #########################[0m
+[02:35:37 INFO]: 
+[02:35:37 INFO]: [38;5;10mSuccessfully loaded 829 Items and 258 Researches[0m
+[02:35:37 INFO]: [38;5;10m( 555 Items from Slimefun, 274 Items from 1 Addons )[0m
+[02:35:37 INFO]: 
+[02:35:37 INFO]: [38;5;10mSlimefun is an Open-Source project that is kept alive by a large community.[0m
+[02:35:37 INFO]: [38;5;10mConsider helping us maintain this project by contributing on GitHub![0m
+[02:35:37 INFO]: [38;5;10m - UNOFFICIALLY MODIFIED BUILD - NO OFFICIAL SUPPORT GIVEN[0m
+[02:35:37 INFO]: 
+[02:35:37 INFO]: [Slimefun] Loading Blocks for World "world"
+[02:35:37 INFO]: [Slimefun] This may take a long time...
+[02:35:37 INFO]: [Slimefun] Loading Blocks... 100% (FINISHED - 0ms)
+[02:35:37 INFO]: [Slimefun] Loaded a total of 0 Blocks for World "world"
+[02:35:37 INFO]: [Slimefun] Loading Blocks for World "world_nether"
+[02:35:37 INFO]: [Slimefun] This may take a long time...
+[02:35:37 INFO]: [Slimefun] Loading Blocks... 100% (FINISHED - 0ms)
+[02:35:37 INFO]: [Slimefun] Loaded a total of 0 Blocks for World "world_nether"
+[02:35:37 INFO]: [Slimefun] Loading Blocks for World "world_the_end"
+[02:35:37 INFO]: [Slimefun] This may take a long time...
+[02:35:37 INFO]: [Slimefun] Loading Blocks... 100% (FINISHED - 0ms)
+[02:35:37 INFO]: [Slimefun] Loaded a total of 0 Blocks for World "world_the_end"
+[02:35:37 INFO]: [dough: protection] Loading Protection Modules...
+[02:35:37 INFO]: [dough: protection] This may happen more than once.
+[02:35:37 INFO]: [CrystamaeHistoria] ÕýÔÚ±£´æÄ§·¨Ë®¾§±àÄêÊ·µÄÊý¾Ý
+[02:35:37 INFO]: Done (16.126s)! For help, type "help"
+[02:35:39 WARN]: *************************************************************************************
+[02:35:39 WARN]: You are running the latest build for your Minecraft version (1.21.11)
+[02:35:39 WARN]: However, you are 4 release(s) behind the latest stable release (26.2)!
+[02:35:39 WARN]: It is recommended that you update as soon as possible
+[02:35:39 WARN]: https://papermc.io/downloads/paper
+[02:35:39 WARN]: *************************************************************************************
+[02:36:08 WARN]: [Skins] Could not fetch skin from Mojang sessions server for e735af9f-f643-415c-a57b-2af77960ba06
+javax.net.ssl.SSLHandshakeException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.ssl.Alert.createSSLException(Alert.java:130) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:383) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:326) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:321) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.checkServerCerts(CertificateMessage.java:1287) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.onConsumeCertificate(CertificateMessage.java:1164) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.consume(CertificateMessage.java:1107) ~[?:?]
+	at java.base/sun.security.ssl.SSLHandshake.consume(SSLHandshake.java:393) ~[?:?]
+	at java.base/sun.security.ssl.HandshakeContext.dispatch(HandshakeContext.java:477) ~[?:?]
+	at java.base/sun.security.ssl.HandshakeContext.dispatch(HandshakeContext.java:448) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.dispatch(TransportContext.java:206) ~[?:?]
+	at java.base/sun.security.ssl.SSLTransport.decode(SSLTransport.java:172) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.decode(SSLSocketImpl.java:1506) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.readHandshakeRecord(SSLSocketImpl.java:1421) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:455) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:426) ~[?:?]
+	at java.base/sun.net.www.protocol.https.HttpsClient.afterConnect(HttpsClient.java:586) ~[?:?]
+	at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(AbstractDelegateHttpsURLConnection.java:187) ~[?:?]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream0(HttpURLConnection.java:1691) ~[?:?]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1615) ~[?:?]
+	at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.getInputStream(HttpsURLConnectionImpl.java:223) ~[?:?]
+	at java.base/java.net.URL.openStream(URL.java:1325) ~[?:?]
+	at Slimefun-5.0.0.jar//io.github.thebusybiscuit.slimefun4.libraries.dough.skins.PlayerSkin.lambda$fromPlayerUUID$0(PlayerSkin.java:121) ~[?:?]
+	at org.bukkit.craftbukkit.scheduler.CraftTask.run(CraftTask.java:78) ~[paper-1.21.11.jar:1.21.11-132-c5eb079]
+	at org.bukkit.craftbukkit.scheduler.CraftAsyncTask.run(CraftAsyncTask.java:57) ~[paper-1.21.11.jar:1.21.11-132-c5eb079]
+	at com.destroystokyo.paper.ServerSchedulerReportingWrapper.run(ServerSchedulerReportingWrapper.java:22) ~[paper-1.21.11.jar:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[?:?]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[?:?]
+Caused by: sun.security.validator.ValidatorException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.validator.PKIXValidator.doBuild(PKIXValidator.java:388) ~[?:?]
+	at java.base/sun.security.validator.PKIXValidator.engineValidate(PKIXValidator.java:271) ~[?:?]
+	at java.base/sun.security.validator.Validator.validate(Validator.java:256) ~[?:?]
+	at java.base/sun.security.ssl.X509TrustManagerImpl.checkTrusted(X509TrustManagerImpl.java:230) ~[?:?]
+	at java.base/sun.security.ssl.X509TrustManagerImpl.checkServerTrusted(X509TrustManagerImpl.java:132) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.checkServerCerts(CertificateMessage.java:1271) ~[?:?]
+	... 24 more
+Caused by: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.provider.certpath.SunCertPathBuilder.build(SunCertPathBuilder.java:148) ~[?:?]
+	at java.base/sun.security.provider.certpath.SunCertPathBuilder.engineBuild(SunCertPathBuilder.java:129) ~[?:?]
+	at java.base/java.security.cert.CertPathBuilder.build(CertPathBuilder.java:297) ~[?:?]
+	at java.base/sun.security.validator.PKIXValidator.doBuild(PKIXValidator.java:383) ~[?:?]
+	... 29 more
+[02:36:08 WARN]: [Slimefun] Attempted to refresh skin cache, got this response: ExecutionException: javax.net.ssl.SSLHandshakeException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+[02:36:08 WARN]: [Slimefun] This usually means mojang.com is temporarily down or started to rate-limit this connection, nothing to worry about!
+[02:40:29 ERROR]: Failed to request yggdrasil public key
+com.mojang.authlib.exceptions.MinecraftClientException: Failed to read from https://api.minecraftservices.com/publickeys due to PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at com.mojang.authlib.minecraft.client.MinecraftClient.readInputStream(MinecraftClient.java:111) ~[authlib-7.0.61.jar:?]
+	at com.mojang.authlib.minecraft.client.MinecraftClient.get(MinecraftClient.java:56) ~[authlib-7.0.61.jar:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilServicesKeyInfo.fetch(YggdrasilServicesKeyInfo.java:114) ~[authlib-7.0.61.jar:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilServicesKeyInfo$1.run(YggdrasilServicesKeyInfo.java:89) ~[authlib-7.0.61.jar:?]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572) ~[?:?]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317) ~[?:?]
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:304) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[?:?]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[?:?]
+Caused by: javax.net.ssl.SSLHandshakeException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.ssl.Alert.createSSLException(Alert.java:130) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:383) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:326) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:321) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.checkServerCerts(CertificateMessage.java:1287) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.onConsumeCertificate(CertificateMessage.java:1164) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.consume(CertificateMessage.java:1107) ~[?:?]
+	at java.base/sun.security.ssl.SSLHandshake.consume(SSLHandshake.java:393) ~[?:?]
+	at java.base/sun.security.ssl.HandshakeContext.dispatch(HandshakeContext.java:477) ~[?:?]
+	at java.base/sun.security.ssl.HandshakeContext.dispatch(HandshakeContext.java:448) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.dispatch(TransportContext.java:206) ~[?:?]
+	at java.base/sun.security.ssl.SSLTransport.decode(SSLTransport.java:172) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.decode(SSLSocketImpl.java:1506) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.readHandshakeRecord(SSLSocketImpl.java:1421) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:455) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:426) ~[?:?]
+	at java.base/sun.net.www.protocol.https.HttpsClient.afterConnect(HttpsClient.java:586) ~[?:?]
+	at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(AbstractDelegateHttpsURLConnection.java:187) ~[?:?]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream0(HttpURLConnection.java:1691) ~[?:?]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1615) ~[?:?]
+	at java.base/java.net.HttpURLConnection.getResponseCode(HttpURLConnection.java:531) ~[?:?]
+	at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.getResponseCode(HttpsURLConnectionImpl.java:307) ~[?:?]
+	at com.mojang.authlib.minecraft.client.MinecraftClient.readInputStream(MinecraftClient.java:82) ~[authlib-7.0.61.jar:?]
+	... 9 more
+Caused by: sun.security.validator.ValidatorException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.validator.PKIXValidator.doBuild(PKIXValidator.java:388) ~[?:?]
+	at java.base/sun.security.validator.PKIXValidator.engineValidate(PKIXValidator.java:271) ~[?:?]
+	at java.base/sun.security.validator.Validator.validate(Validator.java:256) ~[?:?]
+	at java.base/sun.security.ssl.X509TrustManagerImpl.checkTrusted(X509TrustManagerImpl.java:230) ~[?:?]
+	at java.base/sun.security.ssl.X509TrustManagerImpl.checkServerTrusted(X509TrustManagerImpl.java:132) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.checkServerCerts(CertificateMessage.java:1271) ~[?:?]
+	... 27 more
+Caused by: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.provider.certpath.SunCertPathBuilder.build(SunCertPathBuilder.java:148) ~[?:?]
+	at java.base/sun.security.provider.certpath.SunCertPathBuilder.engineBuild(SunCertPathBuilder.java:129) ~[?:?]
+	at java.base/java.security.cert.CertPathBuilder.build(CertPathBuilder.java:297) ~[?:?]
+	at java.base/sun.security.validator.PKIXValidator.doBuild(PKIXValidator.java:383) ~[?:?]
+	... 32 more
+[02:40:34 ERROR]: Failed to request yggdrasil public key
+com.mojang.authlib.exceptions.MinecraftClientException: Failed to read from https://api.minecraftservices.com/publickeys due to PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at com.mojang.authlib.minecraft.client.MinecraftClient.readInputStream(MinecraftClient.java:111) ~[authlib-7.0.61.jar:?]
+	at com.mojang.authlib.minecraft.client.MinecraftClient.get(MinecraftClient.java:56) ~[authlib-7.0.61.jar:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilServicesKeyInfo.fetch(YggdrasilServicesKeyInfo.java:114) ~[authlib-7.0.61.jar:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilServicesKeyInfo$1.run(YggdrasilServicesKeyInfo.java:89) ~[authlib-7.0.61.jar:?]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572) ~[?:?]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317) ~[?:?]
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:304) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[?:?]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[?:?]
+Caused by: javax.net.ssl.SSLHandshakeException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.ssl.Alert.createSSLException(Alert.java:130) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:383) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:326) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:321) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.checkServerCerts(CertificateMessage.java:1287) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.onConsumeCertificate(CertificateMessage.java:1164) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.consume(CertificateMessage.java:1107) ~[?:?]
+	at java.base/sun.security.ssl.SSLHandshake.consume(SSLHandshake.java:393) ~[?:?]
+	at java.base/sun.security.ssl.HandshakeContext.dispatch(HandshakeContext.java:477) ~[?:?]
+	at java.base/sun.security.ssl.HandshakeContext.dispatch(HandshakeContext.java:448) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.dispatch(TransportContext.java:206) ~[?:?]
+	at java.base/sun.security.ssl.SSLTransport.decode(SSLTransport.java:172) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.decode(SSLSocketImpl.java:1506) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.readHandshakeRecord(SSLSocketImpl.java:1421) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:455) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:426) ~[?:?]
+	at java.base/sun.net.www.protocol.https.HttpsClient.afterConnect(HttpsClient.java:586) ~[?:?]
+	at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(AbstractDelegateHttpsURLConnection.java:187) ~[?:?]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream0(HttpURLConnection.java:1691) ~[?:?]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1615) ~[?:?]
+	at java.base/java.net.HttpURLConnection.getResponseCode(HttpURLConnection.java:531) ~[?:?]
+	at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.getResponseCode(HttpsURLConnectionImpl.java:307) ~[?:?]
+	at com.mojang.authlib.minecraft.client.MinecraftClient.readInputStream(MinecraftClient.java:82) ~[authlib-7.0.61.jar:?]
+	... 9 more
+Caused by: sun.security.validator.ValidatorException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.validator.PKIXValidator.doBuild(PKIXValidator.java:388) ~[?:?]
+	at java.base/sun.security.validator.PKIXValidator.engineValidate(PKIXValidator.java:271) ~[?:?]
+	at java.base/sun.security.validator.Validator.validate(Validator.java:256) ~[?:?]
+	at java.base/sun.security.ssl.X509TrustManagerImpl.checkTrusted(X509TrustManagerImpl.java:230) ~[?:?]
+	at java.base/sun.security.ssl.X509TrustManagerImpl.checkServerTrusted(X509TrustManagerImpl.java:132) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.checkServerCerts(CertificateMessage.java:1271) ~[?:?]
+	... 27 more
+Caused by: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.provider.certpath.SunCertPathBuilder.build(SunCertPathBuilder.java:148) ~[?:?]
+	at java.base/sun.security.provider.certpath.SunCertPathBuilder.engineBuild(SunCertPathBuilder.java:129) ~[?:?]
+	at java.base/java.security.cert.CertPathBuilder.build(CertPathBuilder.java:297) ~[?:?]
+	at java.base/sun.security.validator.PKIXValidator.doBuild(PKIXValidator.java:383) ~[?:?]
+	... 32 more
+[02:45:21 INFO]: Stopping the server
+[02:45:21 INFO]: Stopping server
+[02:45:21 INFO]: [CrystamaeHistoria] Disabling CrystamaeHistoria v0.7.0
+[02:45:21 INFO]: [CrystamaeHistoria] ÕýÔÚ±£´æÄ§·¨Ë®¾§±àÄêÊ·µÄÊý¾Ý
+[02:45:21 INFO]: [Slimefun] Disabling Slimefun v5.0.0
+[02:45:21 INFO]: [Slimefun] Backed up Slimefun data to: 2026-08-17-02-45.zip
+[02:45:21 INFO]: Saving players
+[02:45:21 INFO]: Saving worlds
+[02:45:21 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:overworld
+[02:45:21 INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'world'
+[02:45:21 INFO]: [ChunkHolderManager] Halted chunk system for world 'world'
+[02:45:21 INFO]: [ChunkHolderManager] Saving all chunkholders for world 'world'
+[02:45:21 INFO]: [ChunkHolderManager] Saved 0 block chunks, 0 entity chunks, 0 poi chunks in world 'world' in 0.00s
+[02:45:21 INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'world'
+[02:45:21 INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'world'
+[02:45:21 INFO]: Saving chunks for level 'ServerLevel[world_nether]'/minecraft:the_nether
+[02:45:21 INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'world_nether'
+[02:45:21 INFO]: [ChunkHolderManager] Halted chunk system for world 'world_nether'
+[02:45:21 INFO]: [ChunkHolderManager] Saving all chunkholders for world 'world_nether'
+[02:45:21 INFO]: [ChunkHolderManager] Saved 0 block chunks, 0 entity chunks, 0 poi chunks in world 'world_nether' in 0.00s
+[02:45:21 INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'world_nether'
+[02:45:21 INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'world_nether'
+[02:45:21 INFO]: Saving chunks for level 'ServerLevel[world_the_end]'/minecraft:the_end
+[02:45:21 INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'world_the_end'
+[02:45:21 INFO]: [ChunkHolderManager] Halted chunk system for world 'world_the_end'
+[02:45:21 INFO]: [ChunkHolderManager] Saving all chunkholders for world 'world_the_end'
+[02:45:21 INFO]: [ChunkHolderManager] Saved 0 block chunks, 0 entity chunks, 0 poi chunks in world 'world_the_end' in 0.00s
+[02:45:21 INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'world_the_end'
+[02:45:21 INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'world_the_end'
+[02:45:21 INFO]: ThreadedAnvilChunkStorage (world): All chunks are saved
+[02:45:21 INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[02:45:21 INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[02:45:21 INFO]: ThreadedAnvilChunkStorage: All dimensions are saved
+[02:45:21 INFO]: Waiting for all RegionFile I/O tasks to complete...
+[02:45:21 INFO]: All RegionFile I/O tasks to complete
+[02:45:21 INFO]: [MoonriseCommon] Awaiting termination of worker pool for up to 60s...
+[02:45:21 INFO]: [MoonriseCommon] Awaiting termination of I/O pool for up to 60s...
