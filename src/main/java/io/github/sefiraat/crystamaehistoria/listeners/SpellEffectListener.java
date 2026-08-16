@@ -6,6 +6,7 @@ import io.github.sefiraat.crystamaehistoria.magic.spells.spellobjects.MagicFalli
 import io.github.sefiraat.crystamaehistoria.magic.spells.spellobjects.MagicProjectile;
 import io.github.sefiraat.crystamaehistoria.utils.GeneralUtils;
 import io.github.sefiraat.crystamaehistoria.utils.Keys;
+import io.github.sefiraat.crystamaehistoria.utils.SpellUtils;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentUUIDDataType;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI;
@@ -33,7 +34,6 @@ import org.bukkit.event.weather.LightningStrikeEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 public class SpellEffectListener implements Listener {
@@ -41,16 +41,15 @@ public class SpellEffectListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onProjectileHit(ProjectileHitEvent event) {
         final Projectile projectile = event.getEntity();
-        final Optional<MagicProjectile> optionalMagicProjectile = CrystamaeHistoria.getProjectileMap().keySet()
-            .stream()
-            .filter(magicProjectile1 -> magicProjectile1.matches(projectile))
-            .findFirst();
+        // ProjectileHitEvent 为世界级事件（任意原版箭矢命中均触发）：
+        // UUID 索引 O(1) 反查取代原 stream 线性扫描（空表时零分配）
+        final MagicProjectile magicProjectile = CrystamaeHistoria.getSpellMemory()
+            .getProjectileByUuid(projectile.getUniqueId());
 
-        if (!optionalMagicProjectile.isPresent()) {
+        if (magicProjectile == null) {
             return;
         }
 
-        final MagicProjectile magicProjectile = optionalMagicProjectile.get();
         final CastInformation castInfo = CrystamaeHistoria.getProjectileCastInfo(magicProjectile);
         final Entity hitEntity = event.getHitEntity();
 
@@ -90,16 +89,15 @@ public class SpellEffectListener implements Listener {
         final Entity entity = event.getEntity();
 
         if (entity instanceof FallingBlock) {
-            final Optional<MagicFallingBlock> optionalMagicFallingBlock = CrystamaeHistoria.getFallingBlockMap().keySet()
-                .stream()
-                .filter(magicFallingBlock -> magicFallingBlock.matches((FallingBlock) entity))
-                .findFirst();
+            // EntityChangeBlockEvent 为世界级事件（任意原版沙砾落地均触发）：
+            // UUID 索引 O(1) 反查取代原 stream 线性扫描
+            final MagicFallingBlock magicFallingBlock = CrystamaeHistoria.getSpellMemory()
+                .getFallingBlockByUuid(entity.getUniqueId());
 
-            if (!optionalMagicFallingBlock.isPresent()) {
+            if (magicFallingBlock == null) {
                 return;
             }
 
-            final MagicFallingBlock magicFallingBlock = optionalMagicFallingBlock.get();
             final CastInformation castInfo = CrystamaeHistoria.getFallingBlockCastInfo(magicFallingBlock);
 
             event.setCancelled(true);
@@ -144,22 +142,26 @@ public class SpellEffectListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInvulnerablePlayerDamaged(EntityDamageEvent event) {
-        NamespacedKey key = Keys.PDC_IS_INVULNERABLE;
+        final Entity entity = event.getEntity();
+        if (!(entity instanceof LivingEntity)) {
+            return;
+        }
+        // EntityDamageEvent 为世界级事件（任意生物受伤均触发）：
+        // 会话内注册表查表取代原实体 PDC 读取（写入方 Protectorate 过期仅 1050ms，
+        // 会话内存表语义等价，且无实体 NBT 残留键）
+        final Long expiry = CrystamaeHistoria.getSpellMemory().getInvulnerabilityExpiry(entity.getUniqueId());
+        if (expiry == null) {
+            return;
+        }
         EntityDamageEvent.DamageCause cause = event.getCause();
-        if (event.getEntity() instanceof LivingEntity
-            && PersistentDataAPI.hasLong(event.getEntity(), key)
-        ) {
-            LivingEntity livingEntity = (LivingEntity) event.getEntity();
-            long expiry = PersistentDataAPI.getLong(livingEntity, key);
-            if (expiry >= System.currentTimeMillis()) {
-                if (cause != EntityDamageEvent.DamageCause.CUSTOM
-                    && cause != EntityDamageEvent.DamageCause.SUICIDE
-                ) {
-                    event.setCancelled(true);
-                }
-            } else {
-                PersistentDataAPI.remove(livingEntity, key);
+        if (expiry >= System.currentTimeMillis()) {
+            if (cause != EntityDamageEvent.DamageCause.CUSTOM
+                && cause != EntityDamageEvent.DamageCause.SUICIDE
+            ) {
+                event.setCancelled(true);
             }
+        } else {
+            CrystamaeHistoria.getSpellMemory().removeInvulnerability(entity.getUniqueId());
         }
     }
 
@@ -181,8 +183,12 @@ public class SpellEffectListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onMagicSummonDeath(EntityDeathEvent event) {
+        // EntityDeathEvent 为世界级事件（刷怪塔等场景高频）：非候选类型先零成本排除，
+        // 仅可能是召唤物的类型（含崩溃重启后仅存 PDC 的残留）才读 PDC
         NamespacedKey key = Keys.PDC_IS_SPAWN_OWNER;
-        if (DataTypeMethods.hasCustom(event.getEntity(), key, PersistentUUIDDataType.TYPE)) {
+        if (SpellUtils.isSummonableMobType(event.getEntity().getType())
+            && DataTypeMethods.hasCustom(event.getEntity(), key, PersistentUUIDDataType.TYPE)
+        ) {
             event.setCancelled(true);
             event.getEntity().remove();
         }
@@ -190,8 +196,11 @@ public class SpellEffectListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onRideRavager(EntityChangeBlockEvent event) {
+        // 同上：非候选类型（如下落方块/羊吃草）零成本跳过 PDC 读取
         NamespacedKey key = Keys.PDC_IS_SPAWN_OWNER;
-        if (DataTypeMethods.hasCustom(event.getEntity(), key, PersistentUUIDDataType.TYPE)) {
+        if (SpellUtils.isSummonableMobType(event.getEntity().getType())
+            && DataTypeMethods.hasCustom(event.getEntity(), key, PersistentUUIDDataType.TYPE)
+        ) {
             event.setCancelled(true);
         }
     }

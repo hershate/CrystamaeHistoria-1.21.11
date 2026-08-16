@@ -67,7 +67,8 @@ public final class Keys {
 
     // Entities
     public static final NamespacedKey PDC_IS_DISPLAY_STAND = newKey("a_dpy");
-    public static final NamespacedKey PDC_IS_INVULNERABLE = newKey("invul");
+    // 原 invul 键（Protectorate 无敌标记）已迁移为 SpellMemory 会话内注册表：
+    // 旧实体 NBT 中的残留键无人读取，属惰性数据，无害保留在既有实体上
     public static final NamespacedKey PDC_IS_WEATHER_WITHER = newKey("weather");
     public static final NamespacedKey PDC_IS_SPAWN_OWNER = newKey("owner");
     public static final NamespacedKey PDC_IS_DISPLAY_ITEM = newKey("di");

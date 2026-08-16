@@ -77,7 +77,7 @@ public class MagicProjectile {
     }
 
     public void kill() {
-        CrystamaeHistoria.getProjectileMap().remove(this);
+        CrystamaeHistoria.getSpellMemory().unregisterProjectile(this);
         Projectile projectile = (Projectile) Bukkit.getEntity(projectileUUID);
         if (projectile != null) {
             projectile.remove();

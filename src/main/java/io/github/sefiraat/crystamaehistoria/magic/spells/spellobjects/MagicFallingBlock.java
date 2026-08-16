@@ -72,7 +72,7 @@ public class MagicFallingBlock {
     }
 
     public void kill() {
-        CrystamaeHistoria.getFallingBlockMap().remove(this);
+        CrystamaeHistoria.getSpellMemory().unregisterFallingBlock(this);
         FallingBlock fallingBlock = (FallingBlock) Bukkit.getEntity(fallingBlockUUID);
         if (fallingBlock != null) {
             fallingBlock.remove();

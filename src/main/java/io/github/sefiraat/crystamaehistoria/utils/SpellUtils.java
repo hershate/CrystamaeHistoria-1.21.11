@@ -23,11 +23,39 @@ import org.bukkit.entity.Projectile;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.EnumSet;
 import java.util.UUID;
 import java.util.function.Consumer;
 
 @UtilityClass
 public class SpellUtils {
+
+    /**
+     * 全部可被召唤为法术召唤物的实体类型（供世界级高频事件的类型门控——
+     * 非候选类型的实体死亡/方块变化事件可零成本跳过 PDC 读取）。
+     * 预置集合覆盖现存 12 个召唤法术的全部类型，保证崩溃重启后仅存 PDC
+     * 标记的残留召唤物仍被门控覆盖；{@code summonTemporaryMob} 在运行期
+     * 自动登记新类型，新增召唤法术无需手动维护。
+     */
+    private static final EnumSet<EntityType> SUMMONABLE_MOB_TYPES = EnumSet.of(
+        EntityType.VEX,
+        EntityType.GOAT,
+        EntityType.GIANT,
+        EntityType.BLAZE,
+        EntityType.COW,
+        EntityType.SILVERFISH,
+        EntityType.ENDERMITE,
+        EntityType.BAT,
+        EntityType.RAVAGER,
+        EntityType.ZOMBIE,
+        EntityType.PHANTOM,
+        EntityType.IRON_GOLEM
+    );
+
+    /** 实体类型是否可能是法术召唤物（门控检查，非候选即排除）。 */
+    public static boolean isSummonableMobType(EntityType entityType) {
+        return SUMMONABLE_MOB_TYPES.contains(entityType);
+    }
 
     @ParametersAreNonnullByDefault
     public static <T extends Mob> MagicSummon summonTemporaryMob(
@@ -62,6 +90,8 @@ public class SpellUtils {
         final T mob = (T) location.getWorld().spawnEntity(location, entityType);
         final MagicSummon magicSummon = new MagicSummon(mob.getUniqueId(), caster);
         final MobGoals mobGoals = Bukkit.getMobGoals();
+        // 运行期自动登记类型，保证未来新增召唤类型无需手动维护门控白名单
+        SUMMONABLE_MOB_TYPES.add(entityType);
 
         if (tickConsumer != null) {
             magicSummon.setTickConsumer(tickConsumer);
@@ -145,7 +175,8 @@ public class SpellUtils {
         if (tickConsumer != null) {
             magicProjectile.setConsumer(tickConsumer);
         }
-        CrystamaeHistoria.getProjectileMap().put(magicProjectile, new Pair<>(castInformation, System.currentTimeMillis() + duration));
+        CrystamaeHistoria.getSpellMemory().registerProjectile(
+            magicProjectile, new Pair<>(castInformation, System.currentTimeMillis() + duration));
         return magicProjectile;
     }
 
@@ -199,7 +230,8 @@ public class SpellUtils {
         final FallingBlock fallingBlock = location.getWorld().spawnFallingBlock(location, material.createBlockData());
         final MagicFallingBlock magicFallingBlock = new MagicFallingBlock(fallingBlock);
 
-        CrystamaeHistoria.getFallingBlockMap().put(magicFallingBlock, new Pair<>(castInformation, System.currentTimeMillis() + duration));
+        CrystamaeHistoria.getSpellMemory().registerFallingBlock(
+            magicFallingBlock, new Pair<>(castInformation, System.currentTimeMillis() + duration));
         return magicFallingBlock;
     }
 }

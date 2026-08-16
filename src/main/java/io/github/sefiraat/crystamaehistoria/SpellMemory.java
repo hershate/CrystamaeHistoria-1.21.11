@@ -16,6 +16,8 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.util.BoundingBox;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -29,6 +31,16 @@ public class SpellMemory {
     private final Map<MagicProjectile, Pair<CastInformation, Long>> projectileMap = new HashMap<>();
     @Getter
     private final Map<MagicFallingBlock, Pair<CastInformation, Long>> fallingBlockMap = new HashMap<>();
+    // UUID 反查索引：ProjectileHitEvent/EntityChangeBlockEvent 为世界级高频事件（任意原版箭矢
+    // 命中/沙砾落地均触发），原先对 projectileMap 的 stream 线性扫描在空表时也要付出整条
+    // 流水线分配成本。索引与主表在 register/unregister 同步维护，命中路径降为 O(1)。
+    private final Map<UUID, MagicProjectile> projectileIndex = new HashMap<>();
+    private final Map<UUID, MagicFallingBlock> fallingBlockIndex = new HashMap<>();
+    // 无敌状态注册表：PDC_IS_INVULNERABLE 原先写入实体 NBT 且每次伤害事件读取；
+    // 唯一写入方 Protectorate 的过期仅 1050ms（远短于任何重启耗时），会话内存表
+    // 语义等价且免去实体 PDC 读写的 NBT 往返与残留键。
+    @Getter
+    private final Map<UUID, Long> invulnerableEntities = new HashMap<>();
     @Getter
     private final Map<UUID, Pair<CastInformation, Long>> strikeMap = new HashMap<>();
     @Getter
@@ -107,6 +119,90 @@ public class SpellMemory {
         removeSleepingBags();
         sleepingBags.clear();
 
+        // 会话内无敌标记随之失效（与其它临时效果一致，关服即结束）
+        invulnerableEntities.clear();
+        projectileIndex.clear();
+        fallingBlockIndex.clear();
+
+    }
+
+    /**
+     * 登记魔法弹射物（主表 + UUID 索引同步维护）。
+     * 取代旧 {@code getProjectileMap().put(...)} 直写——绕过本方法会导致索引失配。
+     */
+    public void registerProjectile(@Nonnull MagicProjectile magicProjectile,
+                                   @Nonnull Pair<CastInformation, Long> value) {
+        projectileMap.put(magicProjectile, value);
+        projectileIndex.put(magicProjectile.getProjectileUUID(), magicProjectile);
+    }
+
+    /** 注销魔法弹射物（幂等，kill 自移除路径）。 */
+    public void unregisterProjectile(@Nonnull MagicProjectile magicProjectile) {
+        projectileMap.remove(magicProjectile);
+        projectileIndex.remove(magicProjectile.getProjectileUUID());
+    }
+
+    /**
+     * 按实体 UUID 反查魔法弹射物（O(1)）。非魔法弹射物返回 null。
+     */
+    @Nullable
+    public MagicProjectile getProjectileByUuid(@Nonnull UUID projectileUuid) {
+        return projectileIndex.get(projectileUuid);
+    }
+
+    /** 登记魔法下落方块（主表 + UUID 索引同步维护）。 */
+    public void registerFallingBlock(@Nonnull MagicFallingBlock magicFallingBlock,
+                                     @Nonnull Pair<CastInformation, Long> value) {
+        fallingBlockMap.put(magicFallingBlock, value);
+        fallingBlockIndex.put(magicFallingBlock.getFallingBlockUUID(), magicFallingBlock);
+    }
+
+    /** 注销魔法下落方块（幂等，kill 自移除路径）。 */
+    public void unregisterFallingBlock(@Nonnull MagicFallingBlock magicFallingBlock) {
+        fallingBlockMap.remove(magicFallingBlock);
+        fallingBlockIndex.remove(magicFallingBlock.getFallingBlockUUID());
+    }
+
+    /**
+     * 按实体 UUID 反查魔法下落方块（O(1)）。非魔法下落方块返回 null。
+     */
+    @Nullable
+    public MagicFallingBlock getFallingBlockByUuid(@Nonnull UUID fallingBlockUuid) {
+        return fallingBlockIndex.get(fallingBlockUuid);
+    }
+
+    /** 标记实体无敌至指定时刻（毫秒时间戳）。 */
+    public void markInvulnerable(@Nonnull UUID entityUuid, long expiryMillis) {
+        invulnerableEntities.put(entityUuid, expiryMillis);
+    }
+
+    /**
+     * 查询实体无敌到期时刻；未登记返回 null。过期条目由调用方按需移除或由
+     * 周期清扫回收（见 {@link #removeInvulnerable(boolean)}）。
+     */
+    @Nullable
+    public Long getInvulnerabilityExpiry(@Nonnull UUID entityUuid) {
+        return invulnerableEntities.get(entityUuid);
+    }
+
+    /** 移除单条无敌标记（命中过期条目时）。 */
+    public void removeInvulnerability(@Nonnull UUID entityUuid) {
+        invulnerableEntities.remove(entityUuid);
+    }
+
+    /** 周期清扫过期无敌标记（无副作用，仅内存条目回收）。 */
+    public void removeInvulnerable(boolean forceRemoveAll) {
+        if (invulnerableEntities.isEmpty()) {
+            return;
+        }
+        final long time = System.currentTimeMillis();
+        final Iterator<Map.Entry<UUID, Long>> iterator = invulnerableEntities.entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Map.Entry<UUID, Long> entry = iterator.next();
+            if (forceRemoveAll || entry.getValue() < time) {
+                iterator.remove();
+            }
+        }
     }
 
     public void removeProjectiles(boolean forceRemoveAll) {

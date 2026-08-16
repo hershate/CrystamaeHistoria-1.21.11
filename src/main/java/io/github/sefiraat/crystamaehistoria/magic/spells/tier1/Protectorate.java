@@ -1,13 +1,12 @@
 package io.github.sefiraat.crystamaehistoria.magic.spells.tier1;
 
+import io.github.sefiraat.crystamaehistoria.CrystamaeHistoria;
 import io.github.sefiraat.crystamaehistoria.magic.CastInformation;
 import io.github.sefiraat.crystamaehistoria.magic.spells.core.Spell;
 import io.github.sefiraat.crystamaehistoria.magic.spells.core.SpellCoreBuilder;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.liquefactionbasin.RecipeSpell;
 import io.github.sefiraat.crystamaehistoria.stories.definition.StoryType;
-import io.github.sefiraat.crystamaehistoria.utils.Keys;
 import io.github.sefiraat.crystamaehistoria.utils.ParticleUtils;
-import io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -45,7 +44,9 @@ public class Protectorate extends Spell {
         // Effects
         for (Entity entity : location.getWorld().getNearbyEntities(location, effectRange, effectRange, effectRange)) {
             if (entity instanceof LivingEntity) {
-                PersistentDataAPI.setLong(entity, Keys.PDC_IS_INVULNERABLE, System.currentTimeMillis() + 1050);
+                // 会话内注册表取代实体 PDC 写入（每次伤害事件原先都要读实体 NBT）
+                CrystamaeHistoria.getSpellMemory()
+                    .markInvulnerable(entity.getUniqueId(), System.currentTimeMillis() + 1050);
                 ParticleUtils.displayParticleEffect(entity, Particle.HAPPY_VILLAGER, 1, 3);
             }
         }
