@@ -8,6 +8,7 @@ import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.text.MessageFormat;
 import java.util.UUID;
@@ -34,6 +35,31 @@ public class PlayerStatistics {
     public static boolean hasUnlockedSpell(UUID player, SpellType spellType) {
         String path = player + "." + StatType.SPELL + "." + spellType.getId() + ".UNLOCKED";
         return CrystamaeHistoria.getConfigManager().getPlayerStats().getBoolean(path);
+    }
+
+    /**
+     * 玩家法术统计子节（页级批量判定用）：图鉴翻页对 36 个槽位逐个
+     * hasUnlocked 时，先取本节再做相对路径读取，避免每次从根走全路径。
+     *
+     * @return 对应子节；玩家无统计时 null（配合相对读取重载按未解锁处理）
+     */
+    @Nullable
+    @ParametersAreNonnullByDefault
+    public static ConfigurationSection getSpellStatSection(UUID player) {
+        return CrystamaeHistoria.getConfigManager().getPlayerStats()
+            .getConfigurationSection(player + "." + StatType.SPELL);
+    }
+
+    /**
+     * 同 {@link #hasUnlockedSpell(UUID, SpellType)}，但接受页级预解析的
+     * {@link #getSpellStatSection(UUID)} 子节做相对读取（结果等价）。
+     */
+    @ParametersAreNonnullByDefault
+    public static boolean hasUnlockedSpell(UUID player, SpellType spellType, @Nullable ConfigurationSection spellSection) {
+        if (spellSection == null) {
+            return false;
+        }
+        return spellSection.getBoolean(spellType.getId() + ".UNLOCKED");
     }
 
     @ParametersAreNonnullByDefault
@@ -88,6 +114,23 @@ public class PlayerStatistics {
         return CrystamaeHistoria.getConfigManager().getPlayerStats().getBoolean(path);
     }
 
+    /** 玩家故事统计子节（页级批量判定用），语义同 {@link #getSpellStatSection(UUID)} */
+    @Nullable
+    @ParametersAreNonnullByDefault
+    public static ConfigurationSection getStoryStatSection(UUID player) {
+        return CrystamaeHistoria.getConfigManager().getPlayerStats()
+            .getConfigurationSection(player + "." + StatType.STORY);
+    }
+
+    /** 同 {@link #hasUnlockedUniqueStory(UUID, Material)}，相对预解析子节读取（结果等价） */
+    @ParametersAreNonnullByDefault
+    public static boolean hasUnlockedUniqueStory(UUID player, Material material, @Nullable ConfigurationSection storySection) {
+        if (storySection == null) {
+            return false;
+        }
+        return storySection.getBoolean(material + ".UNLOCKED");
+    }
+
     @ParametersAreNonnullByDefault
     public static void unlockStoryGilded(UUID player, BlockDefinition definition) {
         String path = player + "." + StatType.STORY + "." + definition.getMaterial() + ".GILDED";
@@ -108,6 +151,15 @@ public class PlayerStatistics {
     public static boolean hasUnlockedStoryGilded(UUID player, Material material) {
         String path = player + "." + StatType.STORY + "." + material + ".GILDED";
         return CrystamaeHistoria.getConfigManager().getPlayerStats().getBoolean(path);
+    }
+
+    /** 同 {@link #hasUnlockedStoryGilded(UUID, Material)}，相对预解析子节读取（结果等价） */
+    @ParametersAreNonnullByDefault
+    public static boolean hasUnlockedStoryGilded(UUID player, Material material, @Nullable ConfigurationSection storySection) {
+        if (storySection == null) {
+            return false;
+        }
+        return storySection.getBoolean(material + ".GILDED");
     }
 
     @ParametersAreNonnullByDefault
@@ -187,9 +239,10 @@ public class PlayerStatistics {
             return 0;
         }
         int unlocked = 0;
+        // 相对路径读取：原实现逐键重建全路径（uuid.STORY.<key>.UNLOCKED）再从根解析，
+        // O(n) 次全路径行走；子节相对读取只走最后一层，结果等价
         for (String story : section.getKeys(false)) {
-            String storyPath = uuid + "." + StatType.STORY + "." + story + ".UNLOCKED";
-            if (CrystamaeHistoria.getConfigManager().getPlayerStats().getBoolean(storyPath)) unlocked++;
+            if (section.getBoolean(story + ".UNLOCKED")) unlocked++;
         }
         return unlocked;
     }
@@ -224,9 +277,9 @@ public class PlayerStatistics {
             return 0;
         }
         int unlocked = 0;
+        // 相对路径读取（同 getStoriesUnlocked，原实现逐键重建全路径从根解析）
         for (String spell : section.getKeys(false)) {
-            String storyPath = uuid + "." + StatType.SPELL + "." + spell + ".UNLOCKED";
-            if (CrystamaeHistoria.getConfigManager().getPlayerStats().getBoolean(storyPath)) unlocked++;
+            if (section.getBoolean(spell + ".UNLOCKED")) unlocked++;
         }
         return unlocked;
     }
@@ -261,9 +314,9 @@ public class PlayerStatistics {
             return 0;
         }
         int unlocked = 0;
+        // 相对路径读取（同 getStoriesUnlocked）
         for (String story : section.getKeys(false)) {
-            String storyPath = uuid + "." + StatType.STORY + "." + story + ".GILDED";
-            if (CrystamaeHistoria.getConfigManager().getPlayerStats().getBoolean(storyPath)) unlocked++;
+            if (section.getBoolean(story + ".GILDED")) unlocked++;
         }
         return unlocked;
     }

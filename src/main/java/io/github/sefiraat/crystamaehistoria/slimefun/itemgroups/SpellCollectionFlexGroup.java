@@ -22,6 +22,7 @@ import io.github.sefiraat.crystamaehistoria.utils.NameUtils;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -129,12 +130,15 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
         menu.replaceExistingItem(GUIDE_STATS, getStatsStack(player));
         menu.addMenuClickHandler(GUIDE_STATS, (player1, slot, itemStack, clickAction) -> false);
 
+        // 页级单次解析玩家法术统计子节，36 槽相对路径读取（原每槽从根走全路径）
+        final ConfigurationSection spellStatSection = PlayerStatistics.getSpellStatSection(player.getUniqueId());
+
         for (int i = 0; i < 36; i++) {
             final int slot = i + 9;
 
             if (i + 1 <= spellTypeSubList.size()) {
                 final SpellType spellType = spellTypeSubList.get(i);
-                final boolean researched = PlayerStatistics.hasUnlockedSpell(player, spellType);
+                final boolean researched = PlayerStatistics.hasUnlockedSpell(player.getUniqueId(), spellType, spellStatSection);
 
                 if (mode == SlimefunGuideMode.CHEAT_MODE || researched) {
                     menu.replaceExistingItem(slot, spellType.getSpell().getThemedStack().item());

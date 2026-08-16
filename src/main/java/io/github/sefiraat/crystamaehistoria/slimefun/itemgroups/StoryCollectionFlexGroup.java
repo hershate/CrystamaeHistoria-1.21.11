@@ -21,6 +21,7 @@ import me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -130,12 +131,16 @@ public class StoryCollectionFlexGroup extends FlexItemGroup {
         menu.replaceExistingItem(GUIDE_STATS, getPlayerInfoStack(player));
         menu.addMenuClickHandler(GUIDE_STATS, (player1, slot, itemStack, clickAction) -> false);
 
+        // 页级单次解析玩家故事统计子节，36 槽相对路径读取（原每槽从根走全路径）
+        final ConfigurationSection storyStatSection = PlayerStatistics.getStoryStatSection(player.getUniqueId());
+
         for (int i = 0; i < 36; i++) {
             final int slot = i + 9;
 
             if (i + 1 <= blockDefinitionSubList.size()) {
                 final BlockDefinition definition = blockDefinitionSubList.get(i);
-                final boolean researched = PlayerStatistics.hasUnlockedUniqueStory(player, definition);
+                final boolean researched = PlayerStatistics.hasUnlockedUniqueStory(
+                    player.getUniqueId(), definition.getMaterial(), storyStatSection);
 
                 if (mode == SlimefunGuideMode.CHEAT_MODE || researched) {
                     menu.replaceExistingItem(slot, GuiElements.getUniqueStoryIcon(definition.getMaterial()));
