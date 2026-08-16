@@ -1,9 +1,11 @@
 package ch.perfbench;
 
 import io.github.sefiraat.crystamaehistoria.CrystamaeHistoria;
+import io.github.sefiraat.crystamaehistoria.magic.CastInformation;
 import io.github.sefiraat.crystamaehistoria.magic.SpellType;
 import io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate;
 import io.github.sefiraat.crystamaehistoria.magic.spells.core.InstanceStave;
+import io.github.sefiraat.crystamaehistoria.magic.spells.spellobjects.MagicProjectile;
 import io.github.sefiraat.crystamaehistoria.stories.definition.StoryType;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot;
 import io.github.sefiraat.crystamaehistoria.utils.GeneralUtils;
@@ -11,11 +13,16 @@ import io.github.sefiraat.crystamaehistoria.utils.StoryUtils;
 import io.github.sefiraat.crystamaehistoria.utils.Keys;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveDataType;
+import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentUUIDDataType;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
+import io.github.thebusybiscuit.slimefun4.libraries.dough.collections.Pair;
+import io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
+import org.bukkit.entity.Projectile;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Zombie;
@@ -63,6 +70,7 @@ public final class CHPerfBench extends JavaPlugin {
             benchGadgetTick(w);
             benchStoryPick(w);
             benchStatsPath(w);
+            benchRound10(w);
         } catch (Exception e) {
             getLogger().severe("基准失败: " + e);
             e.printStackTrace();
@@ -411,6 +419,108 @@ public final class CHPerfBench extends JavaPlugin {
         time(w, "statsPath.build", "new_concat", 2_000_000, () -> {
             bh += (player + "." + SpellType.HEAL + "." + spellId + ".TIMES_CAST").length();
         });
+    }
+
+    /** 第 10 轮：世界级高频事件路径（弹射物命中/下落方块反查、无敌检查、召唤物门控） */
+    private void benchRound10(PrintWriter w) {
+        final io.github.sefiraat.crystamaehistoria.SpellMemory memory = CrystamaeHistoria.getSpellMemory();
+        final World world = Bukkit.getWorlds().get(0);
+        final org.bukkit.util.Vector dir = new org.bukkit.util.Vector(1, 0, 0);
+        final NamespacedKey legacyInvulnKey =
+            new NamespacedKey(CrystamaeHistoria.getInstance(), "invul");
+
+        // —— 弹射物命中反查（每次任意弹射物命中均触发）——
+        // 常态一：空表（无魔法弹射物存活）
+        final Projectile arrow = world.spawnArrow(new Location(world, 0, 220, 0), dir, 1.0f, 0f);
+        time(w, "eventPath.projectileReverse", "old_stream_empty", 200_000, () -> bh += memory
+            .getProjectileMap().keySet().stream()
+            .filter(mp -> mp.matches(arrow))
+            .findFirst().isPresent() ? 1 : 0);
+        time(w, "eventPath.projectileReverse", "new_index_empty", 5_000_000, () -> {
+            if (memory.getProjectileByUuid(arrow.getUniqueId()) != null) {
+                bh++;
+            }
+        });
+
+        // 常态二：满表（8 个魔法弹射物存活，未命中即常态——原版弹射物占绝对多数）
+        final List<Projectile> balls = new java.util.ArrayList<>();
+        for (int i = 0; i < 8; i++) {
+            final Projectile ball = world.spawn(new Location(world, i, 230, 0), org.bukkit.entity.Snowball.class);
+            balls.add(ball);
+            // 2 秒过期：基准后由 TemporaryEffectsRunnable 周期清扫经 kill() 正常回收（含索引）
+            memory.registerProjectile(
+                new MagicProjectile(ball),
+                new Pair<>((CastInformation) null, System.currentTimeMillis() + 2000));
+        }
+        time(w, "eventPath.projectileReverse", "old_stream_8entries_miss", 100_000, () -> bh += memory
+            .getProjectileMap().keySet().stream()
+            .filter(mp -> mp.matches(arrow))
+            .findFirst().isPresent() ? 1 : 0);
+        time(w, "eventPath.projectileReverse", "new_index_8entries_miss", 5_000_000, () -> {
+            if (memory.getProjectileByUuid(arrow.getUniqueId()) != null) {
+                bh++;
+            }
+        });
+        for (final Projectile ball : balls) {
+            ball.remove();
+        }
+        arrow.remove();
+
+        // —— 下落方块落地反查（每次任意沙砾落地均触发，空表常态）——
+        final org.bukkit.entity.FallingBlock sand = world.spawnFallingBlock(
+            new Location(world, 2000, 250, 2000), Material.SAND.createBlockData());
+        time(w, "eventPath.fallingBlockReverse", "old_stream_empty", 200_000, () -> bh += memory
+            .getFallingBlockMap().keySet().stream()
+            .filter(fb -> fb.matches(sand))
+            .findFirst().isPresent() ? 1 : 0);
+        time(w, "eventPath.fallingBlockReverse", "new_index_empty", 5_000_000, () -> {
+            if (memory.getFallingBlockByUuid(sand.getUniqueId()) != null) {
+                bh++;
+            }
+        });
+        sand.remove();
+
+        // —— 无敌检查（每次任意实体受伤均触发，未标记即常态）——
+        final Zombie victim = world.spawn(new Location(world, 0, 220, 0), Zombie.class);
+        time(w, "eventPath.invulnCheck", "old_pdc_read", 100_000, () -> {
+            if (PersistentDataAPI.hasLong(victim, legacyInvulnKey)) {
+                bh++;
+            }
+        });
+        time(w, "eventPath.invulnCheck", "new_map_lookup", 5_000_000, () -> {
+            if (memory.getInvulnerabilityExpiry(victim.getUniqueId()) != null) {
+                bh++;
+            }
+        });
+        // 写入路径（Protectorate 每受保护实体每秒一次）
+        time(w, "eventPath.invulnWrite", "old_pdc_write", 50_000, () ->
+            PersistentDataAPI.setLong(victim, legacyInvulnKey, System.currentTimeMillis() + 1050));
+        time(w, "eventPath.invulnWrite", "new_map_write", 5_000_000, () ->
+            memory.markInvulnerable(victim.getUniqueId(), System.currentTimeMillis() + 1050));
+        memory.removeInvulnerability(victim.getUniqueId());
+        victim.remove();
+
+        // —— 召唤物门控（每次任意实体死亡/方块变化均触发）——
+        final Zombie skeleton = world.spawn(new Location(world, 0, 220, 0), Zombie.class);
+        time(w, "eventPath.summonGate", "old_pdc_read", 100_000, () -> {
+            if (DataTypeMethods.hasCustom(skeleton, Keys.PDC_IS_SPAWN_OWNER, PersistentUUIDDataType.TYPE)) {
+                bh++;
+            }
+        });
+        // 常态（骷髅等非召唤类型）：门控直接排除，零 PDC 读取
+        time(w, "eventPath.summonGate", "new_typegate_skeleton", 5_000_000, () -> {
+            if (io.github.sefiraat.crystamaehistoria.utils.SpellUtils.isSummonableMobType(org.bukkit.entity.EntityType.SKELETON)) {
+                bh++;
+            }
+        });
+        // 白名单类型（僵尸）：门控通过后仍需 PDC 确认（复合路径）
+        time(w, "eventPath.summonGate", "new_typegate_zombie_plus_pdc", 100_000, () -> {
+            if (io.github.sefiraat.crystamaehistoria.utils.SpellUtils.isSummonableMobType(org.bukkit.entity.EntityType.ZOMBIE)
+                && DataTypeMethods.hasCustom(skeleton, Keys.PDC_IS_SPAWN_OWNER, PersistentUUIDDataType.TYPE)) {
+                bh++;
+            }
+        });
+        skeleton.remove();
     }
 
     /** 时间驱动预热 + 分批中位数（主线程内，每变体约 1s） */
