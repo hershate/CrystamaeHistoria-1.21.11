@@ -38,6 +38,8 @@ public class LiquefactionBasin extends TickingMenuBlock {
     @Getter
     protected final Map<Location, LiquefactionBasinCache> cacheMap = new HashMap<>();
     private final Color color;
+    /** 每 tick 粒子的 DustOptions：内容与位置无关，可安全驻留物品实例（不可变对象） */
+    private final Particle.DustOptions dustOptions;
 
     @ParametersAreNonnullByDefault
     public LiquefactionBasin(ItemGroup itemGroup,
@@ -50,6 +52,7 @@ public class LiquefactionBasin extends TickingMenuBlock {
         super(itemGroup, item, recipeType, recipe);
         this.maxVolume = maxVolume;
         this.color = color;
+        this.dustOptions = new Particle.DustOptions(color, 1);
     }
 
     @Override
@@ -76,8 +79,8 @@ public class LiquefactionBasin extends TickingMenuBlock {
         LiquefactionBasinCache cache = LiquefactionBasin.this.cacheMap.get(block.getLocation());
         if (cache != null) {
             cache.consumeItems();
-            Particle.DustOptions dustOptions = new Particle.DustOptions(color, 1);
-            ParticleUtils.displayParticleEffect(block.getLocation().add(0.5, 0.5, 0.5), 1, 4, dustOptions);
+            // 中心点归每方块 Cache（pickupLocation 同点复用）；DustOptions 与位置无关可驻留实例
+            ParticleUtils.displayParticleEffect(cache.getCenterLocation(), 1, 4, dustOptions);
         }
         final Material material = block.getType();
         if (material == Material.LAVA_CAULDRON || material == Material.WATER_CAULDRON) {

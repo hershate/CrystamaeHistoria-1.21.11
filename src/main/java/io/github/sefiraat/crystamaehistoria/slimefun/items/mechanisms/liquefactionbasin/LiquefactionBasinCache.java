@@ -42,13 +42,13 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 @Getter
 public class LiquefactionBasinCache extends DisplayStandHolder {
@@ -57,21 +57,42 @@ public class LiquefactionBasinCache extends DisplayStandHolder {
     public static final double HIGHEST_LEVEL = -1;
     protected static final String CH_LEVEL_PREFIX = "ch_c_lvl:";
     private static final Map<SpellType, RecipeSpell> RECIPES_SPELL = new HashMap<>();
+    /**
+     * 配方类型集索引：以配方 3 类型的去重 EnumSet 为键 O(1) 查表，取代对
+     * RECIPES_SPELL 的 69 项线性扫描。3 元素查询集合下 containsAll 等价于
+     * 集合相等（含重复类型的配方天然无法匹配 3 元素集合，落不进任何键），
+     * 两个调用方均有 set.size()==3 前置守卫。同键多配方按注册顺序保序。
+     */
+    private static final Map<Set<StoryType>, List<SpellRecipeEntry>> RECIPES_SPELL_INDEX = new HashMap<>();
     private static final Map<SlimefunItem, RecipeItem> RECIPES_ITEMS = new HashMap<>();
+
+    private record SpellRecipeEntry(SpellType spell, RecipeSpell recipe) {
+    }
 
     private final double maxVolume;
     private final Map<StoryType, Integer> contentMap = new EnumMap<>(StoryType.class);
     /**
-     * 实体拾取扫描中心（机械中心）。机械位置放置后固定，懒初始化缓存——
-     * 免每 tick 的 Location 克隆+偏移两次分配。调用方不修改该实例。
+     * 内容脏标记：consumeItems 每 tick 对每个附近实体都调用 syncBlock 写
+     * BlockStorage（含被弹开的无效物品，内容并未变化）。改为仅在 contentMap
+     * 实际变更（水晶吸收/清空）后的当 tick 结束时落盘一次，终态完全一致。
      */
-    private Location pickupLocation;
+    private boolean contentDirty;
+    /**
+     * 液位总值缓存（-1 = 待重算）。getFillLevel 每 tick 调用，contentMap 至多
+     * 9 项；直接改写 contentMap 的恢复路径（onNewInstance）因走 -1 哨兵同样安全。
+     */
+    private int fillLevelCache = -1;
+    /**
+     * 机械中心点（拾取扫描与每 tick 粒子共用）。机械位置放置后固定，懒初始化
+     * 缓存——免每 tick 的 Location 克隆+偏移分配。调用方不修改该实例。
+     */
+    private Location centerLocation;
 
-    private Location getPickupLocation() {
-        if (pickupLocation == null) {
-            pickupLocation = getLocation().add(0.5, 0.5, 0.5);
+    public Location getCenterLocation() {
+        if (centerLocation == null) {
+            centerLocation = getLocation().add(0.5, 0.5, 0.5);
         }
-        return pickupLocation;
+        return centerLocation;
     }
 
     @ParametersAreNonnullByDefault
@@ -91,6 +112,11 @@ public class LiquefactionBasinCache extends DisplayStandHolder {
 
     public static void addSpellRecipe(SpellType spellType, RecipeSpell recipeSpell) {
         RECIPES_SPELL.put(spellType, recipeSpell);
+        // 同步维护类型集索引（EnumSet 与查询侧 EnumSet 以元素等价/同哈希契约匹配）
+        final Set<StoryType> key = EnumSet.of(
+            recipeSpell.getInput(0), recipeSpell.getInput(1), recipeSpell.getInput(2));
+        RECIPES_SPELL_INDEX.computeIfAbsent(key, k -> new ArrayList<>())
+            .add(new SpellRecipeEntry(spellType, recipeSpell));
     }
 
     public static void addCraftingRecipe(SlimefunItem slimefunItem, RecipeItem recipeItem) {
@@ -100,7 +126,7 @@ public class LiquefactionBasinCache extends DisplayStandHolder {
     @ParametersAreNonnullByDefault
     public void consumeItems() {
         final Collection<Entity> entities = getWorld().getNearbyEntities(
-            getPickupLocation(),
+            getCenterLocation(),
             0.3,
             0.3,
             0.3,
@@ -122,7 +148,11 @@ public class LiquefactionBasinCache extends DisplayStandHolder {
                     rejectItem(item);
                 }
             }
+        }
+        // 内容未变化（如仅弹开无效物品）的 tick 零 BlockStorage 写入
+        if (contentDirty) {
             syncBlock();
+            contentDirty = false;
         }
         if (getFillLevel() > 0 && GeneralUtils.testChance(1, 5)) {
             summonBoilingParticles();
@@ -143,11 +173,9 @@ public class LiquefactionBasinCache extends DisplayStandHolder {
         if (getFillLevel() + amount > maxVolume) {
             rejectItem(item);
         } else {
-            if (contentMap.containsKey(type)) {
-                contentMap.put(type, contentMap.get(type) + amount);
-            } else {
-                contentMap.put(type, amount);
-            }
+            contentMap.merge(type, amount, Integer::sum);
+            contentDirty = true;
+            fillLevelCache = -1;
             updateDisplay();
             item.remove();
             summonConsumeParticles();
@@ -190,6 +218,8 @@ public class LiquefactionBasinCache extends DisplayStandHolder {
 
     public void emptyBasin() {
         contentMap.clear();
+        contentDirty = false;
+        fillLevelCache = -1;
         clearBlockStorage();
         ArmorStand armorStand = getDisplayStand();
         ArmourStandUtils.clearDisplayItem(armorStand);
@@ -226,14 +256,13 @@ public class LiquefactionBasinCache extends DisplayStandHolder {
 
     @ParametersAreNonnullByDefault
     private void processBlankPlate(Item item, BlankPlate plate) {
-        final Set<StoryType> set = contentMap.entrySet().stream()
-            .sorted(Map.Entry.<StoryType, Integer>comparingByValue().reversed())
-            .limit(3)
-            .map(Map.Entry::getKey)
-            .collect(Collectors.toSet());
+        final StoryType[] topTypes = new StoryType[3];
+        final int[] topAmounts = new int[3];
+        fillTopThree(contentMap, topTypes, topAmounts);
 
         final ItemStack itemStack = item.getItemStack();
-        if (set.size() == 3) {
+        if (topTypes[2] != null) {
+            final Set<StoryType> set = EnumSet.of(topTypes[0], topTypes[1], topTypes[2]);
             final SpellType spellType = getMatchingRecipe(set, plate);
             if (spellType != null) {
                 item.getWorld().dropItem(item.getLocation(), ChargedPlate.getChargedPlate(plate.getTier(), spellType, getFillLevel()));
@@ -283,13 +312,12 @@ public class LiquefactionBasinCache extends DisplayStandHolder {
         }
 
         final SpellType currentSpellType = instancePlate.getStoredSpell();
-        final Set<StoryType> set = contentMap.entrySet().stream()
-            .sorted(Map.Entry.<StoryType, Integer>comparingByValue().reversed())
-            .limit(3)
-            .map(Map.Entry::getKey)
-            .collect(Collectors.toSet());
+        final StoryType[] topTypes = new StoryType[3];
+        final int[] topAmounts = new int[3];
+        fillTopThree(contentMap, topTypes, topAmounts);
 
-        if (set.size() == 3) {
+        if (topTypes[2] != null) {
+            final Set<StoryType> set = EnumSet.of(topTypes[0], topTypes[1], topTypes[2]);
             SpellType spellType = getMatchingRecipe(set, plate);
             if (spellType != null && spellType == currentSpellType) {
                 instancePlate.addCrysta(getFillLevel());
@@ -308,19 +336,13 @@ public class LiquefactionBasinCache extends DisplayStandHolder {
     private boolean processOtherItem(Item item) {
         final ItemStack itemStack = item.getItemStack();
 
-        final List<StoryType> typeList = contentMap.entrySet().stream()
-            .sorted(Map.Entry.<StoryType, Integer>comparingByValue().reversed())
-            .limit(3)
-            .map(Map.Entry::getKey)
-            .collect(Collectors.toList());
+        final StoryType[] topTypes = new StoryType[3];
+        final int[] topAmounts = new int[3];
+        fillTopThree(contentMap, topTypes, topAmounts);
 
-        final List<Integer> amountList = contentMap.entrySet().stream()
-            .sorted(Map.Entry.<StoryType, Integer>comparingByValue().reversed())
-            .limit(3)
-            .map(Map.Entry::getValue)
-            .collect(Collectors.toList());
-
-        if (typeList.size() == 3) {
+        if (topTypes[2] != null) {
+            final List<StoryType> typeList = List.of(topTypes[0], topTypes[1], topTypes[2]);
+            final List<Integer> amountList = List.of(topAmounts[0], topAmounts[1], topAmounts[2]);
             SlimefunItem slimefunItem = getMatchingRecipe(typeList, amountList, itemStack);
             if (slimefunItem != null && !slimefunItem.isDisabled()) {
                 final ItemStack stackToDrop = slimefunItem.getRecipeOutput().clone();
@@ -372,14 +394,26 @@ public class LiquefactionBasinCache extends DisplayStandHolder {
     @Nullable
     @ParametersAreNonnullByDefault
     public SpellType getMatchingRecipe(Set<StoryType> set, MagicalPlate magicalPlate) {
-        SpellType spellType = null;
-        for (Map.Entry<SpellType, RecipeSpell> recipeEntry : RECIPES_SPELL.entrySet()) {
-            if (recipeEntry.getValue().recipeMatches(set, magicalPlate.getTier())) {
-                spellType = recipeEntry.getKey();
-                break;
+        return lookupSpellRecipe(set, magicalPlate.getTier());
+    }
+
+    /**
+     * 配方类型集索引查表（O(1)）。索引键为配方类型去重集；查询集合（恒为 3 元素，
+     * 调用方有 size 守卫）与键以 Set 元素相等契约匹配——等价于旧 containsAll
+     * 线性扫描的全部命中情形。同键多配方按注册顺序保序。
+     */
+    @Nullable
+    public static SpellType lookupSpellRecipe(Set<StoryType> set, int tier) {
+        final List<SpellRecipeEntry> candidates = RECIPES_SPELL_INDEX.get(set);
+        if (candidates == null) {
+            return null;
+        }
+        for (SpellRecipeEntry entry : candidates) {
+            if (entry.recipe().getTier() == tier) {
+                return entry.spell();
             }
         }
-        return spellType;
+        return null;
     }
 
     @Nullable
@@ -396,11 +430,53 @@ public class LiquefactionBasinCache extends DisplayStandHolder {
     }
 
     public int getFillLevel() {
+        if (fillLevelCache >= 0) {
+            return fillLevelCache;
+        }
         int amount = 0;
         for (Map.Entry<StoryType, Integer> entry : contentMap.entrySet()) {
             amount += entry.getValue();
         }
+        fillLevelCache = amount;
         return amount;
+    }
+
+    /**
+     * 单遍选取含量最高的前 3 个故事类型与对应含量（对齐顺序）。
+     * EnumMap 至多 9 项，免除 stream 排序管线分配；并列值保持先见者靠前
+     * （与稳定排序 comparingByValue().reversed() 的相对顺序一致）。
+     * map 不足 3 项时，缺位的 types 槽位为 null / amounts 槽位为 -1。
+     */
+    private static void fillTopThree(Map<StoryType, Integer> map, StoryType[] types, int[] amounts) {
+        types[0] = null;
+        types[1] = null;
+        types[2] = null;
+        int a0 = -1;
+        int a1 = -1;
+        int a2 = -1;
+        for (Map.Entry<StoryType, Integer> entry : map.entrySet()) {
+            final StoryType type = entry.getKey();
+            final int value = entry.getValue();
+            if (value > a0) {
+                a2 = a1;
+                types[2] = types[1];
+                a1 = a0;
+                types[1] = types[0];
+                a0 = value;
+                types[0] = type;
+            } else if (value > a1) {
+                a2 = a1;
+                types[2] = types[1];
+                a1 = value;
+                types[1] = type;
+            } else if (value > a2) {
+                a2 = value;
+                types[2] = type;
+            }
+        }
+        amounts[0] = a0;
+        amounts[1] = a1;
+        amounts[2] = a2;
     }
 
     private void summonConsumeParticles() {
