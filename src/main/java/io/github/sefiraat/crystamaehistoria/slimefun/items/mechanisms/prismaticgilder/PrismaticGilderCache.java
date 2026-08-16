@@ -70,7 +70,7 @@ public class PrismaticGilderCache extends AbstractCache {
 
         for (Entity entity : entitiesToPull) {
             final Item item = (Item) entity;
-            final SlimefunItem slimefunItem = SlimefunItem.getByItem(item.getItemStack());
+            final SlimefunItem slimefunItem = io.github.sefiraat.crystamaehistoria.utils.SlimefunItemResolver.resolve(item);
 
             if (slimefunItem != null && slimefunItem.equals(Materials.getPrismaticCrystal())) {
                 GeneralUtils.pullEntity(location, entity, 0.5);
@@ -93,7 +93,7 @@ public class PrismaticGilderCache extends AbstractCache {
 
         for (Entity entity : entities) {
             final Item item = (Item) entity;
-            final SlimefunItem slimefunItem = SlimefunItem.getByItem(item.getItemStack());
+            final SlimefunItem slimefunItem = io.github.sefiraat.crystamaehistoria.utils.SlimefunItemResolver.resolve(item);
 
             if (slimefunItem != null && slimefunItem.equals(Materials.getPrismaticCrystal())) {
                 addCrystamae(item);

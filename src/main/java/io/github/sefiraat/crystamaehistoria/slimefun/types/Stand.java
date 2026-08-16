@@ -137,20 +137,12 @@ public abstract class Stand extends TickingBlockNoGui {
     public abstract void afterTick(Item item, Block block, SlimefunItem slimefunItem, Config config);
 
     /**
-     * 展示物品实体 → 已解析 {@link SlimefunItem} 的弱缓存（afterTick 每 tick
-     * 每 Deserialize 展示架调用 getByItem——对 Slimefun 物品为完整 ItemMeta +
-     * PDC 读取）。实体存续期内物品不替换（替换即新实体新键），条目随实体
-     * 回收自动清理——无陈旧无泄漏；主线程单线程访问。
+     * 展示物品实体 → 已解析 {@link SlimefunItem}（afterTick 每 tick 调用，
+     * 委托共享弱缓存 {@link SlimefunItemResolver}——生命周期闭合论证见其
+     * javadoc；round-39 引入，round-40 统一至共享实现）。
      */
-    private final Map<Item, SlimefunItem> resolvedDisplayItemCache = new java.util.WeakHashMap<>();
-
     @ParametersAreNonnullByDefault
     protected SlimefunItem resolveDisplayItem(Item item) {
-        SlimefunItem resolved = resolvedDisplayItemCache.get(item);
-        if (resolved == null && !resolvedDisplayItemCache.containsKey(item)) {
-            resolved = SlimefunItem.getByItem(item.getItemStack());
-            resolvedDisplayItemCache.put(item, resolved);
-        }
-        return resolved;
+        return io.github.sefiraat.crystamaehistoria.utils.SlimefunItemResolver.resolve(item);
     }
 }

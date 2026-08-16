@@ -135,7 +135,7 @@ public class LiquefactionBasinCache extends DisplayStandHolder {
 
         for (Entity entity : entities) {
             final Item item = (Item) entity;
-            final SlimefunItem slimefunItem = SlimefunItem.getByItem(item.getItemStack());
+            final SlimefunItem slimefunItem = io.github.sefiraat.crystamaehistoria.utils.SlimefunItemResolver.resolve(item);
             if (slimefunItem instanceof Crystal) {
                 final Crystal crystal = (Crystal) slimefunItem;
                 addCrystamae(crystal.getType(), crystal.getRarity(), item);
