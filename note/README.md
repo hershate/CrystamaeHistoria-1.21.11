@@ -47,7 +47,9 @@ v0.2.0 全套基准 + 10 分钟 soak 终验 0 异常 0 tick 落后。
 getStoryLore 记忆化（displayName 49.5x / loreLines 40.6x / 4 条组装段 9.9x，
 跨稀有度采样等价性 true）。第 17 轮召唤物 AI 每 tick 路径——冲撞车块扫描
 13.5x（O(n²) contains 去重为构造上无效的工作）、主人在线查询 5.4x、
-GoalType 集共享常量 3.1x，四组等价性断言 true。
+GoalType 集共享常量 3.1x，四组等价性断言 true。第 18 轮法术周期效果与
+周期任务路径收官——TunnelBore 块扫描 O(n²) 去重消除（等级 5 施法每 tick
+3.24ms → 12µs，271.4x），runnables 全域 6 任务逐类核查。
 
 ## 维护要点（改代码前必读）
 

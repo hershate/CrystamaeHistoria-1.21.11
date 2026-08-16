@@ -35,6 +35,7 @@
 | 15 | 写路径单次元数据往返归一：故事提交（8-10 次克隆 → 1，2.47x）+ 终格独特提交（1.54x）+ 祭坛提取（1.30x）+ 统计计数单路径（1.17x）+ 法杖 lore 静态片段（1.08x）；四组终态等价性运行时断言全通过（[round-15](round-15.md)） | ✅ 完成（服务器回归通过，0 插件异常） |
 | 16 | 展示行构建缓存：Story.getDisplayName/getStoryLore 记忆化（输入不可变、实例全局共享）——displayName 49.5x / loreLines 40.6x / 4 条组装段 9.9x；跨稀有度采样等价性 true（[round-16](round-16.md)） | ✅ 完成（服务器回归通过，真实插件异常 0） |
 | 17 | 召唤物 AI 每 tick 路径：冲撞车块扫描 13.5x（O(n²) 去重为无效工作）+ 主人查询 5.4x（三步 OfflinePlayer → 单次 getPlayer）+ GoalType 集共享常量 3.1x；四组等价性断言 true；targetReads 如实记为噪声级（[round-17](round-17.md)） | ✅ 完成（服务器回归通过，0 插件异常） |
+| 18 | 法术周期效果与周期任务路径收官：TunnelBore 块扫描 O(n²) 去重消除（等级 5 施法每 tick 3.24ms → 12µs，271.4x；等级 3 76.0x）；runnables 全域 6 任务逐类核查 + 不做项论证（[round-18](round-18.md)） | ✅ 完成（服务器回归通过，0 插件异常） |
 
 ## 收敛判定（round-14）
 
