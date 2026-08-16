@@ -1,0 +1,9 @@
+bench	variant	median_ns_op	min_ns_op	p95_ns_op
+stats.countSpells69	new_relative_read	0.66
+stats.countSpells69	old_full_path_rebuild	1.29
+stats.countStories274	new_relative_read	3.89
+stats.countStories274	old_full_path_rebuild	24.57
+stats.pageCheck36	new_section_once_relative_x36	2799.99
+stats.pageCheck36	old_full_path_x36	5410.95
+stats.singleCheck	new_relative_section	78.46
+stats.singleCheck	old_full_path	158.43
