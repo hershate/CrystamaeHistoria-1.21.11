@@ -99,7 +99,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound38(w),
                 () -> benchRound39(w),
                 () -> benchRound40(w),
-                () -> benchRound42(w)
+                () -> benchRound42(w),
+                () -> benchRound44(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -3096,6 +3097,33 @@ public final class CHPerfBench extends JavaPlugin {
                 base.clone().add(x, 0, z).getBlock().setType(Material.AIR);
             }
         }
+    }
+
+    /** 第 44 轮：T5 吸取取首元素（真实实体集合） */
+    private void benchRound44(PrintWriter w) {
+        final World world = Bukkit.getWorlds().get(0);
+        final Location loc = new Location(world, 6000.5, 150.5, 6000.5);
+        final org.bukkit.entity.Item one = world.dropItem(loc, new ItemStack(Material.DIAMOND));
+        one.setGravity(false);
+
+        final java.util.Collection<org.bukkit.entity.Entity> entities =
+            world.getNearbyEntities(loc, 0.3, 0.3, 0.3, org.bukkit.entity.Item.class::isInstance);
+
+        // 等价性：两形态取到同一实体
+        final org.bukkit.entity.Item viaStream = (org.bukkit.entity.Item) entities.stream().findFirst().orElse(null);
+        final org.bukkit.entity.Item viaIterator = entities.isEmpty() ? null : (org.bukkit.entity.Item) entities.iterator().next();
+        getLogger().info("round44 等价性(同实体): " + (viaStream == viaIterator));
+
+        time(w, "insertItem.firstElement", "old_stream_findFirst", 200_000, () -> {
+            final org.bukkit.entity.Item item = (org.bukkit.entity.Item) entities.stream().findFirst().orElse(null);
+            bh += item != null ? 1 : 0;
+        });
+        time(w, "insertItem.firstElement", "new_iterator_next", 1_000_000, () -> {
+            final org.bukkit.entity.Item item = entities.isEmpty() ? null : (org.bukkit.entity.Item) entities.iterator().next();
+            bh += item != null ? 1 : 0;
+        });
+
+        one.remove();
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
