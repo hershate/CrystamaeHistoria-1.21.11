@@ -13,6 +13,7 @@ import io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity;
 import io.github.sefiraat.crystamaehistoria.stories.definition.StoryType;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoriesDataType;
+import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoriesV2DataType;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI;
 import lombok.experimental.UtilityClass;
@@ -345,8 +346,18 @@ public class StoryUtils {
             storyList = new ArrayList<>();
         }
         storyList.add(story);
-        DataTypeMethods.setCustom(im, Keys.PDC_STORIES, PersistentStoriesDataType.TYPE, storyList);
+        writeStories(im, storyList);
         itemStack.setItemMeta(im);
+    }
+
+    /**
+     * 故事列表统一写入（v2 瘦编码）：写 v2 键并移除残留的 v1 键，
+     * 物品上不留双份编码。v1 物品一经任何写路径触碰即迁移为 v2。
+     */
+    @ParametersAreNonnullByDefault
+    private static void writeStories(ItemMeta itemMeta, List<Story> storyList) {
+        DataTypeMethods.setCustom(itemMeta, Keys.PDC_STORIES_V2, PersistentStoriesV2DataType.TYPE, storyList);
+        itemMeta.getPersistentDataContainer().remove(Keys.PDC_STORIES);
     }
 
     /**
@@ -368,9 +379,22 @@ public class StoryUtils {
     /**
      * 同 {@link #getAllStories(ItemStack)}，但接受调用方已持有的 ItemMeta，
      * 供单次往返的提交/移除路径复用同一次克隆。
+     * v2 瘦编码优先；v2 结构损坏时降级回退 v1（crafted 物品优雅降级，
+     * 与 v1 逐条目跳过同级，不产生 tick 异常）。
      */
     @Nullable
     public static List<Story> getAllStories(@Nullable ItemMeta itemMeta) {
+        if (itemMeta == null) {
+            return null;
+        }
+        try {
+            final List<Story> v2 = DataTypeMethods.getCustom(itemMeta, Keys.PDC_STORIES_V2, PersistentStoriesV2DataType.TYPE);
+            if (v2 != null) {
+                return v2;
+            }
+        } catch (IllegalStateException e) {
+            // v2 结构损坏：按 v1（或无数据）继续，不覆盖性丢弃
+        }
         return DataTypeMethods.getCustom(itemMeta, Keys.PDC_STORIES, PersistentStoriesDataType.TYPE);
     }
 
@@ -420,7 +444,7 @@ public class StoryUtils {
         final List<Story> storyList = getAllStories(itemStack);
         Preconditions.checkNotNull(storyList, "No storyList found when trying to remove.");
         storyList.remove(story);
-        DataTypeMethods.setCustom(im, Keys.PDC_STORIES, PersistentStoriesDataType.TYPE, storyList);
+        writeStories(im, storyList);
         itemStack.setItemMeta(im);
         return storyList.size();
     }
@@ -447,7 +471,7 @@ public class StoryUtils {
         if (itemMeta == null) {
             return;
         }
-        List<Story> storyList = DataTypeMethods.getCustom(itemMeta, Keys.PDC_STORIES, PersistentStoriesDataType.TYPE);
+        List<Story> storyList = getAllStories(itemMeta);
         if (storyList == null) {
             storyList = new ArrayList<>();
         }
@@ -457,7 +481,7 @@ public class StoryUtils {
         if (uniqueStory != null) {
             storyList.add(uniqueStory);
         }
-        DataTypeMethods.setCustom(itemMeta, Keys.PDC_STORIES, PersistentStoriesDataType.TYPE, storyList);
+        writeStories(itemMeta, storyList);
         if (mainStory != null) {
             // 常规故事计数 +1（独特故事不计数，与旧 incrementStoryAmount 仅由 addStory 调用一致）
             final int newAmount = getStoryAmount(itemMeta) + 1;
@@ -487,7 +511,7 @@ public class StoryUtils {
     ) {
         final List<Story> storyList = knownList != null ? knownList : new ArrayList<>();
         storyList.remove(story);
-        DataTypeMethods.setCustom(itemMeta, Keys.PDC_STORIES, PersistentStoriesDataType.TYPE, storyList);
+        writeStories(itemMeta, storyList);
         final int remaining = storyList.size();
         if (remaining > 0) {
             StoriesManager.rebuildStoriedStack(itemStack, itemMeta, storyList);

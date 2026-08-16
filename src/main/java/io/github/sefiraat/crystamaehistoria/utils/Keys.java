@@ -42,6 +42,8 @@ public final class Keys {
     public static final NamespacedKey PDC_POTENTIAL_STORIES = newKey("s_pot");
     public static final NamespacedKey PDC_CURRENT_NUMBER_OF_STORIES = newKey("s_cur_n");
     public static final NamespacedKey PDC_STORIES = newKey("s_list");
+    /** 故事列表 v2 瘦编码（单容器两键：合并 id 串 + 稀有度 int[]）；读取 v2 优先，回退 v1 */
+    public static final NamespacedKey PDC_STORIES_V2 = newKey("s_list2");
     public static final NamespacedKey PDC_PLATE_STORAGE = newKey("plt");
     public static final NamespacedKey PDC_STAVE_STORAGE = newKey("stv");
     public static final NamespacedKey PDC_SATCHEL_STORAGE = newKey("satchel");
@@ -54,6 +56,9 @@ public final class Keys {
     public static final NamespacedKey STORY_RARITY = newKey("s_r");
     public static final NamespacedKey STORY_TYPE = newKey("s_t");
     public static final NamespacedKey STORY_IS_GILDED = newKey("s_g");
+    // Type - Story v2（瘦编码容器内两键）
+    public static final NamespacedKey STORY_IDS_JOINED = newKey("s_ids");
+    public static final NamespacedKey STORY_RARITIES = newKey("s_rars");
 
     // Type - Plate
     public static final NamespacedKey PLATE_TIER = newKey("p_t");
