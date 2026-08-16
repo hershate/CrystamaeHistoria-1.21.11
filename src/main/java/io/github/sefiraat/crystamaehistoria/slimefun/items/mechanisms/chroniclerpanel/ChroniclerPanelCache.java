@@ -217,7 +217,9 @@ public class ChroniclerPanelCache extends AbstractCache {
         if (entities.isEmpty()) {
             shutdown();
         } else {
-            final Item item = (Item) entities.stream().findFirst().orElse(null);
+            // 直接迭代取首元素：集合已按 Item 过滤，stream().findFirst() 的
+            // 流分配 + Optional 包装为纯开销（每 tick 每 T5 机械）
+            final Item item = entities.isEmpty() ? null : (Item) entities.iterator().next();
             final ItemStack itemStack = item.getItemStack();
             final ItemStack clone = itemStack.asQuantity(1);
 
