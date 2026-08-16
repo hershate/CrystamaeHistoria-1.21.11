@@ -28,8 +28,11 @@ public class ExaltedHarvester extends ExaltedItem {
             // 从同一基准取随机点：原实现 location.add 原地修改，偏移逐次累积，
             // 随机点越走越远（y 每次再 -1.5，作用范围严重漂移）
             Block block = location.clone().add(x, -1.5, z).getBlock();
-            if (block.getBlockData() instanceof Ageable) {
-                Ageable ageable = (Ageable) block.getBlockData();
+            // 单次读取：原实现 instanceof 与 cast 各做一次 getBlockData
+            //（每 tick 每随机点的完整方块数据快照 ×2 → ×1）
+            final org.bukkit.block.data.BlockData data = block.getBlockData();
+            if (data instanceof Ageable) {
+                Ageable ageable = (Ageable) data;
                 Material material = block.getType();
                 if (ageable.getAge() == ageable.getMaximumAge()) {
                     block.breakNaturally();
