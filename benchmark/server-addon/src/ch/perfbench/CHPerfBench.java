@@ -22,6 +22,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
+import org.bukkit.Particle;
 import org.bukkit.entity.Projectile;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -71,6 +72,7 @@ public final class CHPerfBench extends JavaPlugin {
             benchStoryPick(w);
             benchStatsPath(w);
             benchRound10(w);
+            benchRound11(w);
         } catch (Exception e) {
             getLogger().severe("基准失败: " + e);
             e.printStackTrace();
@@ -521,6 +523,167 @@ public final class CHPerfBench extends JavaPlugin {
             }
         });
         skeleton.remove();
+    }
+
+    /** 第 11 轮：液化池路径（每 tick BlockStorage 写、催化剂 top-3 选取、配方匹配、每 tick 分配） */
+    private void benchRound11(PrintWriter w) {
+        final World world = Bukkit.getWorlds().get(0);
+
+        // —— 每 tick syncBlock：旧（附近每实体无条件全量写 contentMap 键）vs 新（脏标记跳过）——
+        final Block bsBlock = world.getBlockAt(3000, 100, 3000);
+        bsBlock.setType(Material.STONE);
+        final Map<StoryType, Integer> content = new EnumMap<>(StoryType.class);
+        int val = 1;
+        for (StoryType t : StoryType.values()) {
+            content.put(t, val);
+            val += 2;
+        }
+        time(w, "basinTick.syncBlockWrite", "old_unconditional_9keys", 10_000, () -> {
+            for (Map.Entry<StoryType, Integer> e : content.entrySet()) {
+                BlockStorage.addBlockInfo(bsBlock, "ch_c_lvl:" + e.getKey(), String.valueOf(e.getValue()));
+            }
+        });
+        final boolean[] dirty = {false};
+        time(w, "basinTick.syncBlockWrite", "new_dirty_flag_skip", 5_000_000, () -> {
+            if (dirty[0]) {
+                bh++;
+            }
+        });
+
+        // —— 催化剂 top-3 选取：旧（双 stream 排序管线）vs 新（单遍 top-3，fillTopThree 同构副本）——
+        time(w, "basinCatalyst.top3Pick", "old_double_stream_sort", 50_000, () -> {
+            final List<StoryType> typeList = content.entrySet().stream()
+                .sorted(Map.Entry.<StoryType, Integer>comparingByValue().reversed())
+                .limit(3)
+                .map(Map.Entry::getKey)
+                .collect(java.util.stream.Collectors.toList());
+            final List<Integer> amountList = content.entrySet().stream()
+                .sorted(Map.Entry.<StoryType, Integer>comparingByValue().reversed())
+                .limit(3)
+                .map(Map.Entry::getValue)
+                .collect(java.util.stream.Collectors.toList());
+            bh += typeList.size() + amountList.get(0);
+        });
+        final StoryType[] topTypes = new StoryType[3];
+        final int[] topAmounts = new int[3];
+        time(w, "basinCatalyst.top3Pick", "new_single_pass", 2_000_000, () -> {
+            topTypes[0] = null;
+            topTypes[1] = null;
+            topTypes[2] = null;
+            int a0 = -1;
+            int a1 = -1;
+            int a2 = -1;
+            for (Map.Entry<StoryType, Integer> entry : content.entrySet()) {
+                final StoryType type = entry.getKey();
+                final int value = entry.getValue();
+                if (value > a0) {
+                    a2 = a1;
+                    topTypes[2] = topTypes[1];
+                    a1 = a0;
+                    topTypes[1] = topTypes[0];
+                    a0 = value;
+                    topTypes[0] = type;
+                } else if (value > a1) {
+                    a2 = a1;
+                    topTypes[2] = topTypes[1];
+                    a1 = value;
+                    topTypes[1] = type;
+                } else if (value > a2) {
+                    a2 = value;
+                    topTypes[2] = type;
+                }
+            }
+            topAmounts[0] = a0;
+            topAmounts[1] = a1;
+            topAmounts[2] = a2;
+            bh += topAmounts[0];
+        });
+
+        // —— 配方匹配：旧（线性扫描全部配方）vs 新（类型集索引 O(1)）——
+        // 预构建配方列表（旧实现 RECIPES_SPELL 即启动期预构建的注册表）
+        final List<io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.liquefactionbasin.RecipeSpell> recipes =
+            new java.util.ArrayList<>();
+        for (SpellType st : SpellType.getCachedValues()) {
+            recipes.add(st.get().getRecipe());
+        }
+        final java.util.Set<StoryType> hitSet = java.util.EnumSet.of(
+            SpellType.HEAL.get().getRecipe().getInput(0),
+            SpellType.HEAL.get().getRecipe().getInput(1),
+            SpellType.HEAL.get().getRecipe().getInput(2));
+        // miss 集合：穷举 C(9,3) 组合中不与任何配方类型集相同的第一个
+        final StoryType[] all = StoryType.values();
+        java.util.Set<StoryType> missFound = null;
+        outer:
+        for (int i = 0; i < all.length; i++) {
+            for (int j = i + 1; j < all.length; j++) {
+                for (int k = j + 1; k < all.length; k++) {
+                    final java.util.Set<StoryType> cand = java.util.EnumSet.of(all[i], all[j], all[k]);
+                    if (cand.equals(hitSet)) {
+                        continue;
+                    }
+                    boolean isRecipe = false;
+                    for (io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.liquefactionbasin.RecipeSpell r : recipes) {
+                        if (java.util.EnumSet.of(r.getInput(0), r.getInput(1), r.getInput(2)).equals(cand)) {
+                            isRecipe = true;
+                            break;
+                        }
+                    }
+                    if (!isRecipe) {
+                        missFound = cand;
+                        break outer;
+                    }
+                }
+            }
+        }
+        final java.util.Set<StoryType> missSet = missFound;
+        getLogger().info("round11 missSet=" + missSet + " recipes=" + recipes.size());
+        time(w, "basinCatalyst.recipeMatch", "old_linear_miss", 20_000, () -> {
+            boolean found = false;
+            for (io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.liquefactionbasin.RecipeSpell r : recipes) {
+                if (r.recipeMatches(missSet, 1)) {
+                    found = true;
+                    break;
+                }
+            }
+            bh += found ? 1 : 0;
+        });
+        time(w, "basinCatalyst.recipeMatch", "new_index_miss", 5_000_000, () -> {
+            if (io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.liquefactionbasin.LiquefactionBasinCache
+                .lookupSpellRecipe(missSet, 1) != null) {
+                bh++;
+            }
+        });
+        time(w, "basinCatalyst.recipeMatch", "old_linear_hit_heal", 20_000, () -> {
+            boolean found = false;
+            for (io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.liquefactionbasin.RecipeSpell r : recipes) {
+                if (r.recipeMatches(hitSet, 1)) {
+                    found = true;
+                    break;
+                }
+            }
+            bh += found ? 1 : 0;
+        });
+        time(w, "basinCatalyst.recipeMatch", "new_index_hit_heal", 5_000_000, () -> {
+            if (io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.liquefactionbasin.LiquefactionBasinCache
+                .lookupSpellRecipe(hitSet, 1) != null) {
+                bh++;
+            }
+        });
+
+        // —— 每 tick 粒子前置分配：旧（DustOptions + 中心 Location 双分配）vs 新（缓存字段读）——
+        final Block basinBlock = world.getBlockAt(3000, 101, 3000);
+        basinBlock.setType(Material.CAULDRON);
+        time(w, "basinTick.particleSetup", "old_alloc_per_tick", 1_000_000, () -> {
+            final Particle.DustOptions d = new Particle.DustOptions(org.bukkit.Color.AQUA, 1);
+            final Location c = basinBlock.getLocation().add(0.5, 0.5, 0.5);
+            bh += c.getBlockX() + (int) d.getSize();
+        });
+        final Particle.DustOptions cachedDust = new Particle.DustOptions(org.bukkit.Color.AQUA, 1);
+        final Location cachedCenter = basinBlock.getLocation().add(0.5, 0.5, 0.5);
+        time(w, "basinTick.particleSetup", "new_cached_fields", 5_000_000, () ->
+            bh += cachedCenter.getBlockX() + (int) cachedDust.getSize());
+        basinBlock.setType(Material.AIR);
+        bsBlock.setType(Material.AIR);
     }
 
     /** 时间驱动预热 + 分批中位数（主线程内，每变体约 1s） */
