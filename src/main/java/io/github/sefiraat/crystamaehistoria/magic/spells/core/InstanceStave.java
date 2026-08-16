@@ -8,6 +8,7 @@ import io.github.sefiraat.crystamaehistoria.utils.Keys;
 import io.github.sefiraat.crystamaehistoria.utils.TextUtils;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveDataType;
+import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveV2DataType;
 import io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType;
 import lombok.Getter;
 import org.bukkit.inventory.ItemStack;
@@ -67,11 +68,7 @@ public class InstanceStave {
         }
         final Map<SpellSlot, InstancePlate> map;
         try {
-            map = DataTypeMethods.getCustom(
-                itemMeta,
-                Keys.PDC_STAVE_STORAGE,
-                PersistentStaveDataType.TYPE
-            );
+            map = PersistentStaveV2DataType.readStaveMap(itemMeta);
         } catch (IllegalStateException e) {
             // 物品 PDC 不可信（作弊/损坏数据）：反序列化失败时按空法杖失败关闭，
             // 避免异常穿透到施法事件链
@@ -99,7 +96,7 @@ public class InstanceStave {
         final InstanceStave stave = new InstanceStave(itemStack, false);
         final InstancePlate plate;
         try {
-            plate = PersistentStaveDataType.getSlotPlate(itemMeta, slot);
+            plate = PersistentStaveV2DataType.readSlotPlate(itemMeta, slot);
         } catch (IllegalStateException e) {
             CrystamaeHistoria.getInstance().getLogger().warning("法杖 PDC 数据损坏，按空法杖处理: " + e.getMessage());
             return stave;
@@ -123,11 +120,7 @@ public class InstanceStave {
                                               org.bukkit.inventory.meta.ItemMeta itemMeta) {
         final Map<SpellSlot, InstancePlate> map;
         try {
-            map = DataTypeMethods.getCustom(
-                itemMeta,
-                Keys.PDC_STAVE_STORAGE,
-                PersistentStaveDataType.TYPE
-            );
+            map = PersistentStaveV2DataType.readStaveMap(itemMeta);
         } catch (IllegalStateException e) {
             CrystamaeHistoria.getInstance().getLogger().warning("法杖 PDC 数据损坏，跳过写回（保持原数据）: " + e.getMessage());
             return null;

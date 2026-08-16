@@ -8,6 +8,7 @@ import io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot
 import io.github.sefiraat.crystamaehistoria.utils.Keys;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveDataType;
+import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveV2DataType;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -61,11 +62,7 @@ public class TestWand extends SubCommand {
                 final InstancePlate plateInstance = new InstancePlate(1, SpellType.valueOf(args[0]), 9999);
                 map.put(SpellSlot.LEFT_CLICK, plateInstance);
                 ItemMeta itemMeta = stave.getItemMeta();
-                DataTypeMethods.setCustom(
-                    itemMeta,
-                    Keys.PDC_STAVE_STORAGE,
-                    PersistentStaveDataType.TYPE,
-                    staveInstance.getSpellInstanceMap()
+                PersistentStaveV2DataType.writeStaveMap(itemMeta, staveInstance.getSpellInstanceMap()
                 );
                 stave.setItemMeta(itemMeta);
                 staveInstance.buildLore();

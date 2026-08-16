@@ -10,6 +10,7 @@ import io.github.sefiraat.crystamaehistoria.utils.Keys;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentPlateDataType;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveDataType;
+import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveV2DataType;
 import io.github.sefiraat.crystamaehistoria.utils.theme.GuiElements;
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
@@ -108,11 +109,7 @@ public class StaveConfigurator extends MenuBlock {
             }
             staveInstance.getSpellInstanceMap().clear();
             ItemMeta itemMeta = stave.getItemMeta();
-            DataTypeMethods.setCustom(
-                itemMeta,
-                Keys.PDC_STAVE_STORAGE,
-                PersistentStaveDataType.TYPE,
-                staveInstance.getSpellInstanceMap()
+            PersistentStaveV2DataType.writeStaveMap(itemMeta, staveInstance.getSpellInstanceMap()
             );
             staveInstance.buildLore(itemMeta);
             stave.setItemMeta(itemMeta);
@@ -160,11 +157,7 @@ public class StaveConfigurator extends MenuBlock {
                         staveInstance.setSlot(spellSlot, instancePlate);
                     }
                 }
-                DataTypeMethods.setCustom(
-                    staveMeta,
-                    Keys.PDC_STAVE_STORAGE,
-                    PersistentStaveDataType.TYPE,
-                    staveInstance.getSpellInstanceMap()
+                PersistentStaveV2DataType.writeStaveMap(staveMeta, staveInstance.getSpellInstanceMap()
                 );
                 staveInstance.buildLore(staveMeta);
                 stave.setItemMeta(staveMeta);

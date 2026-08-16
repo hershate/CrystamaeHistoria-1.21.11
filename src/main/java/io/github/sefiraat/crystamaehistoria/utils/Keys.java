@@ -65,6 +65,12 @@ public final class Keys {
 
     // Type - Plate
     public static final NamespacedKey PLATE_TIER = newKey("p_t");
+    // Type - Stave v2（扁平容器内五键：槽位/法术连接串 + tier/crysta 数组 + cooldown 长数组）
+    public static final NamespacedKey STAVE_SLOTS_JOINED = newKey("stv_slots");
+    public static final NamespacedKey STAVE_SPELLS_JOINED = newKey("stv_spells");
+    public static final NamespacedKey STAVE_TIERS = newKey("stv_t");
+    public static final NamespacedKey STAVE_CRYSTAS = newKey("stv_c");
+    public static final NamespacedKey STAVE_COOLDOWNS = newKey("stv_cd");
     public static final NamespacedKey PLATE_SPELL = newKey("p_s");
     public static final NamespacedKey PLATE_CHARGES = newKey("p_c");
     public static final NamespacedKey PLATE_COOLDOWN = newKey("p_cd");

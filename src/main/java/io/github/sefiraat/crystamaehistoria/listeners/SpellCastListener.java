@@ -8,6 +8,7 @@ import io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.Stave;
 import io.github.sefiraat.crystamaehistoria.utils.Keys;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveDataType;
+import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveV2DataType;
 import io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import net.md_5.bungee.api.ChatMessageType;
@@ -52,11 +53,7 @@ public class SpellCastListener implements Listener {
                     stack, slot, staveInstance.getSpellInstanceMap().get(slot), staveMeta);
                 if (writeBack != null) {
                     // 写回：PDC 与 lore 共用同一 meta 快照（法术回调不触碰手持物品元数据）
-                    DataTypeMethods.setCustom(
-                        staveMeta,
-                        Keys.PDC_STAVE_STORAGE,
-                        PersistentStaveDataType.TYPE,
-                        writeBack.getSpellInstanceMap()
+                    PersistentStaveV2DataType.writeStaveMap(staveMeta, writeBack.getSpellInstanceMap()
                     );
                     writeBack.buildLore(staveMeta);
                     stack.setItemMeta(staveMeta);
