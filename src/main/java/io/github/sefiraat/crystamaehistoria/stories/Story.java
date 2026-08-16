@@ -48,6 +48,7 @@ public class Story {
      */
     @ParametersAreNonnullByDefault
     public Story(ConfigurationSection section, StoryRarity storyRarity) {
+        // 启动期每个故事构造一次（1220+ 次）：shards 列表只读一次复用
         final List<Integer> shards = section.getIntegerList("shards");
 
         this.id = section.getString("name");
@@ -68,7 +69,7 @@ public class Story {
 
         this.rarity = storyRarity;
         this.type = storyType;
-        this.storyShardProfile = new StoryShardProfile(section.getIntegerList("shards"));
+        this.storyShardProfile = new StoryShardProfile(shards);
         this.storyStrings = section.getStringList("lore");
         this.author = section.getString("author");
         this.sponsor = section.getString("sponsor");

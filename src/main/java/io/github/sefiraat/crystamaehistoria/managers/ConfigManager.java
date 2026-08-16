@@ -70,9 +70,20 @@ public class ConfigManager {
         }
         final BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, Charsets.UTF_8));
         final YamlConfiguration defaults = YamlConfiguration.loadConfiguration(reader);
+        // 稳态启动（文件已含全部默认键）免落盘：copyDefaults 只补缺失键、不覆写
+        // 既有值，故"无缺失键"时写盘产物与现存文件逐字节等价，纯属重复 IO
+        boolean missingDefault = false;
+        for (String key : defaults.getKeys(true)) {
+            if (!config.contains(key)) {
+                missingDefault = true;
+                break;
+            }
+        }
         config.addDefaults(defaults);
         config.options().copyDefaults(true);
-        config.save(file);
+        if (missingDefault) {
+            config.save(file);
+        }
     }
 
     @ParametersAreNonnullByDefault
@@ -84,21 +95,27 @@ public class ConfigManager {
 
     public void loadConfig() {
         // Spells
+        boolean newSpellKeys = false;
         for (SpellType spellType : SpellType.getCachedValues()) {
             Spell spell = spellType.getSpell();
             if (!spells.contains(spell.getId())) {
-                try {
-                    final File file = new File(CrystamaeHistoria.getInstance().getDataFolder(), "spells.yml");
-                    spells.set(spell.getId(), true);
-                    spells.save(file);
-                } catch (IOException exception) {
-                    exception.printStackTrace();
-                }
+                // 原实现每补一个缺失键就整文件落盘一次（首次启动至多 69 次全量
+                // 序列化+写盘）；改为全部补齐后一次落盘，终态一致
+                spells.set(spell.getId(), true);
+                newSpellKeys = true;
             }
             boolean enabled = spells.getBoolean(spell.getId());
             spell.setEnabled(enabled);
             if (enabled) {
                 LiquefactionBasinCache.addSpellRecipe(spellType, spell.getRecipe());
+            }
+        }
+        if (newSpellKeys) {
+            try {
+                final File file = new File(CrystamaeHistoria.getInstance().getDataFolder(), "spells.yml");
+                spells.save(file);
+            } catch (IOException exception) {
+                exception.printStackTrace();
             }
         }
     }

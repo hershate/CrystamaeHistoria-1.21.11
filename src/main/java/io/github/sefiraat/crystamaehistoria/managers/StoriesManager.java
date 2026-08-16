@@ -237,13 +237,15 @@ public class StoriesManager {
 
             final Story story = new Story(storySection, StoryRarity.UNIQUE);
             final int tier = wholeSection.getInt("tier");
-            final List<StoryType> types = wholeSection.getStringList("elements").stream()
-                                                      .map(StoryType::getByName)
-                                                      .filter(Objects::nonNull)
-                                                      .collect(Collectors.toList());
+            // elements 列表只读一次复用（原实现读两次，995 键 × 每次新建列表）
+            final List<String> elements = wholeSection.getStringList("elements");
+            final List<StoryType> types = elements.stream()
+                                                  .map(StoryType::getByName)
+                                                  .filter(Objects::nonNull)
+                                                  .collect(Collectors.toList());
 
             // 非法元素名已在过滤时剔除（原实现只打日志，null 混入池后发掘时 NPE）
-            if (wholeSection.getStringList("elements").size() != types.size()) {
+            if (elements.size() != types.size()) {
                 CrystamaeHistoria.getInstance().getLogger().info(
                     MessageFormat.format("A block has a badly typed element -> {0}", key)
                 );

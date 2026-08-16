@@ -170,20 +170,35 @@ public class CrystamaeHistoria extends JavaPlugin implements SlimefunAddon {
 
         saveDefaultConfig();
 
+        // 启动阶段计时（冷路径画像，单次汇总日志）
+        final long t0 = System.nanoTime();
         this.configManager = new ConfigManager();
+        final long tConfig = System.nanoTime();
         this.storiesManager = new StoriesManager();
+        final long tStories = System.nanoTime();
         this.listenerManager = new ListenerManager();
         this.runnableManager = new RunnableManager();
         this.spellMemory = new SpellMemory();
         this.supportedPluginManager = new SupportedPluginManager();
+        final long tManagers = System.nanoTime();
 
         configManager.loadConfig();
 
         SpellType.setupEnabledSpells();
+        final long tLoad = System.nanoTime();
 
         setupSlimefun();
+        final long tItems = System.nanoTime();
 
         setupCommands();
+        final long tDone = System.nanoTime();
+
+        getLogger().info(() -> String.format(
+            "启动阶段耗时: 配置加载 %.1fms | 故事域构建 %.1fms | 管理器 %.1fms | "
+                + "法术配置 %.1fms | 物品注册 %.1fms | 命令 %.2fms | 合计 %.1fms",
+            (tConfig - t0) / 1e6, (tStories - tConfig) / 1e6, (tManagers - tStories) / 1e6,
+            (tLoad - tManagers) / 1e6, (tItems - tLoad) / 1e6, (tDone - tItems) / 1e6,
+            (tDone - t0) / 1e6));
     }
 
     private void setupCommands() {
