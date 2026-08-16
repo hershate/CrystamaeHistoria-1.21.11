@@ -142,7 +142,9 @@ utils/SlimefunItemResolver 统一液化池满池滞留/镀金器拉取中物品/
 Stand 三处 tick 路径——177x（1279→7.22ns）。第 41 轮 v0.9.0 全量终验（171 变体，
 25 条断言行全部符合文档化预期，0 SEVERE）+ 空闲 soak + 收敛判定——
 **第八轮性能优化循环闭合，版本收口 0.9.0**。八轮循环（41 轮）总账见
-[report/perf/round-41](report/perf/round-41.md)。
+[report/perf/round-41](report/perf/round-41.md)。第 42 轮 getBlockData 族清扫
+（唯一双读 ExaltedHarvester 归一）：实测持平（~30ns NMS 引用读，
+族边界确认）——长尾代际递减指示逼近真实地板。
 
 ## 维护要点（改代码前必读）
 

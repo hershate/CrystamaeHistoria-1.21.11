@@ -98,7 +98,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound35(w),
                 () -> benchRound38(w),
                 () -> benchRound39(w),
-                () -> benchRound40(w)
+                () -> benchRound40(w),
+                () -> benchRound42(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -3052,6 +3053,49 @@ public final class CHPerfBench extends JavaPlugin {
         });
 
         standing.remove();
+    }
+
+    /** 第 42 轮：收获者 onExalt 的 getBlockData 双读归一（真实作物方块） */
+    private void benchRound42(PrintWriter w) {
+        final World world = Bukkit.getWorlds().get(0);
+        final Location base = new Location(world, 6010, 130, 6010);
+        // 放置一片成熟小麦（Ageable）
+        for (int x = 0; x < 3; x++) {
+            for (int z = 0; z < 3; z++) {
+                base.clone().add(x, 0, z).getBlock().setType(Material.WHEAT);
+            }
+        }
+        final Block crop = base.getBlock();
+
+        // ———— 等价性：单读判定与双读一致 ————
+        final boolean doubleIsAgeable = crop.getBlockData() instanceof org.bukkit.block.data.Ageable;
+        final org.bukkit.block.data.BlockData single = crop.getBlockData();
+        final boolean singleIsAgeable = single instanceof org.bukkit.block.data.Ageable;
+        getLogger().info("round42 等价性(单双读一致): " + (doubleIsAgeable == singleIsAgeable));
+
+        // ———— 每 tick 每随机点：双读 vs 单读 ————
+        time(w, "harvesterTick.blockData", "old_double_read", 100_000, () -> {
+            int c = 0;
+            if (crop.getBlockData() instanceof org.bukkit.block.data.Ageable) {
+                final org.bukkit.block.data.Ageable ageable = (org.bukkit.block.data.Ageable) crop.getBlockData();
+                c += ageable.getMaximumAge();
+            }
+            bh += c;
+        });
+        time(w, "harvesterTick.blockData", "new_single_read", 200_000, () -> {
+            int c = 0;
+            final org.bukkit.block.data.BlockData data = crop.getBlockData();
+            if (data instanceof org.bukkit.block.data.Ageable) {
+                c += ((org.bukkit.block.data.Ageable) data).getMaximumAge();
+            }
+            bh += c;
+        });
+
+        for (int x = 0; x < 3; x++) {
+            for (int z = 0; z < 3; z++) {
+                base.clone().add(x, 0, z).getBlock().setType(Material.AIR);
+            }
+        }
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
