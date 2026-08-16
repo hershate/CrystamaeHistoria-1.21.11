@@ -966,20 +966,24 @@ public final class CHPerfBench extends JavaPlugin {
             () -> uniqueItem.setItemMeta(uniqueTemplateMeta),
             () -> StoryUtils.commitStory(uniqueItem, story, uniqueStory));
 
-        // —— 发掘+提取全往返（提交后立即提取，列表回到模板长度，状态自稳定）——
-        final ItemStack rtItem = round15Template(3, 5, story);
-        time(w, "writePath.roundTripCommitExtract", "old_chains", 2_000, () -> {
-            round15OldCommit(rtItem, story, null);
-            bh += round15OldExtract(rtItem) ? 1 : 0;
-        });
-        time(w, "writePath.roundTripCommitExtract", "new_single_roundtrips", 2_000, () -> {
-            StoryUtils.commitStory(rtItem, story, null);
-            final ItemMeta m = rtItem.getItemMeta();
-            final List<io.github.sefiraat.crystamaehistoria.stories.Story> l =
-                StoryUtils.getAllStories(m);
-            bh += io.github.sefiraat.crystamaehistoria.utils.GildingUtils.isGilded(m) ? 0 : 1;
-            bh += StoryUtils.removeStoryAndRebuild(rtItem, m, l.get(0), l) == 0 ? 1 : 0;
-        });
+        // —— 提取（状态收缩型：预置 5 条，批 4 次内不耗尽；批间复位）——
+        // 注：不使用"提交+提取"自稳定往返设计——rebuildStoriedStack 每次在既有显示名上
+        // 叠加"有故事的"前缀（上游既有行为，旧/新一致），名字无界增长会使
+        // Paper 的组件→legacy 正则转换二次方变慢，污染计量。
+        final ItemStack extractItem = round15Template(5, 5, story);
+        final ItemMeta extractTemplateMeta = extractItem.getItemMeta();
+        timeResettable(w, "writePath.storyExtract", "old_chain_7clones", 4,
+            () -> extractItem.setItemMeta(extractTemplateMeta),
+            () -> bh += round15OldExtract(extractItem) ? 1 : 0);
+        timeResettable(w, "writePath.storyExtract", "new_single_roundtrip", 4,
+            () -> extractItem.setItemMeta(extractTemplateMeta),
+            () -> {
+                final ItemMeta m = extractItem.getItemMeta();
+                final List<io.github.sefiraat.crystamaehistoria.stories.Story> l =
+                    StoryUtils.getAllStories(m);
+                bh += io.github.sefiraat.crystamaehistoria.utils.GildingUtils.isGilded(m) ? 0 : 1;
+                bh += StoryUtils.removeStoryAndRebuild(extractItem, m, l.get(0), l) == 0 ? 1 : 0;
+            });
 
         // —— 统计计数（读改写：路径双构建 vs 单构建；真实 player_stats 配置）——
         final UUID statPlayer = UUID.fromString("12345678-1234-1234-1234-123456789012");
