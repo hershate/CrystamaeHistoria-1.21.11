@@ -76,6 +76,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Arrays;
+import java.util.Comparator;
 
 public enum SpellType {
 
@@ -182,6 +183,9 @@ public enum SpellType {
         enabledSpells = Arrays.stream(values())
             .filter(spellType -> spellType.getSpell().isEnabled())
             .toArray(SpellType[]::new);
+        // 启动时一次性按 id 排序：图鉴翻页直接使用数组顺序，
+        // 消除每次打开页面对共享缓存数组的原地重排（幂等但为重复工作且污染共享状态）
+        Arrays.sort(enabledSpells, Comparator.comparing(SpellType::getId));
     }
 
     @Nonnull

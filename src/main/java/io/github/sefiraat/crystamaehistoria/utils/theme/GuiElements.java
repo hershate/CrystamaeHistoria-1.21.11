@@ -76,60 +76,68 @@ public class GuiElements {
 
     @ParametersAreNonnullByDefault
     public static ItemStack getUniqueStoryIcon(Material material) {
-        return ThemeType.themedItemStack(
-            material,
+        // 图标为材质的纯函数（标题化名 + 固定主题行），按材质记忆化，clone 保持每槽独立实例
+        return UNIQUE_STORY_ICON_CACHE.computeIfAbsent(material, m -> ThemeType.themedItemStack(
+            m,
             ThemeType.RARITY_UNIQUE,
-            NameUtils.getMaterialName(material),
+            NameUtils.getMaterialName(m),
             "该故事已被发掘"
-        );
+        )).clone();
     }
 
     @ParametersAreNonnullByDefault
     public static ItemStack getStoryNotUnlockedIcon(Material material) {
-        return ThemeType.themedItemStack(
+        return STORY_NOT_UNLOCKED_ICON_CACHE.computeIfAbsent(material, m -> ThemeType.themedItemStack(
             Material.BARRIER,
             ThemeType.RESEARCH,
-            NameUtils.getMaterialName(material),
+            NameUtils.getMaterialName(m),
             MessageFormat.format("{0}{1}已锁定", ThemeType.RESEARCH.getColor(), ChatColor.BOLD),
             "该故事还没有解锁",
             "当你使用记录者首次发掘",
             "指定方块的故事时才能解锁"
-        );
+        )).clone();
     }
 
     @ParametersAreNonnullByDefault
     public static ItemStack getSpellNotUnlockedIcon(String name) {
-        return ThemeType.themedItemStack(
+        return SPELL_NOT_UNLOCKED_ICON_CACHE.computeIfAbsent(name, n -> ThemeType.themedItemStack(
             Material.BARRIER,
             ThemeType.RESEARCH,
-            name,
+            n,
             MessageFormat.format("{0}{1}已锁定", ThemeType.RESEARCH.getColor(), ChatColor.BOLD),
             "该法术还没有被解锁",
             "当你在液化池中首次",
             "充能魔法板时才能解锁法术"
-        );
+        )).clone();
     }
 
     @ParametersAreNonnullByDefault
     public static ItemStack getBlockGildedIcon(Material material) {
-        return ThemeType.themedItemStack(
-            material,
+        return BLOCK_GILDED_ICON_CACHE.computeIfAbsent(material, m -> ThemeType.themedItemStack(
+            m,
             ThemeType.RARITY_UNIQUE,
-            NameUtils.getMaterialName(material),
+            NameUtils.getMaterialName(m),
             "该方块已被镀金过"
-        );
+        )).clone();
     }
 
     @ParametersAreNonnullByDefault
     public static ItemStack getBlockNotGildedIcon(Material material) {
-        return ThemeType.themedItemStack(
+        return BLOCK_NOT_GILDED_ICON_CACHE.computeIfAbsent(material, m -> ThemeType.themedItemStack(
             Material.BARRIER,
             ThemeType.RESEARCH,
-            NameUtils.getMaterialName(material),
+            NameUtils.getMaterialName(m),
             MessageFormat.format("{0}{1}已锁定", ThemeType.RESEARCH.getColor(), ChatColor.BOLD),
             "该方块还未被镀金过"
-        );
+        )).clone();
     }
+
+    /** 图鉴图标缓存（材质/名称为纯函数输入；数量以 Material 枚举与法术名为界） */
+    private static final java.util.EnumMap<Material, ItemStack> UNIQUE_STORY_ICON_CACHE = new java.util.EnumMap<>(Material.class);
+    private static final java.util.EnumMap<Material, ItemStack> STORY_NOT_UNLOCKED_ICON_CACHE = new java.util.EnumMap<>(Material.class);
+    private static final java.util.HashMap<String, ItemStack> SPELL_NOT_UNLOCKED_ICON_CACHE = new java.util.HashMap<>();
+    private static final java.util.EnumMap<Material, ItemStack> BLOCK_GILDED_ICON_CACHE = new java.util.EnumMap<>(Material.class);
+    private static final java.util.EnumMap<Material, ItemStack> BLOCK_NOT_GILDED_ICON_CACHE = new java.util.EnumMap<>(Material.class);
 
     @ParametersAreNonnullByDefault
     public static ItemStack getSpellSlotPane(SpellSlot spellSlot) {

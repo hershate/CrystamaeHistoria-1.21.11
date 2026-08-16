@@ -25,11 +25,11 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -98,13 +98,12 @@ public class StoryCollectionFlexGroup extends FlexItemGroup {
 
     @ParametersAreNonnullByDefault
     private void setupPage(Player player, PlayerProfile profile, SlimefunGuideMode mode, ChestMenu menu, int page) {
-        final List<BlockDefinition> blockDefinitions = new ArrayList<>(CrystamaeHistoria.getStoriesManager().getBlockDefinitionMap().values());
-        final int numberOfBlocks = CrystamaeHistoria.getStoriesManager().getBlockDefinitionMap().size();
+        // 启动期预排序快照（blockDefinitionMap 启动后不可变），翻页直接 subList
+        final List<BlockDefinition> blockDefinitions = CrystamaeHistoria.getStoriesManager().getBlockDefinitionsSortedByMaterial();
+        final int numberOfBlocks = blockDefinitions.size();
         final int totalPages = (int) Math.ceil(numberOfBlocks / (double) PAGE_SIZE);
         final int start = (page - 1) * PAGE_SIZE;
         final int end = Math.min(start + PAGE_SIZE, blockDefinitions.size());
-
-        blockDefinitions.sort(Comparator.comparing(definition -> definition.getMaterial().name()));
 
         final List<BlockDefinition> blockDefinitionSubList = blockDefinitions.subList(start, end);
 
@@ -183,7 +182,7 @@ public class StoryCollectionFlexGroup extends FlexItemGroup {
             menu.replaceExistingItem(slot, ChestMenuUtils.getBackground());
         }
 
-        menu.replaceExistingItem(CHRONICLING_SLOT, getPoolsItemStack(definition));
+        menu.replaceExistingItem(CHRONICLING_SLOT, getDefinitionDetail(definition)[0].clone());
         menu.addMenuClickHandler(CHRONICLING_SLOT, (player, i, itemStack, clickAction) -> false);
 
         menu.replaceExistingItem(TIER_SLOT, getTierItemStack(definition));
@@ -192,7 +191,7 @@ public class StoryCollectionFlexGroup extends FlexItemGroup {
         menu.replaceExistingItem(STATS_SLOT, getStatsStack(p.getUniqueId(), definition));
         menu.addMenuClickHandler(STATS_SLOT, (player, i, itemStack, clickAction) -> false);
 
-        menu.replaceExistingItem(UNIQUE_SLOT, getUniqueStoryItemStack(definition));
+        menu.replaceExistingItem(UNIQUE_SLOT, getDefinitionDetail(definition)[1].clone());
         menu.addMenuClickHandler(UNIQUE_SLOT, (player, i, itemStack, clickAction) -> false);
 
         for (Map.Entry<StoryType, Integer> entry : definition.getUnique().getStoryShardProfile().shardMap.entrySet()) {
@@ -239,6 +238,17 @@ public class StoryCollectionFlexGroup extends FlexItemGroup {
                 setupPage(player1, profile, mode, menu, nextPage);
             }
             return false;
+        });
+    }
+
+    /** 方块详情堆缓存（材质 → [故事池说明, 独特故事]）：BlockDefinition 启动后不可变，纯函数输入 */
+    private static final java.util.EnumMap<Material, ItemStack[]> DEFINITION_DETAIL_CACHE = new java.util.EnumMap<>(Material.class);
+
+    @Nonnull
+    private ItemStack[] getDefinitionDetail(BlockDefinition definition) {
+        return DEFINITION_DETAIL_CACHE.computeIfAbsent(definition.getMaterial(), m -> new ItemStack[]{
+            getPoolsItemStack(definition),
+            getUniqueStoryItemStack(definition)
         });
     }
 

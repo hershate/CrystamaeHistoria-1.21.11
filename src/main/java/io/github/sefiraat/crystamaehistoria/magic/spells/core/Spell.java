@@ -27,6 +27,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -49,6 +50,20 @@ public abstract class Spell {
 
     @Nonnull
     public SlimefunItemStack getThemedStack() {
+        // 实例级懒缓存：输入（lore/id/name/material）均为每法术常量，构建结果恒定。
+        // 调用方仅以 .item()（内部 clone）取副本入菜单，缓存实例不被修改。
+        // 图鉴每次翻页原对 36 个槽位逐个全量重建（逐行颜色处理 + ItemMeta 读改写往返）。
+        if (themedStack == null) {
+            themedStack = buildThemedStack();
+        }
+        return themedStack;
+    }
+
+    @Nullable
+    private SlimefunItemStack themedStack;
+
+    @Nonnull
+    private SlimefunItemStack buildThemedStack() {
         ChatColor passiveColor = ThemeType.PASSIVE.getColor();
         List<String> finalLore = new ArrayList<>();
         for (String s : getLore()) {

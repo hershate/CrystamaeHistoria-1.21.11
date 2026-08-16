@@ -24,7 +24,6 @@ import org.bukkit.inventory.ItemStack;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -78,13 +77,12 @@ public class GildedCollectionFlexGroup extends FlexItemGroup {
 
     @ParametersAreNonnullByDefault
     private void setupPage(Player player, PlayerProfile profile, SlimefunGuideMode mode, ChestMenu menu, int page) {
-        final List<BlockDefinition> blockDefinitions = new ArrayList<>(CrystamaeHistoria.getStoriesManager().getBlockDefinitionMap().values());
-        final int numberOfBlocks = CrystamaeHistoria.getStoriesManager().getBlockDefinitionMap().size();
+        // 启动期预排序快照（blockDefinitionMap 启动后不可变），翻页直接 subList
+        final List<BlockDefinition> blockDefinitions = CrystamaeHistoria.getStoriesManager().getBlockDefinitionsSortedByMaterial();
+        final int numberOfBlocks = blockDefinitions.size();
         final int totalPages = (int) Math.ceil(numberOfBlocks / (double) PAGE_SIZE);
         final int start = (page - 1) * PAGE_SIZE;
         final int end = Math.min(start + PAGE_SIZE, blockDefinitions.size());
-
-        blockDefinitions.sort(Comparator.comparing(definition -> definition.getMaterial().name()));
 
         final List<BlockDefinition> blockDefinitionSubList = blockDefinitions.subList(start, end);
 

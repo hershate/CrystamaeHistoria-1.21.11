@@ -23,6 +23,7 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -55,12 +56,25 @@ public class StoriesManager {
      */
     @Getter
     private final Map<StoryRarity, Map<StoryType, List<Story>>> storiesByRarityAndType = new EnumMap<>(StoryRarity.class);
+    /**
+     * 按材质名排序的方块定义快照：图鉴（故事集/镀金集）每次翻页原为
+     * 复制全表 + 排序（O(n log n) 字符串比较器）；blockDefinitionMap 启动后
+     * 不可变，故启动期一次排序，翻页直接 subList。
+     */
+    @Getter
+    private final List<BlockDefinition> blockDefinitionsSortedByMaterial = new ArrayList<>();
 
     public StoriesManager() {
         fillBlockTierMap();
         fillStories();
         buildStoryTypeIndex();
         fillBlockDefinitions();
+        buildSortedBlockDefinitions();
+    }
+
+    private void buildSortedBlockDefinitions() {
+        blockDefinitionsSortedByMaterial.addAll(blockDefinitionMap.values());
+        blockDefinitionsSortedByMaterial.sort(Comparator.comparing(definition -> definition.getMaterial().name()));
     }
 
     private void buildStoryTypeIndex() {

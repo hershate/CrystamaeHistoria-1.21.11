@@ -26,11 +26,11 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -97,13 +97,12 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
 
     @ParametersAreNonnullByDefault
     private void setupPage(Player player, PlayerProfile profile, SlimefunGuideMode mode, ChestMenu menu, int page) {
+        // 启用集已在 setupEnabledSpells 启动时按 id 排序，翻页直接用数组视图
         final List<SpellType> spellTypes = Arrays.asList(SpellType.getEnabledSpells());
         final int numberOfBlocks = spellTypes.size();
         final int totalPages = (int) Math.ceil(numberOfBlocks / (double) PAGE_SIZE);
         final int start = (page - 1) * PAGE_SIZE;
         final int end = Math.min(start + PAGE_SIZE, spellTypes.size());
-
-        spellTypes.sort(Comparator.comparing(spellType -> spellType.getSpell().getId()));
 
         final List<SpellType> spellTypeSubList = spellTypes.subList(start, end);
 
@@ -187,30 +186,75 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
             menu.addMenuClickHandler(slot, ((player, slot2, itemStack, clickAction) -> false));
         }
 
-        menu.replaceExistingItem(MECHANISM, getMechanismStack());
+        menu.replaceExistingItem(MECHANISM, MECHANISM_STACK);
         menu.addMenuClickHandler(MECHANISM, ((player, i, itemStack, clickAction) -> false));
 
-        menu.replaceExistingItem(CRYSTA_COST, getBasicStack(spell));
+        // 详情 7 堆为不可变 SpellCore 的纯函数，按法术记忆化，clone 保持每格独立实例
+        final ItemStack[] detail = DETAIL_STACKS.computeIfAbsent(
+            spellType,
+            st -> buildDetailStacks(st.getSpell())
+        );
+        menu.replaceExistingItem(CRYSTA_COST, detail[0].clone());
         menu.addMenuClickHandler(CRYSTA_COST, ((player, i, itemStack, clickAction) -> false));
 
-        menu.replaceExistingItem(VALUES, getValuesStack(spell));
+        menu.replaceExistingItem(VALUES, detail[1].clone());
         menu.addMenuClickHandler(VALUES, ((player, i, itemStack, clickAction) -> false));
 
-        menu.replaceExistingItem(CAST_TYPE, getCastTypeStack(spell));
+        menu.replaceExistingItem(CAST_TYPE, detail[2].clone());
         menu.addMenuClickHandler(CAST_TYPE, ((player, i, itemStack, clickAction) -> false));
 
-        menu.replaceExistingItem(RANGE, getRangeStack(spell));
+        menu.replaceExistingItem(RANGE, detail[3].clone());
         menu.addMenuClickHandler(RANGE, ((player, i, itemStack, clickAction) -> false));
 
-        menu.replaceExistingItem(KNOCK_BACK, getKnockBackStack(spell));
+        menu.replaceExistingItem(KNOCK_BACK, detail[4].clone());
         menu.addMenuClickHandler(KNOCK_BACK, ((player, i, itemStack, clickAction) -> false));
 
-        menu.replaceExistingItem(PROJECTILE_INFO, getProjectileStack(spell));
+        menu.replaceExistingItem(PROJECTILE_INFO, detail[5].clone());
         menu.addMenuClickHandler(PROJECTILE_INFO, ((player, i, itemStack, clickAction) -> false));
 
-        menu.replaceExistingItem(EFFECTS, getEffectsStack(spell));
+        menu.replaceExistingItem(EFFECTS, detail[6].clone());
         menu.addMenuClickHandler(EFFECTS, ((player, i, itemStack, clickAction) -> false));
 
+    }
+
+    /** 详情堆缓存：[基本信息, 法术属性, 施法类型, 范围, 击退, 弹射物, 药水效果] */
+    private static final java.util.EnumMap<SpellType, ItemStack[]> DETAIL_STACKS = new java.util.EnumMap<>(SpellType.class);
+
+    /** 机制说明堆与法术无关，全常量，启动后共享单实例（展示只读） */
+    private static final ItemStack MECHANISM_STACK = buildMechanismStack();
+
+    @Nonnull
+    private ItemStack[] buildDetailStacks(Spell spell) {
+        return new ItemStack[]{
+            getBasicStack(spell),
+            getValuesStack(spell),
+            getCastTypeStack(spell),
+            getRangeStack(spell),
+            getKnockBackStack(spell),
+            getProjectileStack(spell),
+            getEffectsStack(spell)
+        };
+    }
+
+    @Nonnull
+    private static ItemStack buildMechanismStack() {
+        final List<String> lore = Arrays.stream(
+                new String[]{
+                    "在液化池中投入魔法水晶",
+                    "将其转化为液化魔法水晶",
+                    "",
+                    "数量最多的3种液化魔法水晶决定法术的类型",
+                    "",
+                    "投入一个魔法板来制作法术"
+                }
+            ).map(s -> ThemeType.PASSIVE.getColor() + s)
+            .collect(Collectors.toList());
+
+        return CustomItemStack.create(
+            Material.CAULDRON,
+            ThemeType.MAIN.getColor() + "液化池",
+            lore
+        );
     }
 
     @ParametersAreNonnullByDefault
@@ -246,26 +290,6 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
             }
             return false;
         });
-    }
-
-    private ItemStack getMechanismStack() {
-        final List<String> lore = Arrays.stream(
-                new String[]{
-                    "在液化池中投入魔法水晶",
-                    "将其转化为液化魔法水晶",
-                    "",
-                    "数量最多的3种液化魔法水晶决定法术的类型",
-                    "",
-                    "投入一个魔法板来制作法术"
-                }
-            ).map(s -> ThemeType.PASSIVE.getColor() + s)
-            .collect(Collectors.toList());
-
-        return CustomItemStack.create(
-            Material.CAULDRON,
-            ThemeType.MAIN.getColor() + "液化池",
-            lore
-        );
     }
 
     @ParametersAreNonnullByDefault
