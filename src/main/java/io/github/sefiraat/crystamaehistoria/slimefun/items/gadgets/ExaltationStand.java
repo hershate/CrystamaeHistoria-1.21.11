@@ -80,7 +80,7 @@ public class ExaltationStand extends Stand {
 
     @Override
     public void afterTick(@Nonnull Item item, @Nonnull Block block, @Nonnull SlimefunItem slimefunItem, @Nonnull Config config) {
-        SlimefunItem itemOnStand = SlimefunItem.getByItem(item.getItemStack());
+        SlimefunItem itemOnStand = resolveDisplayItem(item);
         if (itemOnStand instanceof ExaltedItem) {
             ExaltedItem exaltedItem = (ExaltedItem) itemOnStand;
             exaltedItem.onExalt(exaltedItem, item.getLocation().clone());

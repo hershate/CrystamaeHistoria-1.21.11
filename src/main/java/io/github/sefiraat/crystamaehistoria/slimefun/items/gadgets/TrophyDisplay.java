@@ -123,7 +123,7 @@ public class TrophyDisplay extends Stand {
 
     @Override
     public void afterTick(@Nonnull Item item, @Nonnull Block block, @Nonnull SlimefunItem slimefunItem, @Nonnull Config config) {
-        final SlimefunItem trophyItem = SlimefunItem.getByItem(item.getItemStack());
+        final SlimefunItem trophyItem = resolveDisplayItem(item);
         if (trophyItem instanceof Trophy) {
             final Trophy trophy = (Trophy) trophyItem;
             if (trophy.getDisplayConsumer() != null) {
