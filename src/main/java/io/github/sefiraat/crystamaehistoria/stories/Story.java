@@ -88,14 +88,33 @@ public class Story {
         this.gilded = story.gilded;
     }
 
-    public String getDisplayName() {
-        final TextComponent rarityComponent = new TextComponent(getDisplayRarity());
-        final TextComponent nameComponent = new TextComponent(this.id);
+    /**
+     * 展示名缓存：输出仅依赖构造后不可变的输入（稀有度/id），原实现每次调用
+     * 重建组件并做 toLegacyText 转换（Paper 侧组件→legacy 为该路径主导成本）。
+     * 故事池实例全局共享，热路径（每条故事提交/提取的 lore 重建、图鉴构建）
+     * 反复命中同一实例。主线程单线程访问；偶发重复计算无害（幂等）。
+     */
+    @Nullable
+    private String cachedDisplayName;
 
-        rarityComponent.setColor(ThemeType.getByRarity(this.rarity).getColor());
-        rarityComponent.setBold(true);
-        nameComponent.setColor(ThemeType.CLICK_INFO.getColor());
-        return BaseComponent.toLegacyText(rarityComponent, nameComponent);
+    /**
+     * 故事正文行缓存：输入（storyStrings/author/sponsor）构造后不可变。
+     * 以不可变列表返回（调用方仅 addAll/可变参数消费，禁止变异共享缓存）。
+     */
+    @Nullable
+    private List<String> cachedStoryLore;
+
+    public String getDisplayName() {
+        if (cachedDisplayName == null) {
+            final TextComponent rarityComponent = new TextComponent(getDisplayRarity());
+            final TextComponent nameComponent = new TextComponent(this.id);
+
+            rarityComponent.setColor(ThemeType.getByRarity(this.rarity).getColor());
+            rarityComponent.setBold(true);
+            nameComponent.setColor(ThemeType.CLICK_INFO.getColor());
+            cachedDisplayName = BaseComponent.toLegacyText(rarityComponent, nameComponent);
+        }
+        return cachedDisplayName;
     }
 
     public String getDisplayRarity() {
@@ -103,25 +122,28 @@ public class Story {
     }
 
     public List<String> getStoryLore() {
-        final ChatColor passive = ThemeType.PASSIVE.getColor();
-        final List<String> l = new ArrayList<>();
+        if (cachedStoryLore == null) {
+            final ChatColor passive = ThemeType.PASSIVE.getColor();
+            final List<String> l = new ArrayList<>();
 
-        for (String s : storyStrings) {
-            final TextComponent line = new TextComponent(s);
+            for (String s : storyStrings) {
+                final TextComponent line = new TextComponent(s);
 
-            line.setColor(passive);
-            line.setItalic(false);
-            l.add(BaseComponent.toLegacyText(line));
+                line.setColor(passive);
+                line.setItalic(false);
+                l.add(BaseComponent.toLegacyText(line));
+            }
+            if (author != null) {
+                l.add("");
+                l.add(ThemeType.PASSIVE.getColor() + "作者: " + author);
+            }
+            if (sponsor != null) {
+                l.add("");
+                l.add(ThemeType.PASSIVE.getColor() + "赞助者: " + sponsor);
+            }
+            cachedStoryLore = List.copyOf(l);
         }
-        if (author != null) {
-            l.add("");
-            l.add(ThemeType.PASSIVE.getColor() + "作者: " + author);
-        }
-        if (sponsor != null) {
-            l.add("");
-            l.add(ThemeType.PASSIVE.getColor() + "赞助者: " + sponsor);
-        }
-        return l;
+        return cachedStoryLore;
     }
 
     @Override
