@@ -80,7 +80,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound11(w),
                 () -> benchRound12(w),
                 () -> benchRound13(w),
-                () -> benchRound15(w)
+                () -> benchRound15(w),
+                () -> benchRound16(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -1173,8 +1174,131 @@ public final class CHPerfBench extends JavaPlugin {
             + java.util.Objects.equals(loreOld.getLore(), loreNew.getLore()));
     }
 
-    /** 物品终态比对：PDC 逐键多类型探测 + lore + 显示名 + 附魔 + 物品标志 */
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    /**
+     * 第 16 轮：展示行构建缓存（Story.getDisplayName/getStoryLore 记忆化）。
+     * - storyDisplay.displayName：单条展示名（旧：每次重建组件 + toLegacyText；新：缓存命中）
+     * - storyDisplay.loreLines：单条正文行列表（同上）
+     * - storyDisplay.rebuild4Stories：4 条故事的 lore 重建组装段（rebuildStoriedStack 主循环）
+     * 等价性断言：跨稀有度/类型采样 N 条故事，新鲜构建与缓存输出逐字符串一致。
+     */
+    private void benchRound16(PrintWriter w) {
+        final io.github.sefiraat.crystamaehistoria.managers.StoriesManager manager =
+            CrystamaeHistoria.getStoriesManager();
+        final io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity[] rarities =
+            io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity.values();
+        final StoryType[] types = StoryType.values();
+
+        // 采样等价性：每稀有度找一条（含带作者/赞助者的若有）
+        int sampled = 0;
+        boolean allEqual = true;
+        outer:
+        for (final io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity rarity : rarities) {
+            for (final StoryType type : types) {
+                final List<io.github.sefiraat.crystamaehistoria.stories.Story> pool =
+                    manager.getStories(rarity, type);
+                if (pool == null || pool.isEmpty()) {
+                    continue;
+                }
+                final io.github.sefiraat.crystamaehistoria.stories.Story s = pool.get(0);
+                final boolean eqName = round16FreshDisplayName(s).equals(s.getDisplayName());
+                final boolean eqLore = round16FreshStoryLore(s).equals(s.getStoryLore());
+                if (!eqName || !eqLore) {
+                    getLogger().severe("round16 等价性失败: " + s.getId() + " name=" + eqName + " lore=" + eqLore);
+                    allEqual = false;
+                }
+                sampled++;
+                if (sampled >= rarities.length) {
+                    break outer;
+                }
+            }
+        }
+        getLogger().info("round16 等价性(采样 " + sampled + " 条): " + allEqual);
+
+        // 计时样本：COMMON/ELEMENTAL 池首条（典型条目）
+        final List<io.github.sefiraat.crystamaehistoria.stories.Story> commonPool =
+            manager.getStories(io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity.COMMON,
+                StoryType.ELEMENTAL);
+        if (commonPool == null || commonPool.isEmpty()) {
+            getLogger().severe("round16 前置数据缺失，跳过");
+            return;
+        }
+        final io.github.sefiraat.crystamaehistoria.stories.Story story = commonPool.get(0);
+
+        time(w, "storyDisplay.displayName", "old_fresh_components", 100_000,
+            () -> bh += round16FreshDisplayName(story).length());
+        time(w, "storyDisplay.displayName", "new_cached", 5_000_000,
+            () -> bh += story.getDisplayName().length());
+
+        time(w, "storyDisplay.loreLines", "old_fresh_components", 20_000,
+            () -> bh += round16FreshStoryLore(story).size());
+        time(w, "storyDisplay.loreLines", "new_cached", 5_000_000,
+            () -> bh += story.getStoryLore().size());
+
+        // 4 条故事的 lore 组装段（rebuildStoriedStack 主循环体）
+        final List<io.github.sefiraat.crystamaehistoria.stories.Story> four =
+            new java.util.ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            four.add(commonPool.get(i % commonPool.size()));
+        }
+        time(w, "storyDisplay.rebuild4Stories", "old_fresh_components", 5_000, () -> {
+            final List<String> lore = new java.util.ArrayList<>();
+            for (final io.github.sefiraat.crystamaehistoria.stories.Story s : four) {
+                lore.add("");
+                lore.add(round16FreshDisplayName(s));
+                lore.addAll(round16FreshStoryLore(s));
+            }
+            bh += lore.size();
+        });
+        time(w, "storyDisplay.rebuild4Stories", "new_cached", 50_000, () -> {
+            final List<String> lore = new java.util.ArrayList<>();
+            for (final io.github.sefiraat.crystamaehistoria.stories.Story s : four) {
+                lore.add("");
+                lore.add(s.getDisplayName());
+                lore.addAll(s.getStoryLore());
+            }
+            bh += lore.size();
+        });
+    }
+
+    /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
+    private String round16FreshDisplayName(io.github.sefiraat.crystamaehistoria.stories.Story s) {
+        final net.md_5.bungee.api.chat.TextComponent rarityComponent =
+            new net.md_5.bungee.api.chat.TextComponent(
+                "[" + io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType
+                    .getByRarity(s.getRarity()).getLoreLine() + "] ");
+        final net.md_5.bungee.api.chat.TextComponent nameComponent =
+            new net.md_5.bungee.api.chat.TextComponent(s.getId());
+        rarityComponent.setColor(io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType
+            .getByRarity(s.getRarity()).getColor());
+        rarityComponent.setBold(true);
+        nameComponent.setColor(io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.CLICK_INFO.getColor());
+        return net.md_5.bungee.api.chat.BaseComponent.toLegacyText(rarityComponent, nameComponent);
+    }
+
+    /** 同构副本：0.3.0 的 Story.getStoryLore（每次重建组件 + 逐行 toLegacyText） */
+    private List<String> round16FreshStoryLore(io.github.sefiraat.crystamaehistoria.stories.Story s) {
+        final net.md_5.bungee.api.ChatColor passive =
+            io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.PASSIVE.getColor();
+        final List<String> l = new java.util.ArrayList<>();
+        for (final String line : s.getStoryStrings()) {
+            final net.md_5.bungee.api.chat.TextComponent c =
+                new net.md_5.bungee.api.chat.TextComponent(line);
+            c.setColor(passive);
+            c.setItalic(false);
+            l.add(net.md_5.bungee.api.chat.BaseComponent.toLegacyText(c));
+        }
+        if (s.getAuthor() != null) {
+            l.add("");
+            l.add(io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.PASSIVE.getColor() + "作者: " + s.getAuthor());
+        }
+        if (s.getSponsor() != null) {
+            l.add("");
+            l.add(io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.PASSIVE.getColor() + "赞助者: " + s.getSponsor());
+        }
+        return l;
+    }
+
+    /** 物品终态比对：PDC 逐键多类型探测 + lore + 显示名 + 附魔 + 物品标志 */    @SuppressWarnings({"unchecked", "rawtypes"})
     private boolean round15ItemStateEquals(ItemStack a, ItemStack b) {
         final ItemMeta ma = a.getItemMeta();
         final ItemMeta mb = b.getItemMeta();
