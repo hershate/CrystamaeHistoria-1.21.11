@@ -1,0 +1,7 @@
+bench	variant	median_ns_op	min_ns_op	p95_ns_op
+compendium.blockSort	new_snapshot_sublist	3.08
+compendium.blockSort	old_copy_and_sort	29646.85
+compendium.spellSort	new_snapshot_sublist	2.39
+compendium.spellSort	old_resort_shared_array	198.82
+compendium.titleCase	new_enummap_lookup	1.79
+compendium.titleCase	old_rebuild_per_call	174.74
