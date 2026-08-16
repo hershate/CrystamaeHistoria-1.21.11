@@ -157,8 +157,15 @@ public class PersistentStaveV2DataType implements PersistentDataType<PersistentD
         if (itemMeta == null) {
             return null;
         }
-        final PersistentDataContainer container = itemMeta.getPersistentDataContainer()
-            .get(Keys.PDC_STAVE_STORAGE, PersistentDataType.TAG_CONTAINER);
+        PersistentDataContainer container = null;
+        try {
+            container = itemMeta.getPersistentDataContainer()
+                .get(Keys.PDC_STAVE_STORAGE, PersistentDataType.TAG_CONTAINER);
+        } catch (IllegalArgumentException e) {
+            // 值非容器类型（v1 的 ListTag 或 crafted 错误类型）：回退 v1 单槽读取
+            //（Paper 对类型不匹配抛裸 IAE，必须显式防御——全量读取路径经
+            // DataTypeMethods 断路器天然安全，本路径为裸 PDC 调用）
+        }
         if (container == null) {
             // v1（数组）或无数据：回退 v1 单槽读取（含其损坏守卫语义）
             return PersistentStaveDataType.getSlotPlate(itemMeta, slot);
