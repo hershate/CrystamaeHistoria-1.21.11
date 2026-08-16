@@ -86,7 +86,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound18(w),
                 () -> benchRound19(w),
                 () -> benchRound21(w),
-                () -> benchRound22(w)
+                () -> benchRound22(w),
+                () -> benchRound23(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -1877,6 +1878,85 @@ public final class CHPerfBench extends JavaPlugin {
             });
         } finally {
             // 清理合成数据（不留存；SaveConfigRunnable 周期落盘前已移除）
+            stats.set(player.toString(), null);
+        }
+    }
+
+    /** 第 23 轮：统计计数纪元缓存（真实 PlayerStatistics 写方法递增纪元 → 计数缓存失效） */
+    private void benchRound23(PrintWriter w) {
+        final UUID player = UUID.fromString("12345678-1234-1234-1234-123456789023");
+        final org.bukkit.configuration.file.FileConfiguration stats =
+            CrystamaeHistoria.getConfigManager().getPlayerStats();
+        final io.github.sefiraat.crystamaehistoria.stories.BlockDefinition[] defs =
+            CrystamaeHistoria.getStoriesManager().getBlockDefinitionsSortedByMaterial()
+                .toArray(new io.github.sefiraat.crystamaehistoria.stories.BlockDefinition[0]);
+
+        try {
+            // 注入：经真实写方法（自动递增纪元）解锁 137 个故事 + 30 镀金
+            for (int i = 0; i < defs.length; i++) {
+                if (i % 2 == 0) {
+                    io.github.sefiraat.crystamaehistoria.player.PlayerStatistics
+                        .unlockUniqueStory(player, defs[i]);
+                }
+            }
+
+            // ———— 等价性与失效正确性（真实方法） ————
+            // 稳态：缓存命中值 == 现场重算值
+            final int cached = io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getStoriesUnlocked(player);
+            int fresh = 0;
+            {
+                final org.bukkit.configuration.ConfigurationSection section =
+                    stats.getConfigurationSection(player + ".STORY");
+                for (String story : section.getKeys(false)) {
+                    if (section.getBoolean(story + ".UNLOCKED")) fresh++;
+                }
+            }
+            boolean equivSteady = cached == fresh;
+            // 失效：再解锁 1 个（真实写方法递增纪元）→ 计数必须 +1
+            final int before = io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getStoriesUnlocked(player);
+            io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.unlockUniqueStory(player, defs[1]);
+            final int after = io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getStoriesUnlocked(player);
+            boolean invalidationOk = after == before + 1;
+            // 计数类写入（addChronicle）也递增纪元 → 缓存失效后仍与现场一致
+            io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.addChronicle(player, defs[1]);
+            final int afterChronicle = io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getStoriesUnlocked(player);
+            boolean equivAfterWrite = afterChronicle == after;
+            // rank 谓词路径（液化池 Exalted/Uniques 每次催化剂匹配调用）
+            final io.github.sefiraat.crystamaehistoria.player.StoryRank rank =
+                io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getStoryRank(player);
+            boolean rankOk = rank != null;
+            getLogger().info("round23 等价性: steady=" + equivSteady + " invalidation=" + invalidationOk
+                + " afterWrite=" + equivAfterWrite + " rank=" + rankOk + " (count=" + after + ")");
+
+            // ———— 计数路径三变体（274 键） ————
+            time(w, "stats.countStories274.r23", "old_full_path_rebuild", 500, () -> {
+                int c = 0;
+                final org.bukkit.configuration.ConfigurationSection section =
+                    stats.getConfigurationSection(player + ".STORY");
+                for (String story : section.getKeys(false)) {
+                    if (stats.getBoolean(player + ".STORY." + story + ".UNLOCKED")) c++;
+                }
+                bh += c;
+            });
+            time(w, "stats.countStories274.r23", "mid_relative_nocache", 1_000, () -> {
+                int c = 0;
+                final org.bukkit.configuration.ConfigurationSection section =
+                    stats.getConfigurationSection(player + ".STORY");
+                for (String story : section.getKeys(false)) {
+                    if (section.getBoolean(story + ".UNLOCKED")) c++;
+                }
+                bh += c;
+            });
+            time(w, "stats.countStories274.r23", "new_epoch_cache_hit", 1_000_000, () -> {
+                bh += io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getStoriesUnlocked(player);
+            });
+
+            // ———— rank 谓词稳态（液化池每次催化剂匹配） ————
+            time(w, "stats.rankPredicate", "new_epoch_cached", 200_000, () -> {
+                bh += io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getStoryRank(player).ordinal();
+            });
+        } finally {
+            // 清理合成数据
             stats.set(player.toString(), null);
         }
     }

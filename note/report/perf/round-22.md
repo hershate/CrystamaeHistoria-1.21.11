@@ -45,8 +45,17 @@
 |------|----|----|------|
 | stats.singleCheck（单次判定） | 158.43 ns | 78.46 ns | 2.0x |
 | stats.pageCheck36（页 36 槽） | 5,410.95 ns | 2,799.99 ns | 1.93x |
-| stats.countSpells69（每键） | 1.29 ns | 0.66 ns | 2.0x |
-| stats.countStories274（每键） | 24.57 ns | 3.89 ns | 6.3x |
+| stats.countSpells69（每次全量计数） | 12,900 ns* | 6,600 ns* | 1.95x |
+| stats.countStories274（每次全量计数） | 73,710 ns* | 38,900 ns* | 1.89x |
+
+> **\*更正（round-23 时发现）**：本表计数两行的原始 TSV 值（1.29/0.66/24.57/3.89）
+> 因基准变体 lambda 未按 `size` 循环、被 Harness 按 size 误除（countSpells69 两变体
+> 同除数 → 2.0x 比率巧合成立；countStories274 两变体除数不同 → 原报告
+> "每键 24.57→3.89（6.3x）" 的**比率失真**）。上表为按各自除数还原后的每次
+> 全量计数真实值（1.95x / 1.89x）。修正后的基准形态与真实值复测见
+> [round-23](round-23.md) standalone（同规模下旧 61.5µs / 相对 36.4µs，
+> 与本表还原值同量级，差异来自键值分布）。服务器端数字（time 辅助逐次循环）
+> 不受影响，始终有效。
 
 等价性断言（每 fork）：single / count / missing（无统计玩家两路径
 同 false 且子节 null）全 true。

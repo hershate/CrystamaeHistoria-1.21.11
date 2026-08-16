@@ -1,0 +1,5 @@
+bench	variant	median_ns_op	min_ns_op	p95_ns_op
+stats.countAfterWrite	new_epoch_miss_recompute	37794.01
+stats.countStories274	mid_relative_nocache	36414.17
+stats.countStories274	new_epoch_cache_hit	5.21
+stats.countStories274	old_full_path_rebuild	61485.68
