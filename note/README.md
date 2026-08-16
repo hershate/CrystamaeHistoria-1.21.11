@@ -49,7 +49,9 @@ getStoryLore 记忆化（displayName 49.5x / loreLines 40.6x / 4 条组装段 9.
 13.5x（O(n²) contains 去重为构造上无效的工作）、主人在线查询 5.4x、
 GoalType 集共享常量 3.1x，四组等价性断言 true。第 18 轮法术周期效果与
 周期任务路径收官——TunnelBore 块扫描 O(n²) 去重消除（等级 5 施法每 tick
-3.24ms → 12µs，271.4x），runnables 全域 6 任务逐类核查。
+3.24ms → 12µs，271.4x），runnables 全域 6 任务逐类核查。第 19 轮热循环
+Location 分配消除（粒子路径）——ChillWind 球面 1.18x、其余噪声级，判定
+分配削减域已到可测阈值之下。
 
 ## 维护要点（改代码前必读）
 

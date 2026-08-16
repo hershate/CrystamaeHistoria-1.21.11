@@ -36,6 +36,7 @@
 | 16 | 展示行构建缓存：Story.getDisplayName/getStoryLore 记忆化（输入不可变、实例全局共享）——displayName 49.5x / loreLines 40.6x / 4 条组装段 9.9x；跨稀有度采样等价性 true（[round-16](round-16.md)） | ✅ 完成（服务器回归通过，真实插件异常 0） |
 | 17 | 召唤物 AI 每 tick 路径：冲撞车块扫描 13.5x（O(n²) 去重为无效工作）+ 主人查询 5.4x（三步 OfflinePlayer → 单次 getPlayer）+ GoalType 集共享常量 3.1x；四组等价性断言 true；targetReads 如实记为噪声级（[round-17](round-17.md)） | ✅ 完成（服务器回归通过，0 插件异常） |
 | 18 | 法术周期效果与周期任务路径收官：TunnelBore 块扫描 O(n²) 去重消除（等级 5 施法每 tick 3.24ms → 12µs，271.4x；等级 3 76.0x）；runnables 全域 6 任务逐类核查 + 不做项论证（[round-18](round-18.md)） | ✅ 完成（服务器回归通过，0 插件异常） |
+| 19 | 热循环 Location 分配消除（粒子路径）：ChillWind 球面 1.18x，其余噪声级——**域内实测收敛判定**（无观察者 spawnParticle 廉价 + JIT 逃逸分析消除短命克隆，同类扫荡边际收益可忽略）；位置序列等价性 true（[round-19](round-19.md)） | ✅ 完成（服务器回归通过，0 插件异常） |
 
 ## 收敛判定（round-14）
 
