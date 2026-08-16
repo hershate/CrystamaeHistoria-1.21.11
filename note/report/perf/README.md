@@ -72,6 +72,12 @@
 | 39 | 展示架 afterTick 解析弱缓存化（复查轮实质发现，r7/r11 均未覆盖）：`Stand.onTick` 每 tick 调 afterTick → getByItem 全量 meta+PDC 读——`resolveDisplayItem` WeakHashMap 弱缓存（实体替换即新键 + 回收自清理，零失效协议）：**178x**（1305 → 7.32ns，每架每 tick -1.3µs）；缓存解析一致断言 true（[round-39](round-39.md)） | ✅ 完成（服务器回归通过，0 SEVERE） |
 | 40 | 共享 SF 解析弱缓存（r39 同族扩展）：`utils/SlimefunItemResolver` 统一三处 tick 路径（液化池满池滞留水晶 / 镀金器拉取中物品 / Stand 委托）——**177x**（1279 → 7.22ns）；direct/stableInstance 断言 true；复查节奏累计战绩表见报告（[round-40](round-40.md)） | ✅ 完成（服务器回归通过，0 SEVERE） |
 
+## 第八轮循环（复查长尾域，2026-08-17 起）
+
+| 轮次 | 优化点 | 状态 |
+|------|--------|------|
+| 41 | v0.9.0 全量终验（**171 变体**，25 条断言行全部符合文档化预期，0 SEVERE，转储低于基线）+ 纯空闲 soak（0 异常 0 tick 落后，落盘脏判定与三处弱缓存首次共同 soak 验证）+ **收敛判定**（[round-41](round-41.md)，含八轮循环总账；tick getItemMeta 族先行清扫——全事件级） | ✅ 完成（**第八轮循环闭合**，版本收口 0.9.0） |
+
 ## 收敛判定（round-32）
 
 第六轮循环为统计读取域收官专项（路径缩短 → 计数缓存 → 集合缓存），
