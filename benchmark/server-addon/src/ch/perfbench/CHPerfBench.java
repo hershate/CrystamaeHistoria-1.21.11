@@ -894,6 +894,7 @@ public final class CHPerfBench extends JavaPlugin {
      */
     private void timeResettable(PrintWriter w, String bench, String variant, int batchOps,
                                 Runnable reset, Runnable op) {
+        reset.run();
         long warmupEnd = System.nanoTime() + 300_000_000L;
         int warmupOps = 0;
         while (System.nanoTime() < warmupEnd) {
