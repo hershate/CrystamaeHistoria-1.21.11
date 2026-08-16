@@ -1,7 +1,6 @@
 package io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.realisationaltar;
 
 import io.github.sefiraat.crystamaehistoria.CrystamaeHistoria;
-import io.github.sefiraat.crystamaehistoria.managers.StoriesManager;
 import io.github.sefiraat.crystamaehistoria.player.PlayerStatistics;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.AbstractCache;
 import io.github.sefiraat.crystamaehistoria.stories.BlockDefinition;
@@ -188,27 +187,29 @@ public class RealisationAltarCache extends AbstractCache {
                 final int z = ThreadLocalRandom.current().nextInt(-3, 4);
                 final Block potentialBlock = blockMenu.getBlock().getRelative(x, 0, z);
                 if (potentialBlock.isEmpty() && potentialBlock.getRelative(BlockFace.DOWN).getType().isSolid()) {
-                    final List<Story> storyList = StoryUtils.getAllStories(itemStack);
-                    if (storyList.isEmpty()) {
-                        // 数据损坏（有故事槽位标记但无故事内容）：退回物品，避免 get(0) 越界
+                    // 单次元数据往返提取：故事列表/镀金标记读取与移除写回复用同一次克隆
+                    // （旧链 getAllStories + isGilded + removeStory + rebuildStoriedStack 约 7 次克隆）
+                    final ItemMeta itemMeta = itemStack.getItemMeta();
+                    final List<Story> storyList = StoryUtils.getAllStories(itemMeta);
+                    if (storyList == null || storyList.isEmpty()) {
+                        // 数据损坏（有故事槽位标记但无故事内容/列表缺失）：退回物品，
+                        // 避免 get(0) 越界（列表缺失原实现 NPE 穿透 tick，按空处理失败关闭）
                         reject(itemStack);
                         return false;
                     }
                     final Story story = storyList.get(0);
-                    final boolean isGilded = GildingUtils.isGilded(itemStack);
+                    final boolean isGilded = GildingUtils.isGilded(itemMeta);
 
                     potentialBlock.setType(Material.SMALL_AMETHYST_BUD);
                     crystalStoryMap.put(
                         new BlockPosition(potentialBlock.getLocation()),
                         new RealisedCrystalState(story.getRarity(), story.getId(), isGilded)
                     );
-                    if (StoryUtils.removeStory(itemStack, story) == 0) {
+                    if (StoryUtils.removeStoryAndRebuild(itemStack, itemMeta, story, storyList) == 0) {
                         if (activePlayer != null) {
                             PlayerStatistics.addRealisation(activePlayer, definition);
                         }
                         itemStack.setAmount(0);
-                    } else {
-                        StoriesManager.rebuildStoriedStack(itemStack);
                     }
                     summonGrowParticles(potentialBlock);
                     summonConsumeParticles(blockMenu.getBlock());

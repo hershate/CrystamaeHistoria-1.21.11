@@ -8,6 +8,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffectType;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * 名称显示工具。
@@ -27,11 +28,19 @@ public class NameUtils {
 
     @Nonnull
     public static String getItemStackName(@Nonnull ItemStack itemStack) {
-        final ItemMeta itemMeta = itemStack.getItemMeta();
+        return getItemStackName(itemStack.getItemMeta(), itemStack.getType());
+    }
+
+    /**
+     * 同 {@link #getItemStackName(ItemStack)}，但接受调用方已持有的元数据快照
+     * （单次往返提交路径使用，省一次克隆；各调用路径下快照的显示名与已应用状态一致）。
+     */
+    @Nonnull
+    public static String getItemStackName(@Nullable ItemMeta itemMeta, @Nonnull Material material) {
         if (itemMeta != null && itemMeta.hasDisplayName()) {
             return itemMeta.getDisplayName();
         }
-        return getMaterialName(itemStack.getType());
+        return getMaterialName(material);
     }
 
     @Nonnull

@@ -10,7 +10,6 @@ import io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveDataType;
 import io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType;
 import lombok.Getter;
-import net.md_5.bungee.api.ChatColor;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -23,6 +22,30 @@ import java.util.List;
 import java.util.Map;
 
 public class InstanceStave {
+
+    /**
+     * 法杖 lore 的静态片段（主题色与文案均不可变）：每次成功施法写回都会重建 lore，
+     * 头部/尾部/标签前缀预构建为常量，免每次施法的重复字符串拼接与主题解析。
+     */
+    private static final String LORE_HEADER =
+        ThemeType.PASSIVE.getColor() + "可以进行法术绑定的法杖";
+    private static final String LORE_FOOTER =
+        ThemeType.applyThemeToString(ThemeType.CLICK_INFO, ThemeType.STAVE.getLoreLine());
+    private static final String LORE_SPELL_LABEL =
+        ThemeType.PASSIVE.getColor() + "法术: " + ThemeType.NOTICE.getColor();
+    private static final String LORE_CRYSTA_LABEL =
+        ThemeType.PASSIVE.getColor() + "充能: " + ThemeType.NOTICE.getColor();
+    /** 槽位标签前缀（稀有度色 + 槽位描述），按 SpellSlot.ordinal 索引 */
+    private static final String[] SLOT_LABELS = buildSlotLabels();
+
+    private static String[] buildSlotLabels() {
+        final String[] labels = new String[SpellSlot.getCashedValues().length];
+        for (int i = 0; i < labels.length; i++) {
+            final SpellSlot slot = SpellSlot.getCashedValues()[i];
+            labels[i] = ThemeType.RARITY_MYTHICAL.getColor() + slot.getDescription();
+        }
+        return labels;
+    }
 
     @Getter
     public final ItemStack itemStack;
@@ -126,32 +149,27 @@ public class InstanceStave {
     /**
      * 将法术栏位 lore 写入给定 meta（不触发 getItemMeta/setItemMeta 往返）。
      * 与其他 meta 修改（如 PDC 写回）共用同一次往返，省一次 ItemMeta 克隆与应用。
+     * 静态片段（头部/尾部/标签前缀/槽位标签）取类常量，仅晶能数字逐次拼接。
      */
     @ParametersAreNonnullByDefault
     public void buildLore(ItemMeta itemMeta) {
-        final String[] lore = new String[]{
-            "可以进行法术绑定的法杖",
-        };
-        final ChatColor passiveColor = ThemeType.PASSIVE.getColor();
         final List<String> finalLore = new ArrayList<>();
+        finalLore.add(LORE_HEADER);
 
-        for (String s : lore) {
-            finalLore.add(passiveColor + s);
-        }
-
-        for (SpellSlot slot : SpellSlot.getCashedValues()) {
-            final InstancePlate instancePlate = this.spellInstanceMap.get(slot);
+        final SpellSlot[] slots = SpellSlot.getCashedValues();
+        for (int i = 0; i < slots.length; i++) {
+            final InstancePlate instancePlate = this.spellInstanceMap.get(slots[i]);
             if (instancePlate != null) {
-                finalLore.add("");
                 final String magic = instancePlate.getStoredSpell().getSpell().getName();
                 final String crysta = String.valueOf(instancePlate.getCrysta());
-                finalLore.add(ThemeType.RARITY_MYTHICAL.getColor() + slot.getDescription());
-                finalLore.add(ThemeType.PASSIVE.getColor() + "法术: " + ThemeType.NOTICE.getColor() + magic);
-                finalLore.add(ThemeType.PASSIVE.getColor() + "充能: " + ThemeType.NOTICE.getColor() + crysta);
+                finalLore.add("");
+                finalLore.add(SLOT_LABELS[i]);
+                finalLore.add(LORE_SPELL_LABEL + magic);
+                finalLore.add(LORE_CRYSTA_LABEL + crysta);
             }
         }
         finalLore.add("");
-        finalLore.add(ThemeType.applyThemeToString(ThemeType.CLICK_INFO, ThemeType.STAVE.getLoreLine()));
+        finalLore.add(LORE_FOOTER);
         itemMeta.setLore(finalLore);
     }
 

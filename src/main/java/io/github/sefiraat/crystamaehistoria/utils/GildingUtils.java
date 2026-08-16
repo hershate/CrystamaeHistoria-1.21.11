@@ -6,6 +6,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +22,15 @@ public class GildingUtils {
      */
     @ParametersAreNonnullByDefault
     public static boolean isGilded(ItemStack itemStack) {
-        return PersistentDataAPI.hasBoolean(itemStack.getItemMeta(), Keys.PDC_IS_GILDED);
+        return isGilded(itemStack.getItemMeta());
+    }
+
+    /**
+     * 同 {@link #isGilded(ItemStack)}，但接受调用方已持有的元数据快照
+     * （现实祭坛单次往返提取路径使用，省一次克隆）。
+     */
+    public static boolean isGilded(@Nullable ItemMeta itemMeta) {
+        return PersistentDataAPI.hasBoolean(itemMeta, Keys.PDC_IS_GILDED);
     }
 
     /**

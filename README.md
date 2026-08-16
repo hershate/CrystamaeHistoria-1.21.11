@@ -6,8 +6,8 @@
 
 ## 下载
 
-本仓库为 Paper 1.21.11 + Slimefun 5.0.0 迁移版（版本序列自 0.1.0 起算，含 28 轮系统审计修复）。
-已移除自动更新器（依赖的 GuizhanLibPlugin 已剔除），请通过以下方式获取构建：
+本仓库为社区维护的第三方构建，非官方版本。
+已移除自动更新器，请通过以下方式获取构建：
 
 - **本地构建**：`mvn package`（需 Java 21；Slimefun 依赖安装见 [note/README.md](note/README.md) 维护要点 1）
 - **CI 构建**：本仓库 GitHub Actions（Java CI）产物

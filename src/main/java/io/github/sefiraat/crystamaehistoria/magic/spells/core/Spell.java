@@ -27,6 +27,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -75,9 +76,20 @@ public abstract class Spell {
     @Nonnull
     public abstract String getId();
 
+    /**
+     * 展示名缓存：id 不可变（各法术构造时固定），原实现每次调用都做
+     * toTitleCase 字符串处理（施法写回的 lore 重建/图鉴构建高频调用）。
+     * 主线程单线程访问；即便偶发重复计算也无害（幂等）。
+     */
+    @Nullable
+    private String cachedName;
+
     @Nonnull
     public String getName() {
-        return TextUtils.toTitleCase(getId());
+        if (cachedName == null) {
+            cachedName = TextUtils.toTitleCase(getId());
+        }
+        return cachedName;
     }
 
     @Nonnull

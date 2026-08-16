@@ -1,11 +1,11 @@
 package io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.chroniclerpanel;
 
 import io.github.sefiraat.crystamaehistoria.CrystamaeHistoria;
-import io.github.sefiraat.crystamaehistoria.managers.StoriesManager;
 import io.github.sefiraat.crystamaehistoria.player.PlayerStatistics;
 import io.github.sefiraat.crystamaehistoria.runnables.spells.FloatingHeadAnimation;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.AbstractCache;
 import io.github.sefiraat.crystamaehistoria.stories.BlockDefinition;
+import io.github.sefiraat.crystamaehistoria.stories.Story;
 import io.github.sefiraat.crystamaehistoria.utils.ArmourStandUtils;
 import io.github.sefiraat.crystamaehistoria.utils.GeneralUtils;
 import io.github.sefiraat.crystamaehistoria.utils.Keys;
@@ -313,20 +313,22 @@ public class ChroniclerPanelCache extends AbstractCache {
             final int req = blockDefinition.getBlockTier().chroniclingChance;
             if (GeneralUtils.testChance(req, 10000)) {
                 // We can chronicle a story
-                StoryUtils.requestNewStory(i);
-                if (remaining == 1) {
-                    // That was the last story, unlock unique and set research
-                    StoryUtils.requestUniqueStory(i);
-                    if (activePlayer != null) {
-                        if (!PlayerStatistics.hasUnlockedUniqueStory(activePlayer, blockDefinition)) {
-                            PlayerStatistics.unlockUniqueStory(activePlayer, blockDefinition);
-                        }
-                        PlayerStatistics.addChronicle(activePlayer, blockDefinition);
-                    }
+                // 单次元数据往返提交：选取 + 落盘（含计数/满槽附魔）+ 名称/lore 重建
+                // 归一为 1 次克隆 + 1 次应用（旧链 8-10 次克隆 + 3-4 次应用）
+                final Story story = StoryUtils.pickStory(i);
+                final Story unique = remaining == 1 ? StoryUtils.pickUniqueStory(i) : null;
+                if (story != null || unique != null) {
+                    StoryUtils.commitStory(i, story, unique);
                 }
-                StoriesManager.rebuildStoriedStack(i);
+                if (remaining == 1 && activePlayer != null) {
+                    // That was the last story, unlock unique and set research
+                    if (!PlayerStatistics.hasUnlockedUniqueStory(activePlayer, blockDefinition)) {
+                        PlayerStatistics.unlockUniqueStory(activePlayer, blockDefinition);
+                    }
+                    PlayerStatistics.addChronicle(activePlayer, blockDefinition);
+                }
                 blockMenu.getBlock().getWorld().strikeLightningEffect(blockMiddle);
-                // requestNewStory 等可能修改了物品元数据：失效备忘录，下 tick 重判
+                // 提交可能修改了物品元数据：失效备忘录，下 tick 重判
                 verdictItem = null;
             }
         }

@@ -19,6 +19,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -287,11 +288,21 @@ public class StoriesManager {
 
     @ParametersAreNonnullByDefault
     public static void rebuildStoriedStack(ItemStack itemStack) {
-        ItemMeta im = itemStack.getItemMeta();
-        setName(itemStack, im);
+        final ItemMeta im = itemStack.getItemMeta();
+        rebuildStoriedStack(itemStack, im, StoryUtils.getAllStories(itemStack));
+        itemStack.setItemMeta(im);
+    }
+
+    /**
+     * 同 {@link #rebuildStoriedStack(ItemStack)}，但接受调用方已持有的元数据快照与
+     * 已反序列化的故事列表（单次往返提交路径使用，不触发 getItemMeta/setItemMeta）。
+     * 名称读取自该快照（各调用路径下快照的显示名与已应用状态一致）。
+     */
+    @ParametersAreNonnullByDefault
+    public static void rebuildStoriedStack(ItemStack itemStack, ItemMeta itemMeta, @Nullable List<Story> storyList) {
+        setName(itemStack, itemMeta);
         List<String> lore = new ArrayList<>();
         // 伪造/损坏物品可能带故事标记但无故事列表（getAllStories 为 @Nullable）
-        List<Story> storyList = StoryUtils.getAllStories(itemStack);
         if (storyList != null) {
             for (Story story : storyList) {
                 lore.add("");
@@ -299,13 +310,12 @@ public class StoriesManager {
                 lore.addAll(story.getStoryLore());
             }
         }
-        im.setLore(lore);
-        itemStack.setItemMeta(im);
+        itemMeta.setLore(lore);
     }
 
     @ParametersAreNonnullByDefault
     private static void setName(ItemStack itemStack, ItemMeta im) {
-        TextComponent name = new TextComponent("有故事的" + NameUtils.getItemStackName(itemStack));
+        TextComponent name = new TextComponent("有故事的" + NameUtils.getItemStackName(im, itemStack.getType()));
         name.setColor(ThemeType.MAIN.getColor());
         name.setBold(true);
         im.setDisplayName(name.toLegacyText());

@@ -43,10 +43,11 @@ public class PlayerStatistics {
 
     @ParametersAreNonnullByDefault
     public static void addUsage(UUID player, SpellType spellType) {
-        int uses = getUsages(player, spellType);
-        uses++;
-        String path = player + "." + StatType.SPELL + "." + spellType.getId() + ".TIMES_CAST";
-        CrystamaeHistoria.getConfigManager().getPlayerStats().set(path, uses);
+        // 单次路径构建：读改写共用同一路径（原实现 getUsages 与 set 各构建一次）
+        final String path = player + "." + StatType.SPELL + "." + spellType.getId() + ".TIMES_CAST";
+        final org.bukkit.configuration.file.FileConfiguration stats =
+            CrystamaeHistoria.getConfigManager().getPlayerStats();
+        stats.set(path, stats.getInt(path) + 1);
     }
 
     @ParametersAreNonnullByDefault
@@ -116,10 +117,11 @@ public class PlayerStatistics {
 
     @ParametersAreNonnullByDefault
     public static void addChronicle(UUID player, BlockDefinition definition) {
-        int uses = getChronicle(player, definition);
-        uses++;
-        String path = player + "." + StatType.STORY + "." + definition.getMaterial() + ".TIMES_CHRONICLED";
-        CrystamaeHistoria.getConfigManager().getPlayerStats().set(path, uses);
+        // 单次路径构建（原实现 getChronicle 与 set 各构建一次）
+        final String path = player + "." + StatType.STORY + "." + definition.getMaterial() + ".TIMES_CHRONICLED";
+        final org.bukkit.configuration.file.FileConfiguration stats =
+            CrystamaeHistoria.getConfigManager().getPlayerStats();
+        stats.set(path, stats.getInt(path) + 1);
     }
 
     @ParametersAreNonnullByDefault
@@ -141,10 +143,11 @@ public class PlayerStatistics {
 
     @ParametersAreNonnullByDefault
     public static void addRealisation(UUID player, BlockDefinition definition) {
-        int uses = getRealisation(player, definition);
-        uses++;
-        String path = player + "." + StatType.STORY + "." + definition.getMaterial() + ".TIMES_REALISED";
-        CrystamaeHistoria.getConfigManager().getPlayerStats().set(path, uses);
+        // 单次路径构建（原实现 getRealisation 与 set 各构建一次）
+        final String path = player + "." + StatType.STORY + "." + definition.getMaterial() + ".TIMES_REALISED";
+        final org.bukkit.configuration.file.FileConfiguration stats =
+            CrystamaeHistoria.getConfigManager().getPlayerStats();
+        stats.set(path, stats.getInt(path) + 1);
     }
 
     @ParametersAreNonnullByDefault
