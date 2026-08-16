@@ -92,7 +92,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound26(w),
                 () -> benchRound27(w),
                 () -> benchRound28(w),
-                () -> benchRound29(w)
+                () -> benchRound29(w),
+                () -> benchRound31(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -427,7 +428,7 @@ public final class CHPerfBench extends JavaPlugin {
         // 配置加载：单次解析 vs 旧实现的双重解析（真实 995 键 blocks.yml）
         final java.io.File blocksFile =
             new java.io.File(CrystamaeHistoria.getInstance().getDataFolder(), "blocks.yml");
-        time(w, "configParse.blocksYml", "old_double_parse", 20, () -> {
+        time(w, "configParse.blocksYml", "old_double_parse", 4, () -> {  // 批量 20→4：慢宿主下单批 >10s 触发 watchdog 强制停机（2026-08-17 实测三连复现）
             try {
                 org.bukkit.configuration.file.YamlConfiguration cfg =
                     org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(blocksFile);
@@ -437,7 +438,7 @@ public final class CHPerfBench extends JavaPlugin {
                 bh++;
             }
         });
-        time(w, "configParse.blocksYml", "new_single_parse", 40, () -> {
+        time(w, "configParse.blocksYml", "new_single_parse", 8, () -> {
             try {
                 org.bukkit.configuration.file.YamlConfiguration cfg =
                     org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(blocksFile);
@@ -2663,6 +2664,131 @@ public final class CHPerfBench extends JavaPlugin {
                 .readChunkStories(chunk, benchKey).size();
         });
         chunk.getPersistentDataContainer().remove(benchKey);
+    }
+
+    /** 第 31 轮：解锁集合纪元缓存（图鉴页 36 槽判定的批量形态） */
+    private void benchRound31(PrintWriter w) {
+        final UUID player = UUID.fromString("12345678-1234-1234-1234-123456789031");
+        final SpellType[] enabled = SpellType.getEnabledSpells();
+        final io.github.sefiraat.crystamaehistoria.stories.BlockDefinition[] defs =
+            CrystamaeHistoria.getStoriesManager().getBlockDefinitionsSortedByMaterial()
+                .toArray(new io.github.sefiraat.crystamaehistoria.stories.BlockDefinition[0]);
+        final org.bukkit.configuration.file.FileConfiguration stats =
+            CrystamaeHistoria.getConfigManager().getPlayerStats();
+
+        // 注入：2/3 法术解锁（经真实写方法，自动递增纪元）+ 1/2 故事解锁 + 1/4 镀金
+        for (int i = 0; i < enabled.length; i++) {
+            if (i % 3 != 0) {
+                io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.unlockSpell(player, enabled[i]);
+            }
+        }
+        for (int i = 0; i < defs.length; i++) {
+            if (i % 2 == 0) {
+                io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.unlockUniqueStory(player, defs[i]);
+            }
+            if (i % 4 == 0) {
+                io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.unlockStoryGilded(player, defs[i]);
+            }
+        }
+
+        try {
+            // ———— 等价性断言 ————
+            boolean equivSpells = true;
+            final java.util.Set<String> spellSet = io.github.sefiraat.crystamaehistoria.player.PlayerStatistics
+                .getUnlockedSpellIdSet(player);
+            for (SpellType st : enabled) {
+                equivSpells &= spellSet.contains(st.getId())
+                    == io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.hasUnlockedSpell(player, st);
+            }
+            boolean equivStories = true;
+            boolean equivGilded = true;
+            final java.util.Set<Material> storySet = io.github.sefiraat.crystamaehistoria.player.PlayerStatistics
+                .getUnlockedUniqueStorySet(player);
+            final java.util.Set<Material> gildedSet = io.github.sefiraat.crystamaehistoria.player.PlayerStatistics
+                .getGildedSet(player);
+            for (int i = 0; i < defs.length; i += 7) {
+                final Material m = defs[i].getMaterial();
+                equivStories &= storySet.contains(m)
+                    == io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.hasUnlockedUniqueStory(player, m);
+                equivGilded &= gildedSet.contains(m)
+                    == io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.hasUnlockedStoryGilded(player, m);
+            }
+            // 失效：真实解锁后集合必须更新
+            io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.unlockSpell(player, enabled[0]);
+            final boolean invalidated = io.github.sefiraat.crystamaehistoria.player.PlayerStatistics
+                .getUnlockedSpellIdSet(player).contains(enabled[0].getId());
+            // 无统计玩家空集
+            final UUID missing = UUID.fromString("99999999-9999-9999-9999-999999999931");
+            final boolean emptyOk = io.github.sefiraat.crystamaehistoria.player.PlayerStatistics
+                .getUnlockedSpellIdSet(missing).isEmpty();
+            getLogger().info("round31 等价性: spells=" + equivSpells + " stories=" + equivStories
+                + " gilded=" + equivGilded + " invalidation=" + invalidated + " empty=" + emptyOk);
+
+            // ———— 法术集页 36 槽 ————
+            time(w, "stats.pageCheck36.sets", "old_section_relative", 2_000, () -> {
+                final org.bukkit.configuration.ConfigurationSection section =
+                    io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getSpellStatSection(player);
+                int c = 0;
+                for (int s = 0; s < 36; s++) {
+                    c += io.github.sefiraat.crystamaehistoria.player.PlayerStatistics
+                        .hasUnlockedSpell(player, enabled[s], section) ? 1 : 0;
+                }
+                bh += c;
+            });
+            time(w, "stats.pageCheck36.sets", "new_set_contains", 20_000, () -> {
+                final java.util.Set<String> set = io.github.sefiraat.crystamaehistoria.player.PlayerStatistics
+                    .getUnlockedSpellIdSet(player);
+                int c = 0;
+                for (int s = 0; s < 36; s++) {
+                    c += set.contains(enabled[s].getId()) ? 1 : 0;
+                }
+                bh += c;
+            });
+
+            // ———— 故事/镀金集页 36 槽（~998 定义键空间） ————
+            final Material[] mats = new Material[36];
+            for (int i = 0; i < 36; i++) {
+                mats[i] = defs[i * 3].getMaterial();
+            }
+            time(w, "stats.storyPageCheck36", "old_section_relative", 2_000, () -> {
+                final org.bukkit.configuration.ConfigurationSection section =
+                    io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getStoryStatSection(player);
+                int c = 0;
+                for (int s = 0; s < 36; s++) {
+                    c += io.github.sefiraat.crystamaehistoria.player.PlayerStatistics
+                        .hasUnlockedUniqueStory(player, mats[s], section) ? 1 : 0;
+                }
+                bh += c;
+            });
+            time(w, "stats.storyPageCheck36", "new_set_contains", 20_000, () -> {
+                final java.util.Set<Material> set = io.github.sefiraat.crystamaehistoria.player.PlayerStatistics
+                    .getUnlockedUniqueStorySet(player);
+                int c = 0;
+                for (int s = 0; s < 36; s++) {
+                    c += set.contains(mats[s]) ? 1 : 0;
+                }
+                bh += c;
+            });
+
+            // 计数写（addUsage）不得失效集合（成员资格纪元与计数纪元分离的断言）
+            final java.util.Set<String> beforeUsage = io.github.sefiraat.crystamaehistoria.player.PlayerStatistics
+                .getUnlockedSpellIdSet(player);
+            io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.addUsage(player, enabled[0]);
+            final boolean countWriteNoInvalidate = beforeUsage == io.github.sefiraat.crystamaehistoria.player.PlayerStatistics
+                .getUnlockedSpellIdSet(player);
+            getLogger().info("round31 计数写不失效集合: " + countWriteNoInvalidate);
+
+            // ———— 快照重建（成员纪元未命中，每次解锁写后第一次查询） ————
+            time(w, "stats.snapshotRebuild", "spells_and_stories", 100, () -> {
+                // 以一次真实解锁写（递增成员纪元）+ 三集合重建计量
+                io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.unlockSpell(player, enabled[0]);
+                bh += io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getUnlockedSpellIdSet(player).size();
+                bh += io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getUnlockedUniqueStorySet(player).size();
+                bh += io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getGildedSet(player).size();
+            });
+        } finally {
+            stats.set(player.toString(), null);
+        }
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
