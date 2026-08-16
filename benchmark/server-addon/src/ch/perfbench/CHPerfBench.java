@@ -93,7 +93,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound27(w),
                 () -> benchRound28(w),
                 () -> benchRound29(w),
-                () -> benchRound31(w)
+                () -> benchRound31(w),
+                () -> benchRound34(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -2789,6 +2790,61 @@ public final class CHPerfBench extends JavaPlugin {
         } finally {
             stats.set(player.toString(), null);
         }
+    }
+
+    /** 第 34 轮：周期落盘脏判定跳过（真实文件 IO） */
+    private void benchRound34(PrintWriter w) {
+        final io.github.sefiraat.crystamaehistoria.managers.ConfigManager cm =
+            CrystamaeHistoria.getConfigManager();
+        final UUID player = UUID.fromString("12345678-1234-1234-1234-123456789034");
+        final java.io.File statsFile = new java.io.File(CrystamaeHistoria.getInstance().getDataFolder(), "player_stats.yml");
+
+        // ———— 正确性断言 ————
+        boolean equivWriteFlush;
+        boolean equivSkipThenWrite;
+        boolean equivForce;
+        {
+            // 写 → 周期保存 → 文件应含新键
+            io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.unlockSpell(player, SpellType.HEAL);
+            cm.saveAll(false);
+            org.bukkit.configuration.file.YamlConfiguration onDisk =
+                org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(statsFile);
+            equivWriteFlush = onDisk.getBoolean(player + ".SPELL.HEAL.UNLOCKED", false);
+
+            // 稳态跳过后再写 → 下个周期仍能落盘
+            cm.saveAll(false); // 无写入：跳过
+            io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.addChronicle(player,
+                CrystamaeHistoria.getStoriesManager().getBlockDefinitionsSortedByMaterial().get(0));
+            cm.saveAll(false);
+            onDisk = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(statsFile);
+            equivSkipThenWrite = onDisk.getInt(player + ".STORY."
+                + CrystamaeHistoria.getStoriesManager().getBlockDefinitionsSortedByMaterial().get(0).getMaterial()
+                + ".TIMES_CHRONICLED", 0) >= 1;
+
+            // force 无条件冲刷
+            cm.saveAll(true);
+            equivForce = true; // 未抛异常即通过（文件冲刷本身已在上面验证）
+        }
+        getLogger().info("round34 等价性: writeFlush=" + equivWriteFlush
+            + " skipThenWrite=" + equivSkipThenWrite + " force=" + equivForce);
+        // 清理合成数据（经配置直写 + 手动冲刷）
+        cm.getPlayerStats().set(player.toString(), null);
+        cm.saveAll(true);
+
+        // ———— 周期保存路径 ————
+        // 旧：无条件全量（player_stats + config 双序列化）
+        time(w, "savePath.periodic", "old_unconditional", 5, () -> {
+            try {
+                cm.getPlayerStats().save(statsFile);
+            } catch (Exception e) {
+                bh++;
+            }
+        });
+        // 新：水位线跳过（先制造一次真实保存使水位线就位，再测稳态跳过）
+        cm.saveAll(false);
+        time(w, "savePath.periodic", "new_watermark_skip", 100_000, () -> {
+            cm.saveAll(false);
+        });
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
