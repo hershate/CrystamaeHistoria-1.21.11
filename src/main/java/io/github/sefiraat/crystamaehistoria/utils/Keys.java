@@ -62,6 +62,12 @@ public final class Keys {
     // Type - Story v2（瘦编码容器内两键）
     public static final NamespacedKey STORY_IDS_JOINED = newKey("s_ids");
     public static final NamespacedKey STORY_RARITIES = newKey("s_rars");
+    // Type - Story chunk v2（区块晶簇状态容器内五键：ids 连接串/稀有度数组/位置长数组/共享世界/镀金打包串）
+    public static final NamespacedKey CHUNK_STORY_IDS = newKey("c_ids");
+    public static final NamespacedKey CHUNK_STORY_RARITIES = newKey("c_rars");
+    public static final NamespacedKey CHUNK_STORY_POSITIONS = newKey("c_pos");
+    public static final NamespacedKey CHUNK_STORY_WORLD = newKey("c_world");
+    public static final NamespacedKey CHUNK_STORY_GILDED = newKey("c_gild");
 
     // Type - Plate
     public static final NamespacedKey PLATE_TIER = newKey("p_t");

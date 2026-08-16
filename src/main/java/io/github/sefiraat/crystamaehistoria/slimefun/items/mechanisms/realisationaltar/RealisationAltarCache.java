@@ -13,6 +13,7 @@ import io.github.sefiraat.crystamaehistoria.utils.ParticleUtils;
 import io.github.sefiraat.crystamaehistoria.utils.StoryUtils;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods;
 import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoryChunkDataType;
+import io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoryChunkV2DataType;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI;
 import lombok.Getter;
@@ -238,7 +239,9 @@ public class RealisationAltarCache extends AbstractCache {
             story.setGilded(state.gilded);
             stories.add(story);
         }
-        DataTypeMethods.setCustom(chunk, Keys.newKey(String.valueOf(position.getPosition())), PersistentStoryChunkDataType.TYPE, stories);
+        // v2 扁平编码：每次成功提取步骤触发的全量落盘，PDC 键操作 5N → 5
+        PersistentStoryChunkV2DataType.writeChunkStories(
+            chunk, Keys.newKey(String.valueOf(position.getPosition())), stories);
     }
 
     private void summonGrowParticles(@Nonnull Block block) {
@@ -272,10 +275,9 @@ public class RealisationAltarCache extends AbstractCache {
     protected void loadMap() {
         final Chunk chunk = blockMenu.getBlock().getChunk();
         final BlockPosition position = new BlockPosition(blockMenu.getLocation());
-        final List<Story> stories = DataTypeMethods.getCustom(
+        final List<Story> stories = PersistentStoryChunkV2DataType.readChunkStories(
             chunk,
-            Keys.newKey(String.valueOf(position.getPosition())),
-            PersistentStoryChunkDataType.TYPE
+            Keys.newKey(String.valueOf(position.getPosition()))
         );
         if (stories != null) {
             for (Story story : stories) {
