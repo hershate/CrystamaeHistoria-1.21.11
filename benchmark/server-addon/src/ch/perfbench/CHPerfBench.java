@@ -88,7 +88,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound21(w),
                 () -> benchRound22(w),
                 () -> benchRound23(w),
-                () -> benchRound24(w)
+                () -> benchRound24(w),
+                () -> benchRound26(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -2168,6 +2169,174 @@ public final class CHPerfBench extends JavaPlugin {
             }
         }
         itemMeta.lore(lore);
+    }
+
+    /** 第 26 轮：故事列表 PDC v2 瘦编码（真实 PDC 读/写与提交路径） */
+    private void benchRound26(PrintWriter w) {
+        // 跨稀有度取 5 个真实池故事（3 常规提交形态 + 5 满配形态）
+        final java.util.List<io.github.sefiraat.crystamaehistoria.stories.Story> pool = new java.util.ArrayList<>();
+        final io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity[] rs = {
+            io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity.COMMON,
+            io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity.UNCOMMON,
+            io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity.RARE,
+            io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity.EPIC,
+            io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity.MYTHICAL
+        };
+        for (io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity r : rs) {
+            final java.util.Map<io.github.sefiraat.crystamaehistoria.stories.definition.StoryType,
+                java.util.List<io.github.sefiraat.crystamaehistoria.stories.Story>> byType =
+                CrystamaeHistoria.getStoriesManager().getStoriesByRarityAndType().get(r);
+            if (byType != null && !byType.isEmpty()) {
+                pool.add(byType.values().iterator().next().get(0));
+            }
+        }
+        final java.util.List<io.github.sefiraat.crystamaehistoria.stories.Story> three = pool.subList(0, 3);
+        final java.util.List<io.github.sefiraat.crystamaehistoria.stories.Story> five = pool;
+
+        // ———— 等价性断言 ————
+        boolean equivRoundTrip;
+        boolean equivDualReadV1;
+        boolean equivMigration;
+        {
+            // v1/v2 各自往返解析为同一池实例列表
+            final ItemStack a = new ItemStack(Material.STONE);
+            final ItemMeta ma = a.getItemMeta();
+            DataTypeMethods.setCustom(ma, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_STORIES,
+                io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoriesDataType.TYPE, five);
+            final ItemStack b = new ItemStack(Material.STONE);
+            final ItemMeta mb = b.getItemMeta();
+            DataTypeMethods.setCustom(mb, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_STORIES_V2,
+                io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoriesV2DataType.TYPE, five);
+            a.setItemMeta(ma);
+            b.setItemMeta(mb);
+            equivRoundTrip = java.util.Objects.equals(
+                io.github.sefiraat.crystamaehistoria.utils.StoryUtils.getAllStories(a),
+                io.github.sefiraat.crystamaehistoria.utils.StoryUtils.getAllStories(b))
+                && io.github.sefiraat.crystamaehistoria.utils.StoryUtils.getAllStories(b).size() == five.size();
+
+            // v1 物品经双读仍正确
+            equivDualReadV1 = java.util.Objects.equals(
+                io.github.sefiraat.crystamaehistoria.utils.StoryUtils.getAllStories(a), five);
+
+            // v1 物品迁移：commitStory 触碰后读数一致且 v1 键移除（按键集判定，与值类型无关）
+            io.github.sefiraat.crystamaehistoria.utils.StoryUtils.commitStory(a, null,
+                CrystamaeHistoria.getStoriesManager().getBlockDefinitionsSortedByMaterial().get(0).getUnique());
+            final java.util.List<io.github.sefiraat.crystamaehistoria.stories.Story> migrated =
+                io.github.sefiraat.crystamaehistoria.utils.StoryUtils.getAllStories(a);
+            equivMigration = migrated.size() == five.size() + 1
+                && !a.getItemMeta().getPersistentDataContainer().getKeys()
+                    .contains(io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_STORIES);
+        }
+        getLogger().info("round26 等价性: roundTrip=" + equivRoundTrip + " dualReadV1=" + equivDualReadV1
+            + " migration=" + equivMigration);
+
+        // ———— 序列化（5 故事满配形态） ————
+        time(w, "storyPdc.serialize5", "old_v1_subcontainers", 20_000, () -> {
+            final ItemMeta meta = new ItemStack(Material.STONE).getItemMeta();
+            DataTypeMethods.setCustom(meta, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_STORIES,
+                io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoriesDataType.TYPE, five);
+            bh += meta.getLore() == null ? 0 : 1;
+        });
+        time(w, "storyPdc.serialize5", "new_v2_twokeys", 50_000, () -> {
+            final ItemMeta meta = new ItemStack(Material.STONE).getItemMeta();
+            DataTypeMethods.setCustom(meta, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_STORIES_V2,
+                io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoriesV2DataType.TYPE, five);
+            bh += meta.getLore() == null ? 0 : 1;
+        });
+
+        // ———— 反序列化（5 故事） ————
+        final ItemStack v1Item = new ItemStack(Material.STONE);
+        {
+            final ItemMeta m = v1Item.getItemMeta();
+            DataTypeMethods.setCustom(m, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_STORIES,
+                io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoriesDataType.TYPE, five);
+            v1Item.setItemMeta(m);
+        }
+        final ItemStack v2Item = new ItemStack(Material.STONE);
+        {
+            final ItemMeta m = v2Item.getItemMeta();
+            DataTypeMethods.setCustom(m, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_STORIES_V2,
+                io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoriesV2DataType.TYPE, five);
+            v2Item.setItemMeta(m);
+        }
+        time(w, "storyPdc.deserialize5", "old_v1", 20_000, () -> {
+            bh += io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods
+                .getCustom(v1Item.getItemMeta(), io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_STORIES,
+                    io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoriesDataType.TYPE).size();
+        });
+        time(w, "storyPdc.deserialize5", "new_v2", 50_000, () -> {
+            bh += io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods
+                .getCustom(v2Item.getItemMeta(), io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_STORIES_V2,
+                    io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoriesV2DataType.TYPE).size();
+        });
+
+        // ———— 提交路径端到端 ————
+        final io.github.sefiraat.crystamaehistoria.stories.Story extra = three.get(0);
+        // 情形 A：0 故事物品首故事（v2 最坏情形：单故事两编码键数相同 + 双读 miss + v1 remove）
+        time(w, "writePath.storyCommitV2.firstStory", "old_v1_encoding", 2_000, () -> {
+            final ItemStack item = new ItemStack(Material.STONE);
+            round26CommitV1(item, extra);
+            bh += item.getType().ordinal();
+        });
+        time(w, "writePath.storyCommitV2.firstStory", "new_v2_encoding", 5_000, () -> {
+            final ItemStack item = new ItemStack(Material.STONE);
+            io.github.sefiraat.crystamaehistoria.utils.StoryUtils.commitStory(item, extra, null);
+            bh += item.getType().ordinal();
+        });
+        // 情形 B：预置 3 故事物品提交第 4 条（真实推进形态）
+        final ItemStack baseV1 = new ItemStack(Material.STONE);
+        {
+            final ItemMeta m = baseV1.getItemMeta();
+            DataTypeMethods.setCustom(m, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_STORIES,
+                io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoriesDataType.TYPE, three);
+            baseV1.setItemMeta(m);
+        }
+        final ItemStack baseV2 = new ItemStack(Material.STONE);
+        {
+            final ItemMeta m = baseV2.getItemMeta();
+            DataTypeMethods.setCustom(m, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_STORIES_V2,
+                io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoriesV2DataType.TYPE, three);
+            baseV2.setItemMeta(m);
+        }
+        time(w, "writePath.storyCommitV2.fourthStory", "old_v1_encoding", 2_000, () -> {
+            final ItemStack item = baseV1.clone();
+            round26CommitV1(item, extra);
+            bh += item.getType().ordinal();
+        });
+        time(w, "writePath.storyCommitV2.fourthStory", "new_v2_encoding", 5_000, () -> {
+            final ItemStack item = baseV2.clone();
+            io.github.sefiraat.crystamaehistoria.utils.StoryUtils.commitStory(item, extra, null);
+            bh += item.getType().ordinal();
+        });
+    }
+
+    /** 同构副本：round-15 的 commitStory 完整形态 + v1 编码（含计数/附魔簿记，逐行一致） */
+    @SuppressWarnings("deprecation")
+    private void round26CommitV1(ItemStack itemStack, io.github.sefiraat.crystamaehistoria.stories.Story mainStory) {
+        final ItemMeta itemMeta = itemStack.getItemMeta();
+        if (itemMeta == null) {
+            return;
+        }
+        java.util.List<io.github.sefiraat.crystamaehistoria.stories.Story> storyList =
+            io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods.getCustom(
+                itemMeta, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_STORIES,
+                io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoriesDataType.TYPE);
+        if (storyList == null) {
+            storyList = new java.util.ArrayList<>();
+        }
+        storyList.add(mainStory);
+        io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods.setCustom(
+            itemMeta, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_STORIES,
+            io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoriesDataType.TYPE, storyList);
+        final int newAmount = io.github.sefiraat.crystamaehistoria.utils.StoryUtils.getStoryAmount(itemMeta) + 1;
+        io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI
+            .setInt(itemMeta, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_CURRENT_NUMBER_OF_STORIES, newAmount);
+        if (newAmount >= io.github.sefiraat.crystamaehistoria.utils.StoryUtils.getMaxStoryAmount(itemMeta)) {
+            itemMeta.addEnchant(org.bukkit.enchantments.Enchantment.LUCK_OF_THE_SEA, 1, true);
+            itemMeta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS);
+        }
+        io.github.sefiraat.crystamaehistoria.managers.StoriesManager.rebuildStoriedStack(itemStack, itemMeta, storyList);
+        itemStack.setItemMeta(itemMeta);
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
