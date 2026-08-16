@@ -15,10 +15,12 @@ bash benchmark/run.sh benchmark/results/round-N.tsv [fork数，默认3]
 
 ## 基准清单
 
+（每轮基准源码覆盖前轮变体；历轮数据见 `results/`，服务器内基准见 `server-addon/`。当前为第 21 轮变体。）
+
 | 基准 | 文件 | 测量内容 |
 |------|------|----------|
-| `spellEnabled` | `BenchSpellEnabled.java` | 施法前置校验：YamlConfiguration.getBoolean（旧）vs 字段读取（新）；前者为真实 paper-api API |
-| `spellMemoryScan` | `BenchSpellMemoryScan.java` | SpellMemory 周期清理扫描模式：整表 HashSet 复制+二次 get（旧）vs isEmpty 早退/entrySet 零复制扫描（新） |
+| `compendium.spellSort` / `compendium.blockSort` | `BenchCompendiumSort.java` | 图鉴翻页列表排序：每次 asList+sort / 复制+sort（旧）vs 启动期预排序快照 subList（新）；String 键模型复现同形态 java.util 操作序列 |
+| `compendium.titleCase` | `BenchTitleCase.java` | 枚举名 Title Case：逐次 StringBuilder 重建（旧，TextUtils.toTitleCase verbatim 副本）vs EnumMap 查表（新） |
 
 ## 方法论边界（禁止误读）
 

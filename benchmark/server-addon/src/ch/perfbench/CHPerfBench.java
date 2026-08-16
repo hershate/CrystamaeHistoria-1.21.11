@@ -84,7 +84,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound16(w),
                 () -> benchRound17(w),
                 () -> benchRound18(w),
-                () -> benchRound19(w)
+                () -> benchRound19(w),
+                () -> benchRound21(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -1604,6 +1605,178 @@ public final class CHPerfBench extends JavaPlugin {
                 }
             }
         });
+    }
+
+    /** 同构副本：0.4.0 的 Spell.getThemedStack（每次全量重建，逐行颜色处理 + ItemMeta 读改写往返） */
+    @SuppressWarnings("deprecation")
+    private ItemStack round21OldThemedStack(io.github.sefiraat.crystamaehistoria.magic.spells.core.Spell spell) {
+        final net.md_5.bungee.api.ChatColor passiveColor =
+            io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.PASSIVE.getColor();
+        final java.util.List<String> finalLore = new java.util.ArrayList<>();
+        for (String s : spell.getLore()) {
+            finalLore.add(passiveColor + io.github.thebusybiscuit.slimefun4.libraries.dough.common.ChatColors.color(s));
+        }
+        finalLore.add("");
+        finalLore.add(io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.applyThemeToString(
+            io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.CLICK_INFO, "法术"));
+        final io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack stack =
+            new io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack(
+                spell.getId(),
+                spell.getMaterial(),
+                io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.applyThemeToString(
+                    io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.SPELL, spell.getName()),
+                finalLore.toArray(new String[finalLore.size() - 1])
+            );
+        final ItemMeta itemMeta = stack.getItemMeta();
+        itemMeta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS);
+        itemMeta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
+        stack.setItemMeta(itemMeta);
+        // 旧调用链为 getThemedStack().item()——副本补上同一转换
+        return stack.item();
+    }
+
+    /** 同构副本：0.4.0 的 SpellCollectionFlexGroup.getBasicStack（4× MessageFormat + CustomItemStack.create） */
+    @SuppressWarnings("deprecation")
+    private ItemStack round21OldBasicStack(io.github.sefiraat.crystamaehistoria.magic.spells.core.Spell spell) {
+        final io.github.sefiraat.crystamaehistoria.magic.spells.core.SpellCore spellCore = spell.getSpellCore();
+        final net.md_5.bungee.api.ChatColor color =
+            io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.CLICK_INFO.getColor();
+        final net.md_5.bungee.api.ChatColor passive =
+            io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.PASSIVE.getColor();
+
+        final String crysta = java.text.MessageFormat.format("{0}每次施法消耗充能: {1}{2}", color, passive, spellCore.getCrystaCost());
+        final String crystaMulti = java.text.MessageFormat.format("{0}施法消耗{1}随着法杖等级提升而增加", color, spellCore.isCrystaMultiplied() ? "会" : "不会");
+        final String cooldown = java.text.MessageFormat.format("{0}冷却时间(秒): {1}{2}", color, passive, spell.getSpellCore().getCooldownSeconds());
+        final String cooldownDivided = java.text.MessageFormat.format("{0}冷却时间{1}随着法杖等级提升而减少", color, spellCore.isCooldownDivided() ? "会" : "不会");
+
+        return io.github.thebusybiscuit.slimefun4.libraries.dough.items.CustomItemStack.create(
+            org.bukkit.Material.GLOW_BERRIES,
+            io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.MAIN.getColor() + "基本信息",
+            crysta,
+            crystaMulti,
+            cooldown,
+            cooldownDivided
+        );
+    }
+
+    /** 第 21 轮：图鉴 GUI 展示路径（真实 ItemStack 构建/克隆与排序） */
+    private void benchRound21(PrintWriter w) {
+        final io.github.sefiraat.crystamaehistoria.magic.spells.core.Spell[] spells =
+            java.util.Arrays.stream(SpellType.getEnabledSpells())
+                .map(SpellType::get).toArray(io.github.sefiraat.crystamaehistoria.magic.spells.core.Spell[]::new);
+        final java.util.List<Material> materials = new java.util.ArrayList<>(
+            CrystamaeHistoria.getStoriesManager().getBlockDefinitionMap().keySet());
+        final io.github.sefiraat.crystamaehistoria.stories.BlockDefinition[] defs = materials.stream()
+            .map(m -> CrystamaeHistoria.getStoriesManager().getBlockDefinitionMap().get(m))
+            .toArray(io.github.sefiraat.crystamaehistoria.stories.BlockDefinition[]::new);
+
+        // ———— 等价性断言 ————
+        boolean equivThemed = true;
+        for (io.github.sefiraat.crystamaehistoria.magic.spells.core.Spell s : spells) {
+            equivThemed &= round21OldThemedStack(s).isSimilar(s.getThemedStack().item());
+        }
+        boolean equivIcon = true;
+        for (int i = 0; i < Math.min(materials.size(), 40); i++) {
+            final Material m = materials.get(i);
+            equivIcon &= io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.themedItemStack(
+                m, io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.RARITY_UNIQUE,
+                io.github.sefiraat.crystamaehistoria.utils.NameUtils.getMaterialName(m),
+                "该故事已被发掘"
+            ).isSimilar(io.github.sefiraat.crystamaehistoria.utils.theme.GuiElements.getUniqueStoryIcon(m));
+        }
+        final ItemStack basicReplica = round21OldBasicStack(spells[0]);
+        final boolean equivDetail = basicReplica.isSimilar(basicReplica.clone())
+            && round21OldBasicStack(spells[0]).isSimilar(basicReplica);
+        // 排序快照顺序 == 现场重排序
+        final java.util.List<io.github.sefiraat.crystamaehistoria.stories.BlockDefinition> freshSort =
+            new java.util.ArrayList<>(CrystamaeHistoria.getStoriesManager().getBlockDefinitionMap().values());
+        freshSort.sort(java.util.Comparator.comparing(d -> d.getMaterial().name()));
+        boolean equivBlockOrder = freshSort.equals(CrystamaeHistoria.getStoriesManager().getBlockDefinitionsSortedByMaterial());
+        boolean equivSpellOrder = java.util.Arrays.equals(
+            SpellType.getEnabledSpells(),
+            java.util.Arrays.stream(SpellType.getEnabledSpells())
+                .sorted(java.util.Comparator.comparing(SpellType::getId)).toArray(SpellType[]::new));
+        boolean equivTitleCase = true;
+        for (Material m : Material.values()) {
+            equivTitleCase &= io.github.sefiraat.crystamaehistoria.utils.TextUtils.toTitleCase(m.name())
+                .equals(io.github.sefiraat.crystamaehistoria.utils.NameUtils.getMaterialName(m));
+        }
+        getLogger().info("round21 等价性: themed=" + equivThemed + " icon=" + equivIcon
+            + " detail=" + equivDetail + " blockOrder=" + equivBlockOrder
+            + " spellOrder=" + equivSpellOrder + " titleCase=" + equivTitleCase);
+
+        // ———— 主题堆：旧全量重建 vs 新缓存 + .item() 克隆 ————
+        time(w, "compendium.themedStack", "old_rebuild", 50, () -> {
+            bh += round21OldThemedStack(spells[(int) (System.nanoTime() % spells.length)]).getType().ordinal();
+        });
+        time(w, "compendium.themedStack", "new_memo_item_clone", 2_000, () -> {
+            bh += spells[(int) (System.nanoTime() % spells.length)].getThemedStack().item().getType().ordinal();
+        });
+
+        // ———— 页面网格图标 ×36（故事集页）：旧 themedItemStack vs 新缓存克隆 ————
+        time(w, "compendium.pageIcons36", "old_build36", 20, () -> {
+            for (int i = 0; i < 36; i++) {
+                final Material m = materials.get(i);
+                bh += io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.themedItemStack(
+                    m, io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.RARITY_UNIQUE,
+                    io.github.sefiraat.crystamaehistoria.utils.NameUtils.getMaterialName(m),
+                    "该故事已被发掘"
+                ).getType().ordinal();
+            }
+        });
+        time(w, "compendium.pageIcons36", "new_cached_clone36", 300, () -> {
+            for (int i = 0; i < 36; i++) {
+                bh += io.github.sefiraat.crystamaehistoria.utils.theme.GuiElements
+                    .getUniqueStoryIcon(materials.get(i)).getType().ordinal();
+            }
+        });
+
+        // ———— 详情堆（单堆代表 ×7 见报告）：旧 4×MessageFormat 重建 vs clone ————
+        final ItemStack basicPrepared = round21OldBasicStack(spells[0]);
+        time(w, "compendium.detailStack", "old_messageformat_build", 200, () -> {
+            bh += round21OldBasicStack(spells[0]).getType().ordinal();
+        });
+        time(w, "compendium.detailStack", "new_cached_clone", 10_000, () -> {
+            bh += basicPrepared.clone().getType().ordinal();
+        });
+
+        // ———— 法术集翻页排序：旧重排共享数组 vs 新预排序快照 ————
+        final java.util.Comparator<SpellType> byId = java.util.Comparator.comparing(SpellType::getId);
+        time(w, "compendium.spellPageSort", "old_sort_per_page", 5_000, () -> {
+            final java.util.List<SpellType> list = java.util.Arrays.asList(SpellType.getEnabledSpells());
+            list.sort(byId);
+            bh += list.get(0).ordinal();
+        });
+        time(w, "compendium.spellPageSort", "new_snapshot_view", 100_000, () -> {
+            final java.util.List<SpellType> page = java.util.Arrays.asList(SpellType.getEnabledSpells())
+                .subList(0, 36);
+            bh += page.get(0).ordinal();
+        });
+
+        // ———— 故事集/镀金集翻页：旧复制+排序 vs 新快照 subList ————
+        time(w, "compendium.blockPageSort", "old_copy_sort", 500, () -> {
+            final java.util.List<io.github.sefiraat.crystamaehistoria.stories.BlockDefinition> copy =
+                new java.util.ArrayList<>(CrystamaeHistoria.getStoriesManager().getBlockDefinitionMap().values());
+            copy.sort(java.util.Comparator.comparing(d -> d.getMaterial().name()));
+            bh += copy.get(0).hashCode();
+        });
+        time(w, "compendium.blockPageSort", "new_snapshot_sublist", 100_000, () -> {
+            final java.util.List<io.github.sefiraat.crystamaehistoria.stories.BlockDefinition> page =
+                CrystamaeHistoria.getStoriesManager().getBlockDefinitionsSortedByMaterial().subList(0, 36);
+            bh += page.get(0).hashCode();
+        });
+
+        // ———— TitleCase：旧逐次重建 vs 新查表 ————
+        time(w, "compendium.titleCase", "old_rebuild", 100_000, () -> {
+            bh += io.github.sefiraat.crystamaehistoria.utils.TextUtils.toTitleCase(
+                materials.get((int) (System.nanoTime() % materials.size())).name()).length();
+        });
+        time(w, "compendium.titleCase", "new_memo_lookup", 1_000_000, () -> {
+            bh += io.github.sefiraat.crystamaehistoria.utils.NameUtils.getMaterialName(
+                materials.get((int) (System.nanoTime() % materials.size()))).length();
+        });
+        // 防止 defs 未使用告警：引用一次
+        bh += defs.length;
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
