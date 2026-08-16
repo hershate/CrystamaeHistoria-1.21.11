@@ -888,9 +888,9 @@ public final class CHPerfBench extends JavaPlugin {
     }
 
     /**
-     * 时间驱动预热 + 分批中位数（状态增长型操作专用）：被测操作会使物品状态单调增长
-     * （每次追加一条故事），预热期周期复位、每批判前复位到模板，保证两变体在相同的
-     * 列表长度区间内计量（批内仍从 preset 增长 batchOps 条，两变体增长曲线一致）。
+     * 时间驱动预热 + 分批中位数（状态增长型操作专用）：被测操作使物品故事列表单调增长，
+     * 而 Bukkit setLore 有 256 行上限（每条约 9 行 lore），预热期每 4 次复位、
+     * 每批判前复位到模板，批内增长 4 条以内——两变体保持相同的小区间增长曲线。
      */
     private void timeResettable(PrintWriter w, String bench, String variant, int batchOps,
                                 Runnable reset, Runnable op) {
@@ -898,12 +898,12 @@ public final class CHPerfBench extends JavaPlugin {
         int warmupOps = 0;
         while (System.nanoTime() < warmupEnd) {
             op.run();
-            if (++warmupOps % 32 == 0) {
+            if (++warmupOps % 4 == 0) {
                 reset.run();
             }
         }
         reset.run();
-        double[] medians = new double[5];
+        double[] medians = new double[15];
         for (int i = 0; i < medians.length; i++) {
             reset.run();
             long start = System.nanoTime();
@@ -913,9 +913,9 @@ public final class CHPerfBench extends JavaPlugin {
             medians[i] = (System.nanoTime() - start) / (double) batchOps;
         }
         java.util.Arrays.sort(medians);
-        w.printf("%s\t%s\t%.2f%n", bench, variant, medians[2]);
+        w.printf("%s\t%s\t%.2f%n", bench, variant, medians[7]);
         w.flush();
-        getLogger().info(String.format("%s/%s: %.2f ns/op (resettable)", bench, variant, medians[2]));
+        getLogger().info(String.format("%s/%s: %.2f ns/op (resettable)", bench, variant, medians[7]));
     }
 
     /**
@@ -946,23 +946,23 @@ public final class CHPerfBench extends JavaPlugin {
         // —— 等价性断言（先于计时）——
         round15Equivalence(story, uniqueStory);
 
-        // —— 提交（状态增长型，批间复位到模板）——
+        // —— 提交（状态增长型，批间复位到模板；批 4 次防超 256 行 lore 上限）——
         final ItemStack commitItem = round15Template(2, 5, story);
         final ItemMeta commitTemplateMeta = commitItem.getItemMeta();
-        timeResettable(w, "writePath.storyCommit", "old_chain_8clones", 48,
+        timeResettable(w, "writePath.storyCommit", "old_chain_8clones", 4,
             () -> commitItem.setItemMeta(commitTemplateMeta),
             () -> round15OldCommit(commitItem, story, null));
-        timeResettable(w, "writePath.storyCommit", "new_single_roundtrip", 48,
+        timeResettable(w, "writePath.storyCommit", "new_single_roundtrip", 4,
             () -> commitItem.setItemMeta(commitTemplateMeta),
             () -> StoryUtils.commitStory(commitItem, story, null));
 
         // —— 终格提交（常规 + 独特，满槽触发附魔分支）——
         final ItemStack uniqueItem = round15Template(4, 5, story);
         final ItemMeta uniqueTemplateMeta = uniqueItem.getItemMeta();
-        timeResettable(w, "writePath.storyCommitUnique", "old_chain_10clones", 48,
+        timeResettable(w, "writePath.storyCommitUnique", "old_chain_10clones", 4,
             () -> uniqueItem.setItemMeta(uniqueTemplateMeta),
             () -> round15OldCommit(uniqueItem, story, uniqueStory));
-        timeResettable(w, "writePath.storyCommitUnique", "new_single_roundtrip", 48,
+        timeResettable(w, "writePath.storyCommitUnique", "new_single_roundtrip", 4,
             () -> uniqueItem.setItemMeta(uniqueTemplateMeta),
             () -> StoryUtils.commitStory(uniqueItem, story, uniqueStory));
 
@@ -1004,9 +1004,8 @@ public final class CHPerfBench extends JavaPlugin {
         DataTypeMethods.setCustom(staveBaseMeta, Keys.PDC_STAVE_STORAGE, PersistentStaveDataType.TYPE, plates);
         stave.setItemMeta(staveBaseMeta);
         final InstanceStave staveInstance = new InstanceStave(stave);
-        final String spellId = SpellType.HEAL.get().getId();
         time(w, "writePath.staveLoreRebuild", "old_dynamic_strings", 100_000, () -> {
-            // 同构副本：0.3.0 的 buildLore（动态拼接 + getName 即时 toTitleCase）
+            // 同构副本：0.3.0 的 buildLore（动态拼接；getName 为各法术覆写的常量返回）
             final ItemMeta m = stave.getItemMeta();
             final String[] lore = new String[]{"可以进行法术绑定的法杖"};
             final net.md_5.bungee.api.ChatColor passiveColor =
@@ -1019,7 +1018,7 @@ public final class CHPerfBench extends JavaPlugin {
                 final InstancePlate instancePlate = staveInstance.getSpellInstanceMap().get(slot);
                 if (instancePlate != null) {
                     finalLore.add("");
-                    final String magic = io.github.sefiraat.crystamaehistoria.utils.TextUtils.toTitleCase(spellId);
+                    final String magic = instancePlate.getStoredSpell().getSpell().getName();
                     final String crysta = String.valueOf(instancePlate.getCrysta());
                     finalLore.add(io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.RARITY_MYTHICAL.getColor()
                         + slot.getDescription());
@@ -1152,7 +1151,7 @@ public final class CHPerfBench extends JavaPlugin {
                         + slot.getDescription());
                     finalLore.add(passiveColor + "法术: "
                         + io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.NOTICE.getColor()
-                        + io.github.sefiraat.crystamaehistoria.utils.TextUtils.toTitleCase(SpellType.HEAL.get().getId()));
+                        + instancePlate.getStoredSpell().getSpell().getName());
                     finalLore.add(passiveColor + "充能: "
                         + io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.NOTICE.getColor()
                         + String.valueOf(instancePlate.getCrysta()));
