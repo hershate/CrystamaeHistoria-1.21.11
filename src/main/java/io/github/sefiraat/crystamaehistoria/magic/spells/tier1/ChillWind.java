@@ -33,14 +33,20 @@ public class ChillWind extends Spell {
         final double range = getRange(castInformation);
         final double effectRange = range * 0.75;
         final int density = 20;
-        // Particles
+        // Particles（单次克隆的可复用坐标：原实现每点一次 clone().add，~840 点/次施法）
+        final Location point = location.clone();
+        final double baseX = location.getX();
+        final double baseY = location.getY();
+        final double baseZ = location.getZ();
         for (double height = 0; height <= Math.PI; height += Math.PI / density) {
             final double r = range * Math.sin(height);
             final double y = range * Math.cos(height);
             for (double a = 0; a < Math.PI * 2; a += Math.PI / density) {
                 final double x = Math.cos(a) * r;
                 final double z = Math.sin(a) * r;
-                final Location point = location.clone().add(x, y, z);
+                point.setX(baseX + x);
+                point.setY(baseY + y);
+                point.setZ(baseZ + z);
                 ParticleUtils.displayParticleEffect(point, Particle.END_ROD, 0.1, 1);
             }
         }

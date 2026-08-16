@@ -23,17 +23,26 @@ public class ParticleUtils {
 
     @ParametersAreNonnullByDefault
     public static void displayParticleEffect(Location location, Particle particle, double rangeRadius, int numberOfParticles) {
+        // 单次克隆的可复用坐标（spawnParticle 同步读取，无逃逸）：
+        // 原实现每粒子一次 clone().add，N 粒子 N 次分配。每粒子以基准坐标 +
+        // 独立随机偏移 set 坐标（与原 clone().add 语义一致，不累积）
+        final Location point = location.clone();
+        final World world = location.getWorld();
+        final double baseX = location.getX();
+        final double baseY = location.getY();
+        final double baseZ = location.getZ();
         for (int i = 0; i < numberOfParticles; i++) {
-            double x = ThreadLocalRandom.current().nextDouble(-rangeRadius, rangeRadius + 0.1);
-            double y = ThreadLocalRandom.current().nextDouble(-rangeRadius, rangeRadius + 0.1);
-            double z = ThreadLocalRandom.current().nextDouble(-rangeRadius, rangeRadius + 0.1);
-            location.getWorld().spawnParticle(particle, location.clone().add(x, y, z), 1);
+            point.setX(baseX + ThreadLocalRandom.current().nextDouble(-rangeRadius, rangeRadius + 0.1));
+            point.setY(baseY + ThreadLocalRandom.current().nextDouble(-rangeRadius, rangeRadius + 0.1));
+            point.setZ(baseZ + ThreadLocalRandom.current().nextDouble(-rangeRadius, rangeRadius + 0.1));
+            world.spawnParticle(particle, point, 1);
         }
     }
 
     @ParametersAreNonnullByDefault
     public static void displayParticleEffect(Entity entity, Particle particle, double rangeRadius, int numberOfParticles) {
-        displayParticleEffect(entity.getLocation().clone().add(0, 1, 0), particle, rangeRadius, numberOfParticles);
+        // getLocation() 已返回新实例，无需再克隆
+        displayParticleEffect(entity.getLocation().add(0, 1, 0), particle, rangeRadius, numberOfParticles);
     }
 
     @ParametersAreNonnullByDefault
@@ -48,11 +57,17 @@ public class ParticleUtils {
 
     @ParametersAreNonnullByDefault
     public static void displayParticleEffect(Location location, double rangeRadius, int numberOfParticles, Particle.DustOptions dustOptions) {
+        // 单次克隆的可复用坐标（同上，每粒子以基准 + 独立偏移 set，不累积）
+        final Location point = location.clone();
+        final World world = location.getWorld();
+        final double baseX = location.getX();
+        final double baseY = location.getY();
+        final double baseZ = location.getZ();
         for (int i = 0; i < numberOfParticles; i++) {
-            double x = ThreadLocalRandom.current().nextDouble(-rangeRadius, rangeRadius + 0.1);
-            double y = ThreadLocalRandom.current().nextDouble(-rangeRadius, rangeRadius + 0.1);
-            double z = ThreadLocalRandom.current().nextDouble(-rangeRadius, rangeRadius + 0.1);
-            location.getWorld().spawnParticle(Particle.DUST, location.clone().add(x, y, z), 1, dustOptions);
+            point.setX(baseX + ThreadLocalRandom.current().nextDouble(-rangeRadius, rangeRadius + 0.1));
+            point.setY(baseY + ThreadLocalRandom.current().nextDouble(-rangeRadius, rangeRadius + 0.1));
+            point.setZ(baseZ + ThreadLocalRandom.current().nextDouble(-rangeRadius, rangeRadius + 0.1));
+            world.spawnParticle(Particle.DUST, point, 1, dustOptions);
         }
     }
 

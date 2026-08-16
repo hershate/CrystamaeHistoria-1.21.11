@@ -353,10 +353,16 @@ public class ChroniclerPanelCache extends AbstractCache {
     }
 
     private void summonParticles() {
+        // 单次克隆的可复用坐标（spawnParticle 同步读取）：原实现每粒子一次 clone().add
         final Location location = blockMenu.getLocation();
+        final Location point = location.clone();
+        final double baseX = location.getX();
+        final double baseZ = location.getZ();
         for (int i = 0; i < 2; i++) {
-            final Location l = location.clone().add(ThreadLocalRandom.current().nextDouble(0, 1.1), 1, ThreadLocalRandom.current().nextDouble(0, 1.1));
-            location.getWorld().spawnParticle(Particle.ENCHANT, l, 0, 0.2, 0, -0.2, 0);
+            point.setX(baseX + ThreadLocalRandom.current().nextDouble(0, 1.1));
+            point.setZ(baseZ + ThreadLocalRandom.current().nextDouble(0, 1.1));
+            point.setY(location.getY() + 1);
+            location.getWorld().spawnParticle(Particle.ENCHANT, point, 0, 0.2, 0, -0.2, 0);
         }
     }
 

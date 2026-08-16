@@ -83,7 +83,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound15(w),
                 () -> benchRound16(w),
                 () -> benchRound17(w),
-                () -> benchRound18(w)
+                () -> benchRound18(w),
+                () -> benchRound19(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -1486,6 +1487,123 @@ public final class CHPerfBench extends JavaPlugin {
                 }
             });
         }
+    }
+
+    /**
+     * 第 19 轮：热循环 Location 分配消除（粒子路径）。
+     * - particle.burstAlloc：displayParticleEffect 主体（旧 N 次 clone().add vs 单次克隆 set 坐标）
+     * - particle.panelSummon：面板每 tick 2 粒子模式
+     * - particle.sphere840：ChillWind 施法球面 ~840 点循环（含 1 粒子 helper）
+     * 等价性断言：固定偏移序列下两法位置序列逐项一致。
+     */
+    private void benchRound19(PrintWriter w) {
+        final World world = Bukkit.getWorlds().get(0);
+        final Location base = new Location(world, 6000.5, 130.5, 6000.5);
+
+        // 等价性：固定偏移（10 组）下位置序列
+        final double[] offs = {0.05, -0.11, 0.22, -0.31, 0.44, -0.5, 0.61, -0.73, 0.84, -0.97};
+        final java.util.List<String> oldPos = new java.util.ArrayList<>();
+        final java.util.List<String> newPos = new java.util.ArrayList<>();
+        {
+            // 旧：base.clone().add(x,y,z)（独立偏移）
+            for (int i = 0; i < offs.length; i++) {
+                final Location l = base.clone().add(offs[i], offs[(i + 1) % offs.length], offs[(i + 2) % offs.length]);
+                oldPos.add(l.getX() + "," + l.getY() + "," + l.getZ());
+            }
+            // 新：单次克隆 + 基准坐标 set
+            final Location point = base.clone();
+            final double bx = base.getX();
+            final double by = base.getY();
+            final double bz = base.getZ();
+            for (int i = 0; i < offs.length; i++) {
+                point.setX(bx + offs[i]);
+                point.setY(by + offs[(i + 1) % offs.length]);
+                point.setZ(bz + offs[(i + 2) % offs.length]);
+                newPos.add(point.getX() + "," + point.getY() + "," + point.getZ());
+            }
+        }
+        getLogger().info("round19 等价性(位置序列): " + oldPos.equals(newPos));
+
+        // —— displayParticleEffect 主体（10 粒子；spawnParticle 无观察者仍走完整调用）——
+        time(w, "particle.burstAlloc", "old_clone_per_particle", 20_000, () -> {
+            for (int i = 0; i < 10; i++) {
+                final double x = ThreadLocalRandom.current().nextDouble(-1, 1.1);
+                final double y = ThreadLocalRandom.current().nextDouble(-1, 1.1);
+                final double z = ThreadLocalRandom.current().nextDouble(-1, 1.1);
+                world.spawnParticle(Particle.WAX_ON, base.clone().add(x, y, z), 1);
+            }
+        });
+        time(w, "particle.burstAlloc", "new_single_scratch", 20_000, () -> {
+            final Location point = base.clone();
+            final double bx = base.getX();
+            final double by = base.getY();
+            final double bz = base.getZ();
+            for (int i = 0; i < 10; i++) {
+                point.setX(bx + ThreadLocalRandom.current().nextDouble(-1, 1.1));
+                point.setY(by + ThreadLocalRandom.current().nextDouble(-1, 1.1));
+                point.setZ(bz + ThreadLocalRandom.current().nextDouble(-1, 1.1));
+                world.spawnParticle(Particle.WAX_ON, point, 1);
+            }
+        });
+
+        // —— 面板每 tick 2 粒子（记录者面板工作态）——
+        final Location panelLoc = base;
+        time(w, "particle.panelSummon", "old_two_clones", 100_000, () -> {
+            for (int i = 0; i < 2; i++) {
+                final Location l = panelLoc.clone().add(ThreadLocalRandom.current().nextDouble(0, 1.1), 1,
+                    ThreadLocalRandom.current().nextDouble(0, 1.1));
+                world.spawnParticle(Particle.ENCHANT, l, 0, 0.2, 0, -0.2, 0);
+            }
+        });
+        time(w, "particle.panelSummon", "new_single_scratch", 100_000, () -> {
+            final Location point = panelLoc.clone();
+            final double bx = panelLoc.getX();
+            final double bz = panelLoc.getZ();
+            final double by = panelLoc.getY();
+            for (int i = 0; i < 2; i++) {
+                point.setX(bx + ThreadLocalRandom.current().nextDouble(0, 1.1));
+                point.setZ(bz + ThreadLocalRandom.current().nextDouble(0, 1.1));
+                point.setY(by + 1);
+                world.spawnParticle(Particle.ENCHANT, point, 0, 0.2, 0, -0.2, 0);
+            }
+        });
+
+        // —— ChillWind 球面 ~840 点（每次施法一次；含每点 1 粒子 helper）——
+        final double range = 5.0;
+        final int density = 20;
+        time(w, "particle.sphere840", "old_clone_per_point", 20, () -> {
+            final Location location = base.clone().add(0, 1, 0);
+            for (double height = 0; height <= Math.PI; height += Math.PI / density) {
+                final double r = range * Math.sin(height);
+                final double y = range * Math.cos(height);
+                for (double a = 0; a < Math.PI * 2; a += Math.PI / density) {
+                    final double x = Math.cos(a) * r;
+                    final double z = Math.sin(a) * r;
+                    final Location point = location.clone().add(x, y, z);
+                    // 1 粒子 helper（新实现为单次克隆；此处两变体同侧，计量 delta 为外层循环）
+                    world.spawnParticle(Particle.END_ROD, point, 1);
+                }
+            }
+        });
+        time(w, "particle.sphere840", "new_single_scratch", 20, () -> {
+            final Location location = base.clone().add(0, 1, 0);
+            final Location point = location.clone();
+            final double bx = location.getX();
+            final double by = location.getY();
+            final double bz = location.getZ();
+            for (double height = 0; height <= Math.PI; height += Math.PI / density) {
+                final double r = range * Math.sin(height);
+                final double y = range * Math.cos(height);
+                for (double a = 0; a < Math.PI * 2; a += Math.PI / density) {
+                    final double x = Math.cos(a) * r;
+                    final double z = Math.sin(a) * r;
+                    point.setX(bx + x);
+                    point.setY(by + y);
+                    point.setZ(bz + z);
+                    world.spawnParticle(Particle.END_ROD, point, 1);
+                }
+            }
+        });
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
