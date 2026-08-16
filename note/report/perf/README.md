@@ -48,6 +48,7 @@
 |------|--------|------|
 | 26 | 故事列表 PDC v2 瘦编码（单容器两键替代 N 子容器×2 键）：serialize5 2.09x / deserialize5 1.79x / 首故事提交端到端 1.22x，物品 NBT 负载缩小；v1 双读兼容（旧存档可读，一经写入即迁移），crafted 损坏降级语义与 v1 同级；迁移/往返/双读断言全 true（[round-26](round-26.md)） | ✅ 完成（服务器回归通过，0 SEVERE） |
 | 27 | 故事上限 JSON → 扁平 int 键（tier 只写不读，消费值仅 1 数字）：判定链/提交的 gson 逐次解析消除——read 1.93x / makeStoried 1.52x；JSON 双读回退（旧存档永久兼容）+ makeStoried 迁移；makeStoried/jsonFallback/crafted 断言全 true（[round-27](round-27.md)） | ✅ 完成（服务器回归通过，0 SEVERE） |
+| 28 | 法杖存储 v2 扁平编码（单容器五键替代每板子容器×2 键，24→5 键操作，同键双读自动迁移）：deserialize4 2.43x / serialize4 2.72x / 施法前置单槽读 1.55x，成功写回 PDC 份额 -3.1µs；fullRead/singleSlot/migration 断言全 true。**服务器测试拦截红线级缺陷**：readSlotPlate 裸 PDC 读取在 v1 值上抛 IAE（已修 da0d919，方法论沉淀：裸 PDC 调用必须自防御）（[round-28](round-28.md)） | ✅ 完成（服务器回归通过，0 SEVERE） |
 
 ## 收敛判定（round-25）
 

@@ -88,7 +88,12 @@ NBT 负载缩小；v1 双读兼容（旧存档可读，一经写入即迁移）�
 损坏降级语义与 v1 同级；往返/双读/迁移断言全 true。第 27 轮故事上限
 JSON → 扁平 int 键（tier 只写不读，消费值仅 1 数字）——判定链/提交的
 gson 逐次解析消除，read 1.93x / makeStoried 1.52x；JSON 双读回退 +
-makeStoried 迁移，断言全 true。
+makeStoried 迁移，断言全 true。第 28 轮法杖存储 v2 扁平编码——单容器
+五键（槽位/法术连接串 + tier/crysta 数组 + cooldown 长数组）替代每板
+子容器×2 键（24→5 键操作，同键双读自动迁移）：deserialize4 2.43x /
+serialize4 2.72x / 施法前置单槽读 1.55x；fullRead/singleSlot/migration
+断言全 true。服务器测试拦截一处红线级缺陷（readSlotPlate 裸 PDC 读取
+v1 值抛 IAE，已修）——裸 PDC 调用必须自防御，方法论沉淀。
 
 ## 维护要点（改代码前必读）
 

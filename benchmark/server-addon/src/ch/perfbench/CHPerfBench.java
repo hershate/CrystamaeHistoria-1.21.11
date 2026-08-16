@@ -90,7 +90,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound23(w),
                 () -> benchRound24(w),
                 () -> benchRound26(w),
-                () -> benchRound27(w)
+                () -> benchRound27(w),
+                () -> benchRound28(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -2454,6 +2455,121 @@ public final class CHPerfBench extends JavaPlugin {
         io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI
             .setJsonObject(itemMeta, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_POTENTIAL_STORIES, json);
         itemStack.setItemMeta(itemMeta);
+    }
+
+    /** 第 28 轮：法杖存储 v2 扁平编码（真实 PDC 读/写/单槽读取） */
+    private void benchRound28(PrintWriter w) {
+        final io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot[] slots =
+            io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot.getCashedValues();
+        final SpellType[] enabled = SpellType.getEnabledSpells();
+        // 4 板满配（不同 tier/晶能/冷却覆盖全字段）
+        final java.util.Map<io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot,
+            io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate> map = new java.util.EnumMap<>(
+            io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot.class);
+        for (int i = 0; i < slots.length; i++) {
+            final io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate plate =
+                new io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate(
+                    (i % 5) + 1, enabled[i % enabled.length], 10 + i * 7);
+            plate.setCooldown(1_700_000_000_000L + i);
+            map.put(slots[i], plate);
+        }
+
+        final ItemStack v1Stave = new ItemStack(Material.BLAZE_ROD);
+        {
+            final ItemMeta m = v1Stave.getItemMeta();
+            io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods.setCustom(
+                m, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_STAVE_STORAGE,
+                io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveDataType.TYPE, map);
+            v1Stave.setItemMeta(m);
+        }
+        final ItemStack v2Stave = new ItemStack(Material.BLAZE_ROD);
+        {
+            final ItemMeta m = v2Stave.getItemMeta();
+            io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveV2DataType.writeStaveMap(m, map);
+            v2Stave.setItemMeta(m);
+        }
+
+        // ———— 等价性断言 ————
+        boolean equivFullRead;
+        boolean equivSingleSlot;
+        boolean equivMigration;
+        {
+            final java.util.Map<io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot,
+                io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate> readV1 =
+                io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveV2DataType.readStaveMap(v1Stave.getItemMeta());
+            final java.util.Map<io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot,
+                io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate> readV2 =
+                io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveV2DataType.readStaveMap(v2Stave.getItemMeta());
+            boolean ok = readV1.size() == map.size() && readV2.size() == map.size();
+            for (var e : map.entrySet()) {
+                final io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate p1 = readV1.get(e.getKey());
+                final io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate p2 = readV2.get(e.getKey());
+                ok &= p1 != null && p2 != null
+                    && p1.getTier() == e.getValue().getTier() && p2.getTier() == e.getValue().getTier()
+                    && p1.getCrysta() == e.getValue().getCrysta() && p2.getCrysta() == e.getValue().getCrysta()
+                    && p1.getCooldown() == e.getValue().getCooldown() && p2.getCooldown() == e.getValue().getCooldown()
+                    && p1.getStoredSpell() == e.getValue().getStoredSpell() && p2.getStoredSpell() == e.getValue().getStoredSpell();
+            }
+            equivFullRead = ok;
+
+            // 单槽读取（v1 物品经回退路径 / v2 物品直接路径）
+            equivSingleSlot = true;
+            for (var slot : slots) {
+                final var a = io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveV2DataType
+                    .readSlotPlate(v1Stave.getItemMeta(), slot);
+                final var b = io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveV2DataType
+                    .readSlotPlate(v2Stave.getItemMeta(), slot);
+                equivSingleSlot &= a != null && b != null
+                    && a.getTier() == b.getTier() && a.getCrysta() == b.getCrysta()
+                    && a.getCooldown() == b.getCooldown() && a.getStoredSpell() == b.getStoredSpell();
+            }
+
+            // 迁移：v1 物品经写回（v2 覆盖同键）后读取正确，且原键为容器类型
+            final ItemMeta migrated = v1Stave.getItemMeta();
+            io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveV2DataType.writeStaveMap(migrated, map);
+            equivMigration = io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveV2DataType
+                .readStaveMap(migrated).size() == map.size()
+                && migrated.getPersistentDataContainer().has(
+                    io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_STAVE_STORAGE,
+                    org.bukkit.persistence.PersistentDataType.TAG_CONTAINER);
+        }
+        getLogger().info("round28 等价性: fullRead=" + equivFullRead + " singleSlot=" + equivSingleSlot
+            + " migration=" + equivMigration);
+
+        // ———— 全量反序列化（4 板） ————
+        time(w, "stavePdc.deserialize4.r28", "old_v1", 10_000, () -> {
+            bh += io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods
+                .getCustom(v1Stave.getItemMeta(), io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_STAVE_STORAGE,
+                    io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveDataType.TYPE).size();
+        });
+        time(w, "stavePdc.deserialize4.r28", "new_v2", 50_000, () -> {
+            bh += io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveV2DataType
+                .readStaveMap(v2Stave.getItemMeta()).size();
+        });
+
+        // ———— 序列化（4 板满配） ————
+        time(w, "stavePdc.serialize4", "old_v1", 5_000, () -> {
+            final ItemMeta m = new ItemStack(Material.BLAZE_ROD).getItemMeta();
+            io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods.setCustom(
+                m, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_STAVE_STORAGE,
+                io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveDataType.TYPE, map);
+            bh += m.getLore() == null ? 0 : 1;
+        });
+        time(w, "stavePdc.serialize4", "new_v2", 20_000, () -> {
+            final ItemMeta m = new ItemStack(Material.BLAZE_ROD).getItemMeta();
+            io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveV2DataType.writeStaveMap(m, map);
+            bh += m.getLore() == null ? 0 : 1;
+        });
+
+        // ———— 单槽读取（施法失败前置路径） ————
+        time(w, "stavePdc.singleSlot", "old_v1", 20_000, () -> {
+            bh += io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveDataType
+                .getSlotPlate(v1Stave.getItemMeta(), slots[0]) != null ? 1 : 0;
+        });
+        time(w, "stavePdc.singleSlot", "new_v2", 100_000, () -> {
+            bh += io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveV2DataType
+                .readSlotPlate(v2Stave.getItemMeta(), slots[0]) != null ? 1 : 0;
+        });
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
