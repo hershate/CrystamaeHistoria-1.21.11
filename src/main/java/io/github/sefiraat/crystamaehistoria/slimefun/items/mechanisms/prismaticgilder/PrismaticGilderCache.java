@@ -26,6 +26,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Collection;
 import java.util.UUID;
@@ -57,8 +59,9 @@ public class PrismaticGilderCache extends AbstractCache {
     @ParametersAreNonnullByDefault
     public void consumeItems() {
         final Location location = blockMenu.getLocation();
+        final Location center = getPickupLocation();
         final Collection<Entity> entitiesToPull = location.getWorld().getNearbyEntities(
-            location.clone().add(0.5, 0.5, 0.5),
+            center,
             3,
             3,
             3,
@@ -74,8 +77,14 @@ public class PrismaticGilderCache extends AbstractCache {
             }
         }
 
+        // 消费扫描区域（0.75³）⊂ 拉取扫描区域（3³）：首扫为空即无任何物品，
+        // 跳过次扫（镀金器空载 tick 从两次实体扫描降为一次）
+        if (entitiesToPull.isEmpty()) {
+            return;
+        }
+
         final Collection<Entity> entities = location.getWorld().getNearbyEntities(
-            location.clone().add(0.5, 0.5, 0.5),
+            center,
             0.75,
             0.75,
             0.75,
@@ -93,6 +102,18 @@ public class PrismaticGilderCache extends AbstractCache {
             }
             syncBlock();
         }
+    }
+
+    /** 拾取中心点惰性缓存（方块位置不变；原每 tick 两次 clone+add） */
+    @Nullable
+    private Location pickupLocation;
+
+    @Nonnull
+    private Location getPickupLocation() {
+        if (pickupLocation == null) {
+            pickupLocation = blockMenu.getLocation().clone().add(0.5, 0.5, 0.5);
+        }
+        return pickupLocation;
     }
 
     @ParametersAreNonnullByDefault
