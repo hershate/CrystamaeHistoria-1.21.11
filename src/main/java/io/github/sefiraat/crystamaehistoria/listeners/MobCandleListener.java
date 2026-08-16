@@ -8,6 +8,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.util.BoundingBox;
 
+import java.util.Map;
+
 public class MobCandleListener implements Listener {
 
     @EventHandler
@@ -18,7 +20,12 @@ public class MobCandleListener implements Listener {
             && e.getSpawnReason() != CreatureSpawnEvent.SpawnReason.SPAWNER_EGG
             && e.getSpawnReason() != CreatureSpawnEvent.SpawnReason.BUILD_WITHER
         ) {
-            for (BoundingBox boundingBox : CrystamaeHistoria.getSpellMemory().getNoSpawningAreas().keySet()) {
+            // CreatureSpawnEvent 为世界级高频事件：常态（无禁刷区）零迭代器分配
+            final Map<BoundingBox, Long> areas = CrystamaeHistoria.getSpellMemory().getNoSpawningAreas();
+            if (areas.isEmpty()) {
+                return;
+            }
+            for (BoundingBox boundingBox : areas.keySet()) {
                 if (boundingBox.contains(e.getLocation().toVector())) {
                     e.setCancelled(true);
                     return;

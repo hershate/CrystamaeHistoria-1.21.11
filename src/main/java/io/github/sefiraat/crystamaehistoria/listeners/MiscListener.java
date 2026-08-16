@@ -36,7 +36,13 @@ public class MiscListener implements Listener {
     @EventHandler
     public void onPlaceStoriedBlock(BlockPlaceEvent e) {
         ItemStack itemStack = e.getItemInHand();
-        if (itemStack.getType() != Material.AIR && StoryUtils.isStoried(itemStack)) {
+        // hasItemMeta 前置门控：BlockPlaceEvent 为世界级高频事件，无 meta 的普通
+        // 方块（建筑常态）免去 isStoried 的整份 ItemMeta 克隆；hasItemMeta()==false
+        // 与 isStoried()==false 严格等价（无 meta 即无 PDC）
+        if (itemStack.getType() != Material.AIR
+            && itemStack.hasItemMeta()
+            && StoryUtils.isStoried(itemStack)
+        ) {
             final Player player = e.getPlayer();
             player.sendMessage(ThemeType.WARNING.getColor() + "该方块已充满魔法，无法再放置于世界中");
             e.setCancelled(true);
@@ -46,7 +52,10 @@ public class MiscListener implements Listener {
     @EventHandler
     public void onBlockPlacerStoriedBlock(BlockPlacerPlaceEvent e) {
         ItemStack itemStack = e.getItemStack();
-        if (itemStack.getType() != Material.AIR && StoryUtils.isStoried(itemStack)) {
+        if (itemStack.getType() != Material.AIR
+            && itemStack.hasItemMeta()
+            && StoryUtils.isStoried(itemStack)
+        ) {
             e.setCancelled(true);
         }
     }
@@ -66,7 +75,7 @@ public class MiscListener implements Listener {
     @EventHandler
     public void onTryCraft(CraftItemEvent e) {
         for (ItemStack item : e.getInventory().getMatrix()) {
-            if (item != null && item.getType() != Material.AIR) {
+            if (item != null && item.getType() != Material.AIR && item.hasItemMeta()) {
                 if (StoryUtils.isStoried(item)) {
                     e.setCancelled(true);
                     for (HumanEntity viewer : e.getInventory().getViewers()) {
@@ -81,7 +90,10 @@ public class MiscListener implements Listener {
     @EventHandler
     public void onTryCraft(AutoDisenchantEvent e) {
         final ItemStack itemStack = e.getItem();
-        if (itemStack.getType() != Material.AIR && StoryUtils.isStoried(itemStack)) {
+        if (itemStack.getType() != Material.AIR
+            && itemStack.hasItemMeta()
+            && StoryUtils.isStoried(itemStack)
+        ) {
             e.setCancelled(true);
         }
     }
@@ -89,7 +101,11 @@ public class MiscListener implements Listener {
     @EventHandler
     public void onPlaceCover(BlockPlaceEvent e) {
         ItemStack itemStack = e.getPlayer().getInventory().getItemInMainHand();
-        if (SlimefunItem.getByItem(itemStack) instanceof BlockVeil) {
+        // 材质门控：全部方块隐藏器（货运/能源/网络）材质均为 PAPER，
+        // 非 PAPER 免 getByItem 元数据查询
+        if (itemStack.getType() == Material.PAPER
+            && SlimefunItem.getByItem(itemStack) instanceof BlockVeil
+        ) {
             e.setCancelled(true);
         }
     }
