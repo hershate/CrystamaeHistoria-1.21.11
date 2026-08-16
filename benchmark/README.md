@@ -15,12 +15,11 @@ bash benchmark/run.sh benchmark/results/round-N.tsv [fork数，默认3]
 
 ## 基准清单
 
-（每轮基准源码覆盖前轮变体；历轮数据见 `results/`，服务器内基准见 `server-addon/`。当前为第 21 轮变体。）
+（每轮基准源码覆盖前轮变体；历轮数据见 `results/`，服务器内基准见 `server-addon/`。当前为第 22 轮变体。）
 
 | 基准 | 文件 | 测量内容 |
 |------|------|----------|
-| `compendium.spellSort` / `compendium.blockSort` | `BenchCompendiumSort.java` | 图鉴翻页列表排序：每次 asList+sort / 复制+sort（旧）vs 启动期预排序快照 subList（新）；String 键模型复现同形态 java.util 操作序列 |
-| `compendium.titleCase` | `BenchTitleCase.java` | 枚举名 Title Case：逐次 StringBuilder 重建（旧，TextUtils.toTitleCase verbatim 副本）vs EnumMap 查表（新） |
+| `stats.singleCheck` / `stats.pageCheck36` / `stats.countSpells69` / `stats.countStories274` | `BenchStatsRead.java` | 玩家统计读取（真实 YamlConfiguration，1 玩家 × 69 法术 × 274 故事）：全路径 getBoolean（旧）vs 页级子节单次解析 + 相对读取（新）；含逐键等价性与缺失语义断言 |
 
 ## 方法论边界（禁止误读）
 

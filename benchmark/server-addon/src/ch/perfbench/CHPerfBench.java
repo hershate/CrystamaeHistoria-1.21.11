@@ -85,7 +85,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound17(w),
                 () -> benchRound18(w),
                 () -> benchRound19(w),
-                () -> benchRound21(w)
+                () -> benchRound21(w),
+                () -> benchRound22(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -1777,6 +1778,107 @@ public final class CHPerfBench extends JavaPlugin {
         });
         // 防止 defs 未使用告警：引用一次
         bh += defs.length;
+    }
+
+    /** 第 22 轮：玩家统计读取路径（真实 PlayerStatistics 全路径方法 vs 相对子节重载） */
+    private void benchRound22(PrintWriter w) {
+        final UUID player = UUID.fromString("12345678-1234-1234-1234-123456789022");
+        final org.bukkit.configuration.file.FileConfiguration stats =
+            CrystamaeHistoria.getConfigManager().getPlayerStats();
+
+        // 注入合成数据（命中路径）：69 法术 2/3 解锁 + 274 故事 1/2 解锁、1/4 镀金
+        final SpellType[] enabled = SpellType.getEnabledSpells();
+        final java.util.List<Material> materials = new java.util.ArrayList<>(
+            CrystamaeHistoria.getStoriesManager().getBlockDefinitionMap().keySet());
+        for (int i = 0; i < enabled.length; i++) {
+            stats.set(player + ".SPELL." + enabled[i].getId() + ".UNLOCKED", i % 3 != 0);
+        }
+        for (int i = 0; i < materials.size(); i++) {
+            stats.set(player + ".STORY." + materials.get(i) + ".UNLOCKED", i % 2 == 0);
+            stats.set(player + ".STORY." + materials.get(i) + ".GILDED", i % 4 == 0);
+        }
+
+        try {
+            // ———— 等价性断言：全路径 vs 相对（逐法术逐材质） ————
+            final org.bukkit.configuration.ConfigurationSection spellSection =
+                io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getSpellStatSection(player);
+            final org.bukkit.configuration.ConfigurationSection storySection =
+                io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getStoryStatSection(player);
+            boolean equivSpell = true;
+            for (SpellType st : enabled) {
+                equivSpell &= io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.hasUnlockedSpell(player, st)
+                    == io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.hasUnlockedSpell(player, st, spellSection);
+            }
+            boolean equivStory = true;
+            for (Material m : materials) {
+                equivStory &= io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.hasUnlockedUniqueStory(player, m)
+                    == io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.hasUnlockedUniqueStory(player, m, storySection);
+                equivStory &= io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.hasUnlockedStoryGilded(player, m)
+                    == io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.hasUnlockedStoryGilded(player, m, storySection);
+            }
+            // 计数等价（相对读取实现 vs 全路径复刻）
+            int oldCount = 0;
+            for (String spell : stats.getConfigurationSection(player + ".SPELL").getKeys(false)) {
+                if (stats.getBoolean(player + ".SPELL." + spell + ".UNLOCKED")) oldCount++;
+            }
+            boolean equivCount = oldCount
+                == io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getSpellsUnlocked(player);
+            // 缺失玩家语义：两路径同为 false / 子节为 null
+            final UUID missing = UUID.fromString("99999999-9999-9999-9999-999999999999");
+            boolean equivMissing = !io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.hasUnlockedSpell(missing, SpellType.HEAL)
+                && io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getSpellStatSection(missing) == null
+                && !io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.hasUnlockedSpell(
+                    missing, SpellType.HEAL,
+                    io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getSpellStatSection(missing));
+            getLogger().info("round22 等价性: spell=" + equivSpell + " story=" + equivStory
+                + " count=" + equivCount + " missing=" + equivMissing);
+
+            // ———— 图鉴页 36 槽判定 ————
+            time(w, "stats.pageCheck36", "old_full_path_x36", 2_000, () -> {
+                for (int s = 0; s < 36; s++) {
+                    bh += io.github.sefiraat.crystamaehistoria.player.PlayerStatistics
+                        .hasUnlockedSpell(player, enabled[s]) ? 1 : 0;
+                }
+            });
+            time(w, "stats.pageCheck36", "new_section_once_relative_x36", 5_000, () -> {
+                final org.bukkit.configuration.ConfigurationSection section =
+                    io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getSpellStatSection(player);
+                for (int s = 0; s < 36; s++) {
+                    bh += io.github.sefiraat.crystamaehistoria.player.PlayerStatistics
+                        .hasUnlockedSpell(player, enabled[s], section) ? 1 : 0;
+                }
+            });
+
+            // ———— 解锁计数（新实现 vs 旧全路径复刻） ————
+            time(w, "stats.countSpells69", "old_full_path_rebuild", 5_000, () -> {
+                int c = 0;
+                final org.bukkit.configuration.ConfigurationSection section =
+                    stats.getConfigurationSection(player + ".SPELL");
+                for (String spell : section.getKeys(false)) {
+                    if (stats.getBoolean(player + ".SPELL." + spell + ".UNLOCKED")) c++;
+                }
+                bh += c;
+            });
+            time(w, "stats.countSpells69", "new_relative_read", 10_000, () -> {
+                bh += io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getSpellsUnlocked(player);
+            });
+
+            time(w, "stats.countStories274", "old_full_path_rebuild", 1_000, () -> {
+                int c = 0;
+                final org.bukkit.configuration.ConfigurationSection section =
+                    stats.getConfigurationSection(player + ".STORY");
+                for (String story : section.getKeys(false)) {
+                    if (stats.getBoolean(player + ".STORY." + story + ".UNLOCKED")) c++;
+                }
+                bh += c;
+            });
+            time(w, "stats.countStories274", "new_relative_read", 3_000, () -> {
+                bh += io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getStoriesUnlocked(player);
+            });
+        } finally {
+            // 清理合成数据（不留存；SaveConfigRunnable 周期落盘前已移除）
+            stats.set(player.toString(), null);
+        }
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
