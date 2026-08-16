@@ -1,0 +1,765 @@
+Starting org.bukkit.craftbukkit.Main
+2026-08-16T14:07:46.863921400Z ServerMain WARN Advanced terminal features are not available in this environment
+[22:07:47 INFO]: [bootstrap] Running Java 21 (Java HotSpot(TM) 64-Bit Server VM 21.0.10+8-LTS-217; Oracle Corporation null) on Windows 11 10.0 (amd64)
+[22:07:47 INFO]: [bootstrap] Loading Paper 1.21.11-132-ver/1.21.11@c5eb079 (2026-05-11T11:43:09Z) for Minecraft 1.21.11
+[22:07:47 WARN]: [oshi.driver.windows.perfmon.PerfmonDisabled] Invalid registry value type detected for PerfOS counters. Should be REG_DWORD. Ignoring: HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\PerfOS\Performance\Disable Performance Counters.
+[22:07:48 INFO]: [PluginInitializerManager] Initializing plugins...
+[22:07:48 INFO]: [PluginRemapper] Remapping plugin 'plugins\CHPerfBench.jar'...
+[22:07:48 INFO]: [PluginRemapper] Remapping plugin 'plugins\CrystamaeHistoria-0.4.0.jar'...
+[22:07:49 INFO]: [PluginRemapper] Done remapping plugin 'plugins\CHPerfBench.jar' in 549ms.
+[22:07:49 INFO]: [PluginRemapper] Done remapping plugin 'plugins\CrystamaeHistoria-0.4.0.jar' in 745ms.
+[22:07:49 INFO]: [PluginInitializerManager] Initialized 3 plugins
+[22:07:49 INFO]: [PluginInitializerManager] Bukkit plugins (3):
+ - CHPerfBench (1.0.0), CrystamaeHistoria (0.4.0), Slimefun (5.0.0)
+[22:07:56 INFO]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, profilesHost=https://api.mojang.com, name=PROD]
+[22:07:56 ERROR]: Failed to request yggdrasil public key
+com.mojang.authlib.exceptions.MinecraftClientException: Failed to read from https://api.minecraftservices.com/publickeys due to PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at com.mojang.authlib.minecraft.client.MinecraftClient.readInputStream(MinecraftClient.java:111) ~[authlib-7.0.61.jar:?]
+	at com.mojang.authlib.minecraft.client.MinecraftClient.get(MinecraftClient.java:56) ~[authlib-7.0.61.jar:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilServicesKeyInfo.fetch(YggdrasilServicesKeyInfo.java:114) ~[authlib-7.0.61.jar:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilServicesKeyInfo$1.run(YggdrasilServicesKeyInfo.java:89) ~[authlib-7.0.61.jar:?]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572) ~[?:?]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317) ~[?:?]
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:304) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[?:?]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[?:?]
+Caused by: javax.net.ssl.SSLHandshakeException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.ssl.Alert.createSSLException(Alert.java:130) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:383) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:326) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:321) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.checkServerCerts(CertificateMessage.java:1287) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.onConsumeCertificate(CertificateMessage.java:1164) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.consume(CertificateMessage.java:1107) ~[?:?]
+	at java.base/sun.security.ssl.SSLHandshake.consume(SSLHandshake.java:393) ~[?:?]
+	at java.base/sun.security.ssl.HandshakeContext.dispatch(HandshakeContext.java:477) ~[?:?]
+	at java.base/sun.security.ssl.HandshakeContext.dispatch(HandshakeContext.java:448) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.dispatch(TransportContext.java:206) ~[?:?]
+	at java.base/sun.security.ssl.SSLTransport.decode(SSLTransport.java:172) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.decode(SSLSocketImpl.java:1506) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.readHandshakeRecord(SSLSocketImpl.java:1421) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:455) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:426) ~[?:?]
+	at java.base/sun.net.www.protocol.https.HttpsClient.afterConnect(HttpsClient.java:586) ~[?:?]
+	at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(AbstractDelegateHttpsURLConnection.java:187) ~[?:?]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream0(HttpURLConnection.java:1691) ~[?:?]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1615) ~[?:?]
+	at java.base/java.net.HttpURLConnection.getResponseCode(HttpURLConnection.java:531) ~[?:?]
+	at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.getResponseCode(HttpsURLConnectionImpl.java:307) ~[?:?]
+	at com.mojang.authlib.minecraft.client.MinecraftClient.readInputStream(MinecraftClient.java:82) ~[authlib-7.0.61.jar:?]
+	... 9 more
+Caused by: sun.security.validator.ValidatorException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.validator.PKIXValidator.doBuild(PKIXValidator.java:388) ~[?:?]
+	at java.base/sun.security.validator.PKIXValidator.engineValidate(PKIXValidator.java:271) ~[?:?]
+	at java.base/sun.security.validator.Validator.validate(Validator.java:256) ~[?:?]
+	at java.base/sun.security.ssl.X509TrustManagerImpl.checkTrusted(X509TrustManagerImpl.java:230) ~[?:?]
+	at java.base/sun.security.ssl.X509TrustManagerImpl.checkServerTrusted(X509TrustManagerImpl.java:132) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.checkServerCerts(CertificateMessage.java:1271) ~[?:?]
+	... 27 more
+Caused by: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.provider.certpath.SunCertPathBuilder.build(SunCertPathBuilder.java:148) ~[?:?]
+	at java.base/sun.security.provider.certpath.SunCertPathBuilder.engineBuild(SunCertPathBuilder.java:129) ~[?:?]
+	at java.base/java.security.cert.CertPathBuilder.build(CertPathBuilder.java:297) ~[?:?]
+	at java.base/sun.security.validator.PKIXValidator.doBuild(PKIXValidator.java:383) ~[?:?]
+	... 32 more
+[22:07:58 INFO]: Loaded 1470 recipes
+[22:07:58 INFO]: Loaded 1584 advancements
+[22:07:58 INFO]: [ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry] Initialising converters for DataConverter...
+[22:07:59 INFO]: [ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry] Finished initialising converters for DataConverter in 505.4ms
+[22:07:59 INFO]: Starting minecraft server version 1.21.11
+[22:07:59 INFO]: Loading properties
+[22:07:59 INFO]: This server is running Paper version 1.21.11-132-ver/1.21.11@c5eb079 (2026-05-11T11:43:09Z) (Implementing API version 1.21.11-R0.1-SNAPSHOT)
+[22:07:59 INFO]: [spark] This server bundles the spark profiler. For more information please visit https://docs.papermc.io/paper/profiling
+[22:07:59 INFO]: Server Ping Player Sample Count: 12
+[22:07:59 INFO]: Using 4 threads for Netty based IO
+[22:08:00 INFO]: [MoonriseCommon] Paper is using 8 worker threads, 1 I/O threads
+[22:08:00 INFO]: Default game type: SURVIVAL
+[22:08:00 INFO]: Generating keypair
+[22:08:00 INFO]: Starting Minecraft server on *:25565
+[22:08:00 INFO]: Paper: Using Java compression from Velocity.
+[22:08:00 INFO]: Paper: Using Java cipher from Velocity.
+[22:08:01 INFO]: [Slimefun] Loading server plugin Slimefun v5.0.0
+[22:08:01 INFO]: [CrystamaeHistoria] Loading server plugin CrystamaeHistoria v0.4.0
+[22:08:01 INFO]: [CHPerfBench] Loading server plugin CHPerfBench v1.0.0
+[22:08:01 INFO]: Server permissions file permissions.yml is empty, ignoring it
+[22:08:01 WARN]: **** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!
+[22:08:01 WARN]: The server will make no attempt to authenticate usernames. Beware.
+[22:08:01 WARN]: While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.
+[22:08:01 WARN]: To change this, set "online-mode" to "true" in the server.properties file.
+[22:08:01 INFO]: Preparing level "world"
+[22:08:01 INFO]: Loading 0 persistent chunks for world 'minecraft:overworld'...
+[22:08:01 INFO]: Preparing spawn area: 100%
+[22:08:01 INFO]: Prepared spawn area in 3 ms
+[22:08:01 INFO]: Loading 0 persistent chunks for world 'minecraft:the_nether'...
+[22:08:01 INFO]: Prepared spawn area in 14 ms
+[22:08:01 INFO]: Loading 0 persistent chunks for world 'minecraft:the_end'...
+[22:08:01 INFO]: Prepared spawn area in 14 ms
+[22:08:01 INFO]: Done preparing level "world" (0.791s)
+[22:08:01 INFO]: [Slimefun] Enabling Slimefun v5.0.0
+[22:08:01 INFO]: [Slimefun] Paper was detected! Performance optimizations have been applied.
+[22:08:01 INFO]: [Slimefun] Creating directories...
+[22:08:01 INFO]: [Slimefun] Loading language files...
+[22:08:02 INFO]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, profilesHost=https://api.mojang.com, name=PROD]
+[22:08:02 ERROR]: Failed to request yggdrasil public key
+com.mojang.authlib.exceptions.MinecraftClientException: Failed to read from https://api.minecraftservices.com/publickeys due to PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at com.mojang.authlib.minecraft.client.MinecraftClient.readInputStream(MinecraftClient.java:111) ~[authlib-7.0.61.jar:?]
+	at com.mojang.authlib.minecraft.client.MinecraftClient.get(MinecraftClient.java:56) ~[authlib-7.0.61.jar:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilServicesKeyInfo.fetch(YggdrasilServicesKeyInfo.java:114) ~[authlib-7.0.61.jar:?]
+	at com.mojang.authlib.yggdrasil.YggdrasilServicesKeyInfo$1.run(YggdrasilServicesKeyInfo.java:89) ~[authlib-7.0.61.jar:?]
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572) ~[?:?]
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317) ~[?:?]
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:304) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[?:?]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[?:?]
+Caused by: javax.net.ssl.SSLHandshakeException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.ssl.Alert.createSSLException(Alert.java:130) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:383) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:326) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:321) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.checkServerCerts(CertificateMessage.java:1287) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.onConsumeCertificate(CertificateMessage.java:1164) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.consume(CertificateMessage.java:1107) ~[?:?]
+	at java.base/sun.security.ssl.SSLHandshake.consume(SSLHandshake.java:393) ~[?:?]
+	at java.base/sun.security.ssl.HandshakeContext.dispatch(HandshakeContext.java:477) ~[?:?]
+	at java.base/sun.security.ssl.HandshakeContext.dispatch(HandshakeContext.java:448) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.dispatch(TransportContext.java:206) ~[?:?]
+	at java.base/sun.security.ssl.SSLTransport.decode(SSLTransport.java:172) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.decode(SSLSocketImpl.java:1506) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.readHandshakeRecord(SSLSocketImpl.java:1421) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:455) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:426) ~[?:?]
+	at java.base/sun.net.www.protocol.https.HttpsClient.afterConnect(HttpsClient.java:586) ~[?:?]
+	at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(AbstractDelegateHttpsURLConnection.java:187) ~[?:?]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream0(HttpURLConnection.java:1691) ~[?:?]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1615) ~[?:?]
+	at java.base/java.net.HttpURLConnection.getResponseCode(HttpURLConnection.java:531) ~[?:?]
+	at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.getResponseCode(HttpsURLConnectionImpl.java:307) ~[?:?]
+	at com.mojang.authlib.minecraft.client.MinecraftClient.readInputStream(MinecraftClient.java:82) ~[authlib-7.0.61.jar:?]
+	... 9 more
+Caused by: sun.security.validator.ValidatorException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.validator.PKIXValidator.doBuild(PKIXValidator.java:388) ~[?:?]
+	at java.base/sun.security.validator.PKIXValidator.engineValidate(PKIXValidator.java:271) ~[?:?]
+	at java.base/sun.security.validator.Validator.validate(Validator.java:256) ~[?:?]
+	at java.base/sun.security.ssl.X509TrustManagerImpl.checkTrusted(X509TrustManagerImpl.java:230) ~[?:?]
+	at java.base/sun.security.ssl.X509TrustManagerImpl.checkServerTrusted(X509TrustManagerImpl.java:132) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.checkServerCerts(CertificateMessage.java:1271) ~[?:?]
+	... 27 more
+Caused by: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.provider.certpath.SunCertPathBuilder.build(SunCertPathBuilder.java:148) ~[?:?]
+	at java.base/sun.security.provider.certpath.SunCertPathBuilder.engineBuild(SunCertPathBuilder.java:129) ~[?:?]
+	at java.base/java.security.cert.CertPathBuilder.build(CertPathBuilder.java:297) ~[?:?]
+	at java.base/sun.security.validator.PKIXValidator.doBuild(PKIXValidator.java:383) ~[?:?]
+	... 32 more
+[22:08:02 INFO]: [Slimefun] Loaded language "en"
+[22:08:02 INFO]: [Slimefun] Available languages: en, de, fr, it, es, ru, pl, uk, sv, nl, da, cs, ro, bg, pt, pt-BR, hu, lv, sk, vi, id, zh-CN, zh-TW, ja, ko, he, ar, tr, fa, th, tl
+[22:08:02 INFO]: [Slimefun] Using legacy storage for player data
+[22:08:02 INFO]: [Slimefun] Loading GEO-Resources...
+[22:08:02 INFO]: [Slimefun] Loading Tags...
+[22:08:02 INFO]: [Slimefun] Loading items...
+[22:08:04 INFO]: [Slimefun] Loading researches...
+[22:08:04 INFO]: [Slimefun] Loading Wiki pages...
+[22:08:04 INFO]: [Slimefun] Registering listeners...
+[22:08:04 INFO]: [Slimefun] Loading Third-Party plugin integrations...
+[22:08:04 INFO]: [Slimefun] Slimefun has finished loading in 2.44s
+[22:08:04 INFO]: [CrystamaeHistoria] Enabling CrystamaeHistoria v0.4.0
+[22:08:04 INFO]: [CrystamaeHistoria] ########################################
+[22:08:04 INFO]: [CrystamaeHistoria]      CrystamaeHistoria  Ä§·¨Ë®¾§±àÄêÊ·    
+[22:08:04 INFO]: [CrystamaeHistoria] ########################################
+[22:08:04 INFO]: [CrystamaeHistoria] ÒÑ¼ÓÔØ: 995 ¸ö¶ÀÌØµÄ·½¿é¹ÊÊÂ.
+[22:08:04 INFO]: [CrystamaeHistoria] Æô¶¯½×¶ÎºÄÊ±: ÅäÖÃ¼ÓÔØ 181.3ms | ¹ÊÊÂÓò¹¹½¨ 39.7ms | ¹ÜÀíÆ÷ 111.4ms | ·¨ÊõÅäÖÃ 64.9ms | ÎïÆ·×¢²á 234.7ms | ÃüÁî 1.60ms | ºÏ¼Æ 633.5ms
+[22:08:04 INFO]: [CHPerfBench] Enabling CHPerfBench v1.0.0
+[22:08:05 INFO]: [spark] Starting background profiler...
+[22:08:05 INFO]: [spark] The async-profiler engine is not supported for your os/arch (windows11/amd64), so the built-in Java engine will be used instead.
+[22:08:05 INFO]: Running delayed init tasks
+[22:08:05 INFO]: [Slimefun] Collecting Snapshots of all Recipes...
+[22:08:05 INFO]: [Slimefun] Found 1,470 Recipes!
+[22:08:05 INFO]: 
+[22:08:05 INFO]: [38;5;10m######################### - Slimefun v5.0.0 - #########################[0m
+[22:08:05 INFO]: 
+[22:08:05 INFO]: [38;5;10mSuccessfully loaded 829 Items and 258 Researches[0m
+[22:08:05 INFO]: [38;5;10m( 555 Items from Slimefun, 274 Items from 2 Addons )[0m
+[22:08:05 INFO]: 
+[22:08:05 INFO]: [38;5;10mSlimefun is an Open-Source project that is kept alive by a large community.[0m
+[22:08:05 INFO]: [38;5;10mConsider helping us maintain this project by contributing on GitHub![0m
+[22:08:05 INFO]: [38;5;10m - UNOFFICIALLY MODIFIED BUILD - NO OFFICIAL SUPPORT GIVEN[0m
+[22:08:05 INFO]: 
+[22:08:05 INFO]: [Slimefun] Loading Blocks for World "world"
+[22:08:05 INFO]: [Slimefun] This may take a long time...
+[22:08:05 INFO]: [Slimefun] Loading Blocks... 100% (FINISHED - 1ms)
+[22:08:05 INFO]: [Slimefun] Loaded a total of 0 Blocks for World "world"
+[22:08:05 INFO]: [Slimefun] Loading Blocks for World "world_nether"
+[22:08:05 INFO]: [Slimefun] This may take a long time...
+[22:08:05 INFO]: [Slimefun] Loading Blocks... 100% (FINISHED - 0ms)
+[22:08:05 INFO]: [Slimefun] Loaded a total of 0 Blocks for World "world_nether"
+[22:08:05 INFO]: [Slimefun] Loading Blocks for World "world_the_end"
+[22:08:05 INFO]: [Slimefun] This may take a long time...
+[22:08:05 INFO]: [Slimefun] Loading Blocks... 100% (FINISHED - 0ms)
+[22:08:05 INFO]: [Slimefun] Loaded a total of 0 Blocks for World "world_the_end"
+[22:08:05 INFO]: [dough: protection] Loading Protection Modules...
+[22:08:05 INFO]: [dough: protection] This may happen more than once.
+[22:08:05 INFO]: [CrystamaeHistoria] ÕýÔÚ±£´æÄ§·¨Ë®¾§±àÄêÊ·µÄÊý¾Ý
+[22:08:05 INFO]: Done (19.672s)! For help, type "help"
+[22:08:08 WARN]: *************************************************************************************
+[22:08:08 WARN]: You are running the latest build for your Minecraft version (1.21.11)
+[22:08:08 WARN]: However, you are 4 release(s) behind the latest stable release (26.2)!
+[22:08:08 WARN]: It is recommended that you update as soon as possible
+[22:08:08 WARN]: https://papermc.io/downloads/paper
+[22:08:08 WARN]: *************************************************************************************
+[22:08:11 INFO]: [CHPerfBench] raycast50.miss/old_exact_plus_face: 141.18 ns/op
+[22:08:11 INFO]: [CHPerfBench] raycast50.miss/new_single_raytrace: 108.30 ns/op
+[22:08:11 INFO]: [CHPerfBench] hit ³¡¾°Ç½±Ú¿É¼û: false
+[22:08:12 INFO]: [CHPerfBench] raycast50.hit5/old_exact_plus_face: 496.90 ns/op
+[22:08:12 INFO]: [CHPerfBench] raycast50.hit5/new_single_raytrace: 228.08 ns/op
+[22:08:12 INFO]: [CHPerfBench] stavePdc.deserialize/full_meta_plus_pdc: 6100.62 ns/op
+[22:08:13 INFO]: [CHPerfBench] interactRightClick.cooldownCheck/old_pdc_read: 89.07 ns/op
+[22:08:13 INFO]: [CHPerfBench] interactRightClick.cooldownCheck/new_material_gate: 5.83 ns/op
+[22:08:13 INFO]: [CHPerfBench] interactAny.scoopCheck/old_getByItem_plain: 16.14 ns/op
+[22:08:14 INFO]: [CHPerfBench] interactAny.scoopCheck/new_material_gate: 6.48 ns/op
+[22:08:14 INFO]: [CHPerfBench] staveSuccess.metaWriteBack/old_two_round_trips: 30751.95 ns/op
+[22:08:15 INFO]: [CHPerfBench] staveSuccess.metaWriteBack/new_single_round_trip: 20341.80 ns/op
+[22:08:15 INFO]: [CHPerfBench] machineTick.steadyStoryCheck/old_itemstack_args: 3037.76 ns/op
+[22:08:16 INFO]: [CHPerfBench] machineTick.steadyStoryCheck/new_single_meta: 1603.56 ns/op
+[22:08:16 INFO]: [CHPerfBench] machineTick.jsonLimitsParse/getMaxStoryAmount: 1356.62 ns/op
+[22:08:16 INFO]: [CHPerfBench] machineTick.pickupLocCompute/old_clone_add: 2.65 ns/op
+[22:08:17 INFO]: [CHPerfBench] machineTick.pickupLocCompute/new_cached_field: 3.89 ns/op
+[22:08:17 INFO]: [CHPerfBench] machineTick.fullWorking/round3_itemstack_args: 3243.05 ns/op
+[22:08:17 INFO]: [CHPerfBench] machineTick.fullWorking/round4_single_meta_partial: 4014.80 ns/op
+[22:08:18 INFO]: [CHPerfBench] machineTick.fullWorking/round5_memo_hit: 3.11 ns/op
+[22:08:18 INFO]: [CHPerfBench] staveCast.precheckReads/old_full_deserialize: 3995.05 ns/op
+[22:08:19 INFO]: [CHPerfBench] staveCast.precheckReads/new_slot_only_read: 3195.74 ns/op
+[22:08:19 INFO]: [CHPerfBench] staveCast.successReads/old_full_once: 4245.75 ns/op
+[22:08:19 INFO]: [CHPerfBench] staveCast.successReads/new_shared_meta_reads: 5527.50 ns/op
+[22:08:20 INFO]: [CHPerfBench] gadgetTick.mobFanPrefix/old_bs_string_parse: 97.18 ns/op
+[22:08:20 INFO]: [CHPerfBench] gadgetTick.mobFanPrefix/new_map_lookup: 56.89 ns/op
+[22:08:20 INFO]: [CHPerfBench] gadgetTick.materialPick/old_toArray_copy: 37.76 ns/op
+[22:08:21 INFO]: [CHPerfBench] gadgetTick.materialPick/new_cached_array: 6.44 ns/op
+[22:08:21 INFO]: [CHPerfBench] gadgetTick.locationPattern/old_multi_alloc: 30.94 ns/op
+[22:08:21 INFO]: [CHPerfBench] gadgetTick.locationPattern/new_single_alloc: 11.69 ns/op
+[22:08:22 INFO]: [CHPerfBench] storyPick.byType/old_stream_filter: 128.38 ns/op
+[22:08:22 INFO]: [CHPerfBench] storyPick.byType/new_index_lookup: 6.40 ns/op
+[22:08:30 INFO]: [CHPerfBench] configParse.blocksYml/old_double_parse: 80326195.00 ns/op
+[22:08:31 ERROR]: --- DO NOT REPORT THIS TO PAPER - THIS IS NOT A BUG OR A CRASH  - 1.21.11-132-c5eb079 (MC: 1.21.11) ---
+[22:08:31 ERROR]: The server has not responded for 10 seconds! Creating thread dump
+[22:08:31 ERROR]: ------------------------------
+[22:08:31 ERROR]: Server thread dump (Look for plugins here before reporting to Paper!):
+[22:08:31 ERROR]: ------------------------------
+[22:08:31 ERROR]: Current Thread: Server thread
+[22:08:31 ERROR]: 	PID: 81 | Suspended: false | Native: false | State: RUNNABLE
+[22:08:31 ERROR]: 	Stack:
+[22:08:31 ERROR]: 		java.base@21.0.10/java.util.regex.Pattern$Branch.match(Pattern.java:4914)
+[22:08:31 ERROR]: 		java.base@21.0.10/java.util.regex.Pattern$GroupHead.match(Pattern.java:4969)
+[22:08:31 ERROR]: 		java.base@21.0.10/java.util.regex.Pattern$Begin.match(Pattern.java:3851)
+[22:08:31 ERROR]: 		java.base@21.0.10/java.util.regex.Matcher.match(Matcher.java:1794)
+[22:08:31 ERROR]: 		java.base@21.0.10/java.util.regex.Matcher.matches(Matcher.java:754)
+[22:08:31 ERROR]: 		org.yaml.snakeyaml.resolver.Resolver.resolve(Resolver.java:133)
+[22:08:31 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeScalarNode(Composer.java:223)
+[22:08:31 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeNode(Composer.java:205)
+[22:08:31 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeKeyNode(Composer.java:359)
+[22:08:31 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeMappingChildren(Composer.java:344)
+[22:08:31 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeMappingNode(Composer.java:323)
+[22:08:31 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeNode(Composer.java:209)
+[22:08:31 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeValueNode(Composer.java:369)
+[22:08:31 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeMappingChildren(Composer.java:348)
+[22:08:31 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeMappingNode(Composer.java:323)
+[22:08:31 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeNode(Composer.java:209)
+[22:08:31 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeValueNode(Composer.java:369)
+[22:08:31 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeMappingChildren(Composer.java:348)
+[22:08:31 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeMappingNode(Composer.java:323)
+[22:08:31 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeNode(Composer.java:209)
+[22:08:31 ERROR]: 		org.yaml.snakeyaml.composer.Composer.getNode(Composer.java:131)
+[22:08:31 ERROR]: 		org.yaml.snakeyaml.composer.Composer.getSingleNode(Composer.java:157)
+[22:08:31 ERROR]: 		org.yaml.snakeyaml.Yaml.compose(Yaml.java:575)
+[22:08:31 ERROR]: 		org.bukkit.configuration.file.YamlConfiguration.loadFromString(YamlConfiguration.java:105)
+[22:08:31 ERROR]: 		org.bukkit.configuration.file.FileConfiguration.load(FileConfiguration.java:160)
+[22:08:31 ERROR]: 		org.bukkit.configuration.file.FileConfiguration.load(FileConfiguration.java:128)
+[22:08:31 ERROR]: 		org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(YamlConfiguration.java:310)
+[22:08:31 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.lambda$benchStoryPick$56(CHPerfBench.java:439)
+[22:08:31 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench$$Lambda/0x00000165b69076a0.run(Unknown Source)
+[22:08:31 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.time(CHPerfBench.java:888)
+[22:08:31 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.benchStoryPick(CHPerfBench.java:436)
+[22:08:31 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.lambda$runBenchmarks$7(CHPerfBench.java:77)
+[22:08:31 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench$$Lambda/0x00000165b6481c90.run(Unknown Source)
+[22:08:31 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.chainSteps(CHPerfBench.java:107)
+[22:08:31 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.lambda$chainSteps$22(CHPerfBench.java:113)
+[22:08:31 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench$$Lambda/0x00000165b68cd648.run(Unknown Source)
+[22:08:31 ERROR]: 		org.bukkit.craftbukkit.scheduler.CraftTask.run(CraftTask.java:78)
+[22:08:31 ERROR]: 		org.bukkit.craftbukkit.scheduler.CraftScheduler.mainThreadHeartbeat(CraftScheduler.java:474)
+[22:08:31 ERROR]: 		net.minecraft.server.MinecraftServer.tickChildren(MinecraftServer.java:1756)
+[22:08:31 ERROR]: 		net.minecraft.server.MinecraftServer.tickServer(MinecraftServer.java:1611)
+[22:08:31 ERROR]: 		net.minecraft.server.dedicated.DedicatedServer.tickServer(DedicatedServer.java:427)
+[22:08:31 ERROR]: 		net.minecraft.server.MinecraftServer.processPacketsAndTick(MinecraftServer.java:1667)
+[22:08:31 ERROR]: 		net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:1335)
+[22:08:31 ERROR]: 		net.minecraft.server.MinecraftServer.lambda$spin$2(MinecraftServer.java:388)
+[22:08:31 ERROR]: 		net.minecraft.server.MinecraftServer$$Lambda/0x00000165b5f8a400.run(Unknown Source)
+[22:08:31 ERROR]: 		java.base@21.0.10/java.lang.Thread.runWith(Thread.java:1596)
+[22:08:31 ERROR]: 		java.base@21.0.10/java.lang.Thread.run(Thread.java:1583)
+[22:08:31 ERROR]: ------------------------------
+[22:08:31 ERROR]: --- DO NOT REPORT THIS TO PAPER - THIS IS NOT A BUG OR A CRASH ---
+[22:08:31 ERROR]: ------------------------------
+[22:08:36 ERROR]: --- DO NOT REPORT THIS TO PAPER - THIS IS NOT A BUG OR A CRASH  - 1.21.11-132-c5eb079 (MC: 1.21.11) ---
+[22:08:36 ERROR]: The server has not responded for 15 seconds! Creating thread dump
+[22:08:36 ERROR]: ------------------------------
+[22:08:36 ERROR]: Server thread dump (Look for plugins here before reporting to Paper!):
+[22:08:36 ERROR]: ------------------------------
+[22:08:36 ERROR]: Current Thread: Server thread
+[22:08:36 ERROR]: 	PID: 81 | Suspended: false | Native: false | State: RUNNABLE
+[22:08:36 ERROR]: 	Stack:
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.scanner.ScannerImpl.atEndOfPlain(ScannerImpl.java:2085)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.scanner.ScannerImpl.scanPlainSpaces(ScannerImpl.java:2132)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.scanner.ScannerImpl.scanPlain(ScannerImpl.java:2062)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.scanner.ScannerImpl.fetchPlain(ScannerImpl.java:1074)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.scanner.ScannerImpl.fetchMoreTokens(ScannerImpl.java:432)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.scanner.ScannerImpl.checkToken(ScannerImpl.java:238)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.parser.ParserImpl$ParseIndentlessSequenceEntryValue.produce(ParserImpl.java:610)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.parser.ParserImpl$ParseIndentlessSequenceEntryKey.produce(ParserImpl.java:592)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.parser.ParserImpl.peekEvent(ParserImpl.java:161)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.parser.ParserImpl.checkEvent(ParserImpl.java:152)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeSequenceNode(Composer.java:272)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeNode(Composer.java:207)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeValueNode(Composer.java:369)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeMappingChildren(Composer.java:348)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeMappingNode(Composer.java:323)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeNode(Composer.java:209)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeValueNode(Composer.java:369)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeMappingChildren(Composer.java:348)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeMappingNode(Composer.java:323)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeNode(Composer.java:209)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeValueNode(Composer.java:369)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeMappingChildren(Composer.java:348)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeMappingNode(Composer.java:323)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.composer.Composer.composeNode(Composer.java:209)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.composer.Composer.getNode(Composer.java:131)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.composer.Composer.getSingleNode(Composer.java:157)
+[22:08:36 ERROR]: 		org.yaml.snakeyaml.Yaml.compose(Yaml.java:575)
+[22:08:36 ERROR]: 		org.bukkit.configuration.file.YamlConfiguration.loadFromString(YamlConfiguration.java:105)
+[22:08:36 ERROR]: 		org.bukkit.configuration.file.FileConfiguration.load(FileConfiguration.java:160)
+[22:08:36 ERROR]: 		org.bukkit.configuration.file.FileConfiguration.load(FileConfiguration.java:128)
+[22:08:36 ERROR]: 		org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(YamlConfiguration.java:310)
+[22:08:36 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.lambda$benchStoryPick$56(CHPerfBench.java:439)
+[22:08:36 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench$$Lambda/0x00000165b69076a0.run(Unknown Source)
+[22:08:36 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.time(CHPerfBench.java:888)
+[22:08:36 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.benchStoryPick(CHPerfBench.java:436)
+[22:08:36 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.lambda$runBenchmarks$7(CHPerfBench.java:77)
+[22:08:36 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench$$Lambda/0x00000165b6481c90.run(Unknown Source)
+[22:08:36 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.chainSteps(CHPerfBench.java:107)
+[22:08:36 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.lambda$chainSteps$22(CHPerfBench.java:113)
+[22:08:36 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench$$Lambda/0x00000165b68cd648.run(Unknown Source)
+[22:08:36 ERROR]: 		org.bukkit.craftbukkit.scheduler.CraftTask.run(CraftTask.java:78)
+[22:08:36 ERROR]: 		org.bukkit.craftbukkit.scheduler.CraftScheduler.mainThreadHeartbeat(CraftScheduler.java:474)
+[22:08:36 ERROR]: 		net.minecraft.server.MinecraftServer.tickChildren(MinecraftServer.java:1756)
+[22:08:36 ERROR]: 		net.minecraft.server.MinecraftServer.tickServer(MinecraftServer.java:1611)
+[22:08:36 ERROR]: 		net.minecraft.server.dedicated.DedicatedServer.tickServer(DedicatedServer.java:427)
+[22:08:36 ERROR]: 		net.minecraft.server.MinecraftServer.processPacketsAndTick(MinecraftServer.java:1667)
+[22:08:36 ERROR]: 		net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:1335)
+[22:08:36 ERROR]: 		net.minecraft.server.MinecraftServer.lambda$spin$2(MinecraftServer.java:388)
+[22:08:36 ERROR]: 		net.minecraft.server.MinecraftServer$$Lambda/0x00000165b5f8a400.run(Unknown Source)
+[22:08:36 ERROR]: 		java.base@21.0.10/java.lang.Thread.runWith(Thread.java:1596)
+[22:08:36 ERROR]: 		java.base@21.0.10/java.lang.Thread.run(Thread.java:1583)
+[22:08:36 ERROR]: ------------------------------
+[22:08:36 ERROR]: --- DO NOT REPORT THIS TO PAPER - THIS IS NOT A BUG OR A CRASH ---
+[22:08:36 ERROR]: ------------------------------
+[22:08:39 INFO]: [CHPerfBench] configParse.blocksYml/new_single_parse: 39483207.50 ns/op
+[22:08:39 INFO]: [CHPerfBench] statsPath.build/old_messageformat: 384.62 ns/op
+[22:08:40 INFO]: [CHPerfBench] statsPath.build/new_concat: 34.59 ns/op
+[22:08:40 INFO]: [CHPerfBench] eventPath.projectileReverse/old_stream_empty: 86.53 ns/op
+[22:08:41 INFO]: [CHPerfBench] eventPath.projectileReverse/new_index_empty: 5.09 ns/op
+[22:08:41 INFO]: [CHPerfBench] eventPath.projectileReverse/old_stream_8entries_miss: 260.59 ns/op
+[22:08:42 INFO]: [CHPerfBench] eventPath.projectileReverse/new_index_8entries_miss: 6.96 ns/op
+[22:08:42 INFO]: [CHPerfBench] eventPath.fallingBlockReverse/old_stream_empty: 74.18 ns/op
+[22:08:42 INFO]: [CHPerfBench] eventPath.fallingBlockReverse/new_index_empty: 4.62 ns/op
+[22:08:43 INFO]: [CHPerfBench] eventPath.invulnCheck/old_pdc_read: 23.93 ns/op
+[22:08:43 INFO]: [CHPerfBench] eventPath.invulnCheck/new_map_lookup: 4.55 ns/op
+[22:08:44 INFO]: [CHPerfBench] eventPath.invulnWrite/old_pdc_write: 65.11 ns/op
+[22:08:44 INFO]: [CHPerfBench] eventPath.invulnWrite/new_map_write: 14.88 ns/op
+[22:08:45 INFO]: [CHPerfBench] eventPath.summonGate/old_pdc_read: 24.21 ns/op
+[22:08:45 INFO]: [CHPerfBench] eventPath.summonGate/new_typegate_skeleton: 4.76 ns/op
+[22:08:45 INFO]: [CHPerfBench] eventPath.summonGate/new_typegate_zombie_plus_pdc: 13.99 ns/op
+[22:08:46 INFO]: [CHPerfBench] basinTick.syncBlockWrite/old_unconditional_9keys: 1547.83 ns/op
+[22:08:46 INFO]: [CHPerfBench] basinTick.syncBlockWrite/new_dirty_flag_skip: 4.04 ns/op
+[22:08:47 INFO]: [CHPerfBench] basinCatalyst.top3Pick/old_double_stream_sort: 854.40 ns/op
+[22:08:48 INFO]: [CHPerfBench] basinCatalyst.top3Pick/new_single_pass: 113.54 ns/op
+[22:08:48 INFO]: [CHPerfBench] round11 missSet=[ELEMENTAL, MECHANICAL, HUMAN] recipes=69
+[22:08:48 INFO]: [CHPerfBench] basinCatalyst.recipeMatch/old_linear_miss: 1685.97 ns/op
+[22:08:49 INFO]: [CHPerfBench] basinCatalyst.recipeMatch/new_index_miss: 9.47 ns/op
+[22:08:49 INFO]: [CHPerfBench] basinCatalyst.recipeMatch/old_linear_hit_heal: 753.79 ns/op
+[22:08:50 INFO]: [CHPerfBench] basinCatalyst.recipeMatch/new_index_hit_heal: 23.62 ns/op
+[22:08:51 INFO]: [CHPerfBench] basinTick.particleSetup/old_alloc_per_tick: 9.28 ns/op
+[22:08:51 INFO]: [CHPerfBench] basinTick.particleSetup/new_cached_fields: 5.49 ns/op
+[22:08:54 INFO]: [CHPerfBench] startup.configSave/old_unconditional_save: 40565609.90 ns/op
+[22:08:57 INFO]: [CHPerfBench] startup.configSave/new_presence_check_skip: 3209263.00 ns/op
+[22:08:58 INFO]: [CHPerfBench] startup.spellsFirstBoot/old_save_per_key: 52992767.00 ns/op
+[22:08:59 INFO]: [CHPerfBench] startup.spellsFirstBoot/new_single_save: 1068437.99 ns/op
+[22:08:59 INFO]: [CHPerfBench] startup.storyShardsRead/old_double_read: 145.53 ns/op
+[22:09:00 INFO]: [CHPerfBench] startup.storyShardsRead/new_single_read: 56.29 ns/op
+[22:09:00 INFO]: [CHPerfBench] eventPath.storiedPlaceCheck/old_meta_clone_pdc: 52.83 ns/op
+[22:09:01 INFO]: [CHPerfBench] eventPath.storiedPlaceCheck/new_hasItemMeta_gate: 8.55 ns/op
+[22:09:01 INFO]: [CHPerfBench] round13 µÈ¼ÛÐÔ(ÖØÃüÃûÊ¯Í·): old=false new=false hasMeta=true
+[22:09:01 INFO]: [CHPerfBench] round13 µÈ¼ÛÐÔ(¹ÊÊÂÊ¯Í·): old=true new=true hasMeta=true
+[22:09:01 INFO]: [CHPerfBench] eventPath.placeCoverCheck/old_getByItem: 14.87 ns/op
+[22:09:02 INFO]: [CHPerfBench] eventPath.placeCoverCheck/new_material_gate: 7.43 ns/op
+[22:09:02 INFO]: [CHPerfBench] eventPath.mobCandleSpawnScan/old_iterator_alloc: 5.27 ns/op
+[22:09:02 INFO]: [CHPerfBench] eventPath.mobCandleSpawnScan/new_isEmpty_guard: 3.01 ns/op
+[22:09:02 INFO]: [CHPerfBench] round15 µÈ¼ÛÐÔ(A ³£¹æÌá½»): true
+[22:09:02 INFO]: [CHPerfBench] round15 µÈ¼ÛÐÔ(B ÖÕ¸ñ¶ÀÌØÌá½»): true
+[22:09:02 INFO]: [CHPerfBench] round15 µÈ¼ÛÐÔ(C ÌáÈ¡): true
+[22:09:02 INFO]: [CHPerfBench] round15 µÈ¼ÛÐÔ(D ·¨ÕÈ lore): true
+[22:09:03 INFO]: [CHPerfBench] writePath.storyCommit/old_chain_8clones: 57475.00 ns/op (resettable)
+[22:09:03 INFO]: [CHPerfBench] writePath.storyCommit/new_single_roundtrip: 36950.25 ns/op (resettable)
+[22:09:03 INFO]: [CHPerfBench] writePath.storyCommitUnique/old_chain_10clones: 99424.75 ns/op (resettable)
+[22:09:03 INFO]: [CHPerfBench] writePath.storyCommitUnique/new_single_roundtrip: 68650.00 ns/op (resettable)
+[22:09:04 INFO]: [CHPerfBench] writePath.storyExtract/old_chain_7clones: 33774.75 ns/op (resettable)
+[22:09:04 INFO]: [CHPerfBench] writePath.storyExtract/new_single_roundtrip: 26650.25 ns/op (resettable)
+[22:09:05 INFO]: [CHPerfBench] writePath.statsIncrement/old_double_path_build: 532.99 ns/op
+[22:09:06 INFO]: [CHPerfBench] writePath.statsIncrement/new_single_path: 468.72 ns/op
+[22:09:10 INFO]: [CHPerfBench] writePath.staveLoreRebuild/old_dynamic_strings: 23275.29 ns/op
+[22:09:12 ERROR]: --- DO NOT REPORT THIS TO PAPER - THIS IS NOT A BUG OR A CRASH  - 1.21.11-132-c5eb079 (MC: 1.21.11) ---
+[22:09:12 ERROR]: The server has not responded for 10 seconds! Creating thread dump
+[22:09:12 ERROR]: ------------------------------
+[22:09:12 ERROR]: Server thread dump (Look for plugins here before reporting to Paper!):
+[22:09:12 ERROR]: ------------------------------
+[22:09:12 ERROR]: Current Thread: Server thread
+[22:09:12 ERROR]: 	PID: 81 | Suspended: false | Native: false | State: RUNNABLE
+[22:09:12 ERROR]: 	Stack:
+[22:09:12 ERROR]: 		net.minecraft.network.chat.Style.withColor(Style.java:140)
+[22:09:12 ERROR]: 		net.minecraft.network.chat.Style.withColor(Style.java:160)
+[22:09:12 ERROR]: 		org.bukkit.craftbukkit.util.CraftChatMessage$StringMessage.<init>(CraftChatMessage.java:129)
+[22:09:12 ERROR]: 		org.bukkit.craftbukkit.util.CraftChatMessage.fromString(CraftChatMessage.java:228)
+[22:09:12 ERROR]: 		org.bukkit.craftbukkit.util.CraftChatMessage.fromString(CraftChatMessage.java:224)
+[22:09:12 ERROR]: 		org.bukkit.craftbukkit.util.CraftChatMessage.fromStringOrNull(CraftChatMessage.java:208)
+[22:09:12 ERROR]: 		org.bukkit.craftbukkit.util.CraftChatMessage.fromStringOrNull(CraftChatMessage.java:204)
+[22:09:12 ERROR]: 		org.bukkit.craftbukkit.inventory.CraftMetaItem.safelyAdd(CraftMetaItem.java:2360)
+[22:09:12 ERROR]: 		org.bukkit.craftbukkit.inventory.CraftMetaItem.setLore(CraftMetaItem.java:1365)
+[22:09:12 ERROR]: 		CrystamaeHistoria-0.4.0.jar//io.github.sefiraat.crystamaehistoria.magic.spells.core.InstanceStave.buildLore(InstanceStave.java:173)
+[22:09:12 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.lambda$benchRound15$112(CHPerfBench.java:1053)
+[22:09:12 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench$$Lambda/0x00000165b6928218.run(Unknown Source)
+[22:09:12 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.time(CHPerfBench.java:888)
+[22:09:12 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.benchRound15(CHPerfBench.java:1051)
+[22:09:12 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.lambda$runBenchmarks$13(CHPerfBench.java:83)
+[22:09:12 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench$$Lambda/0x00000165b6482a78.run(Unknown Source)
+[22:09:12 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.chainSteps(CHPerfBench.java:107)
+[22:09:12 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.lambda$chainSteps$22(CHPerfBench.java:113)
+[22:09:12 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench$$Lambda/0x00000165b68cd648.run(Unknown Source)
+[22:09:12 ERROR]: 		org.bukkit.craftbukkit.scheduler.CraftTask.run(CraftTask.java:78)
+[22:09:12 ERROR]: 		org.bukkit.craftbukkit.scheduler.CraftScheduler.mainThreadHeartbeat(CraftScheduler.java:474)
+[22:09:12 ERROR]: 		net.minecraft.server.MinecraftServer.tickChildren(MinecraftServer.java:1756)
+[22:09:12 ERROR]: 		net.minecraft.server.MinecraftServer.tickServer(MinecraftServer.java:1611)
+[22:09:12 ERROR]: 		net.minecraft.server.dedicated.DedicatedServer.tickServer(DedicatedServer.java:427)
+[22:09:12 ERROR]: 		net.minecraft.server.MinecraftServer.processPacketsAndTick(MinecraftServer.java:1667)
+[22:09:12 ERROR]: 		net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:1335)
+[22:09:12 ERROR]: 		net.minecraft.server.MinecraftServer.lambda$spin$2(MinecraftServer.java:388)
+[22:09:12 ERROR]: 		net.minecraft.server.MinecraftServer$$Lambda/0x00000165b5f8a400.run(Unknown Source)
+[22:09:12 ERROR]: 		java.base@21.0.10/java.lang.Thread.runWith(Thread.java:1596)
+[22:09:12 ERROR]: 		java.base@21.0.10/java.lang.Thread.run(Thread.java:1583)
+[22:09:12 ERROR]: ------------------------------
+[22:09:12 ERROR]: --- DO NOT REPORT THIS TO PAPER - THIS IS NOT A BUG OR A CRASH ---
+[22:09:12 ERROR]: ------------------------------
+[22:09:15 INFO]: [CHPerfBench] writePath.staveLoreRebuild/new_static_fragments: 20479.35 ns/op
+[22:09:15 INFO]: [CHPerfBench] round16 µÈ¼ÛÐÔ(²ÉÑù 6 Ìõ): true
+[22:09:15 INFO]: [CHPerfBench] storyDisplay.displayName/old_fresh_components: 201.19 ns/op
+[22:09:16 INFO]: [CHPerfBench] storyDisplay.displayName/new_cached: 4.87 ns/op
+[22:09:16 INFO]: [CHPerfBench] storyDisplay.loreLines/old_fresh_components: 194.84 ns/op
+[22:09:16 INFO]: [CHPerfBench] storyDisplay.loreLines/new_cached: 4.90 ns/op
+[22:09:17 INFO]: [CHPerfBench] storyDisplay.rebuild4Stories/old_fresh_components: 2091.62 ns/op
+[22:09:17 INFO]: [CHPerfBench] storyDisplay.rebuild4Stories/new_cached: 288.73 ns/op
+[22:09:17 INFO]: [CHPerfBench] round17 µÈ¼ÛÐÔ: types=true ownerOffline=true scanOrder=true distance=true
+[22:09:18 INFO]: [CHPerfBench] mobGoal.ownerLookup/old_offlineplayer_3step: 20.75 ns/op
+[22:09:18 INFO]: [CHPerfBench] mobGoal.ownerLookup/new_getPlayer_single: 4.37 ns/op
+[22:09:18 INFO]: [CHPerfBench] mobGoal.typesAlloc/old_enumset_of: 7.57 ns/op
+[22:09:19 INFO]: [CHPerfBench] mobGoal.typesAlloc/new_shared_constant: 3.11 ns/op
+[22:09:19 INFO]: [CHPerfBench] mobGoal.targetReads/old_triple_read: 3.50 ns/op
+[22:09:19 INFO]: [CHPerfBench] mobGoal.targetReads/new_single_cached: 3.32 ns/op
+[22:09:20 INFO]: [CHPerfBench] ramGoal.blockScan/old_blockposition_dedup: 13665.25 ns/op
+[22:09:20 INFO]: [CHPerfBench] ramGoal.blockScan/new_direct_coords: 1855.38 ns/op
+[22:09:20 INFO]: [CHPerfBench] mobGoal.followDistance/old_distance_sqrt: 9.66 ns/op
+[22:09:21 INFO]: [CHPerfBench] mobGoal.followDistance/new_distanceSquared: 9.11 ns/op
+[22:09:21 INFO]: [CHPerfBench] round18 µÈ¼ÛÐÔ(×ø±êÐòÁÐ r3): true
+[22:09:26 INFO]: [CHPerfBench] tunnelBore.blockScan.r3/old_blockposition_dedup: 215117.68 ns/op
+[22:09:26 INFO]: [CHPerfBench] tunnelBore.blockScan.r3/new_direct_coords: 2996.55 ns/op
+[22:09:26 INFO]: [CHPerfBench] round18 µÈ¼ÛÐÔ(×ø±êÐòÁÐ r5): true
+[22:09:31 ERROR]: --- DO NOT REPORT THIS TO PAPER - THIS IS NOT A BUG OR A CRASH  - 1.21.11-132-c5eb079 (MC: 1.21.11) ---
+[22:09:31 ERROR]: The server has not responded for 10 seconds! Creating thread dump
+[22:09:31 ERROR]: ------------------------------
+[22:09:31 ERROR]: Server thread dump (Look for plugins here before reporting to Paper!):
+[22:09:31 ERROR]: ------------------------------
+[22:09:31 ERROR]: Current Thread: Server thread
+[22:09:31 ERROR]: 	PID: 81 | Suspended: false | Native: false | State: RUNNABLE
+[22:09:31 ERROR]: 	Stack:
+[22:09:31 ERROR]: 		java.base@21.0.10/java.util.ArrayList.indexOfRange(ArrayList.java:298)
+[22:09:31 ERROR]: 		java.base@21.0.10/java.util.ArrayList.indexOf(ArrayList.java:286)
+[22:09:31 ERROR]: 		java.base@21.0.10/java.util.ArrayList.contains(ArrayList.java:275)
+[22:09:31 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.lambda$benchRound18$129(CHPerfBench.java:1471)
+[22:09:31 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench$$Lambda/0x00000165b692a5b0.run(Unknown Source)
+[22:09:31 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.time(CHPerfBench.java:888)
+[22:09:31 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.benchRound18(CHPerfBench.java:1463)
+[22:09:31 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.lambda$runBenchmarks$16(CHPerfBench.java:86)
+[22:09:31 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench$$Lambda/0x00000165b64830c0.run(Unknown Source)
+[22:09:31 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.chainSteps(CHPerfBench.java:107)
+[22:09:31 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.lambda$chainSteps$22(CHPerfBench.java:113)
+[22:09:31 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench$$Lambda/0x00000165b68cd648.run(Unknown Source)
+[22:09:31 ERROR]: 		org.bukkit.craftbukkit.scheduler.CraftTask.run(CraftTask.java:78)
+[22:09:31 ERROR]: 		org.bukkit.craftbukkit.scheduler.CraftScheduler.mainThreadHeartbeat(CraftScheduler.java:474)
+[22:09:31 ERROR]: 		net.minecraft.server.MinecraftServer.tickChildren(MinecraftServer.java:1756)
+[22:09:31 ERROR]: 		net.minecraft.server.MinecraftServer.tickServer(MinecraftServer.java:1611)
+[22:09:31 ERROR]: 		net.minecraft.server.dedicated.DedicatedServer.tickServer(DedicatedServer.java:427)
+[22:09:31 ERROR]: 		net.minecraft.server.MinecraftServer.processPacketsAndTick(MinecraftServer.java:1667)
+[22:09:31 ERROR]: 		net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:1335)
+[22:09:31 ERROR]: 		net.minecraft.server.MinecraftServer.lambda$spin$2(MinecraftServer.java:388)
+[22:09:31 ERROR]: 		net.minecraft.server.MinecraftServer$$Lambda/0x00000165b5f8a400.run(Unknown Source)
+[22:09:31 ERROR]: 		java.base@21.0.10/java.lang.Thread.runWith(Thread.java:1596)
+[22:09:31 ERROR]: 		java.base@21.0.10/java.lang.Thread.run(Thread.java:1583)
+[22:09:31 ERROR]: ------------------------------
+[22:09:31 ERROR]: --- DO NOT REPORT THIS TO PAPER - THIS IS NOT A BUG OR A CRASH ---
+[22:09:31 ERROR]: ------------------------------
+[22:09:36 INFO]: [CHPerfBench] tunnelBore.blockScan.r5/old_blockposition_dedup: 3197932.17 ns/op
+[22:09:36 ERROR]: --- DO NOT REPORT THIS TO PAPER - THIS IS NOT A BUG OR A CRASH  - 1.21.11-132-c5eb079 (MC: 1.21.11) ---
+[22:09:36 ERROR]: The server has not responded for 15 seconds! Creating thread dump
+[22:09:36 ERROR]: ------------------------------
+[22:09:36 ERROR]: Server thread dump (Look for plugins here before reporting to Paper!):
+[22:09:36 ERROR]: ------------------------------
+[22:09:36 ERROR]: Current Thread: Server thread
+[22:09:36 ERROR]: 	PID: 81 | Suspended: false | Native: false | State: RUNNABLE
+[22:09:36 ERROR]: 	Stack:
+[22:09:36 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench$$Lambda/0x00000165b692a7c8.run(Unknown Source)
+[22:09:36 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.time(CHPerfBench.java:882)
+[22:09:36 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.benchRound18(CHPerfBench.java:1481)
+[22:09:36 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.lambda$runBenchmarks$16(CHPerfBench.java:86)
+[22:09:36 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench$$Lambda/0x00000165b64830c0.run(Unknown Source)
+[22:09:36 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.chainSteps(CHPerfBench.java:107)
+[22:09:36 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.lambda$chainSteps$22(CHPerfBench.java:113)
+[22:09:36 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench$$Lambda/0x00000165b68cd648.run(Unknown Source)
+[22:09:36 ERROR]: 		org.bukkit.craftbukkit.scheduler.CraftTask.run(CraftTask.java:78)
+[22:09:36 ERROR]: 		org.bukkit.craftbukkit.scheduler.CraftScheduler.mainThreadHeartbeat(CraftScheduler.java:474)
+[22:09:36 ERROR]: 		net.minecraft.server.MinecraftServer.tickChildren(MinecraftServer.java:1756)
+[22:09:36 ERROR]: 		net.minecraft.server.MinecraftServer.tickServer(MinecraftServer.java:1611)
+[22:09:36 ERROR]: 		net.minecraft.server.dedicated.DedicatedServer.tickServer(DedicatedServer.java:427)
+[22:09:36 ERROR]: 		net.minecraft.server.MinecraftServer.processPacketsAndTick(MinecraftServer.java:1667)
+[22:09:36 ERROR]: 		net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:1335)
+[22:09:36 ERROR]: 		net.minecraft.server.MinecraftServer.lambda$spin$2(MinecraftServer.java:388)
+[22:09:36 ERROR]: 		net.minecraft.server.MinecraftServer$$Lambda/0x00000165b5f8a400.run(Unknown Source)
+[22:09:36 ERROR]: 		java.base@21.0.10/java.lang.Thread.runWith(Thread.java:1596)
+[22:09:36 ERROR]: 		java.base@21.0.10/java.lang.Thread.run(Thread.java:1583)
+[22:09:36 ERROR]: ------------------------------
+[22:09:36 ERROR]: --- DO NOT REPORT THIS TO PAPER - THIS IS NOT A BUG OR A CRASH ---
+[22:09:36 ERROR]: ------------------------------
+[22:09:36 INFO]: [CHPerfBench] tunnelBore.blockScan.r5/new_direct_coords: 10739.48 ns/op
+[22:09:36 INFO]: [CHPerfBench] round19 µÈ¼ÛÐÔ(Î»ÖÃÐòÁÐ): true
+[22:09:37 INFO]: [CHPerfBench] particle.burstAlloc/old_clone_per_particle: 232.47 ns/op
+[22:09:37 INFO]: [CHPerfBench] particle.burstAlloc/new_single_scratch: 152.42 ns/op
+[22:09:37 INFO]: [CHPerfBench] particle.panelSummon/old_two_clones: 33.26 ns/op
+[22:09:38 INFO]: [CHPerfBench] particle.panelSummon/new_single_scratch: 34.14 ns/op
+[22:09:38 INFO]: [CHPerfBench] particle.sphere840/old_clone_per_point: 15115.00 ns/op
+[22:09:38 INFO]: [CHPerfBench] particle.sphere840/new_single_scratch: 13140.05 ns/op
+[22:09:38 INFO]: [CHPerfBench] round21 µÈ¼ÛÐÔ: themed=true icon=true detail=true blockOrder=true spellOrder=true titleCase=true
+[22:09:39 INFO]: [CHPerfBench] compendium.themedStack/old_rebuild: 22134.00 ns/op
+[22:09:39 INFO]: [CHPerfBench] compendium.themedStack/new_memo_item_clone: 73.80 ns/op
+[22:09:39 INFO]: [CHPerfBench] compendium.pageIcons36/old_build36: 149300.05 ns/op
+[22:09:39 INFO]: [CHPerfBench] compendium.pageIcons36/new_cached_clone36: 485.00 ns/op
+[22:09:40 INFO]: [CHPerfBench] compendium.detailStack/old_messageformat_build: 15544.50 ns/op
+[22:09:40 INFO]: [CHPerfBench] compendium.detailStack/new_cached_clone: 16.02 ns/op
+[22:09:40 INFO]: [CHPerfBench] compendium.spellPageSort/old_sort_per_page: 1092.30 ns/op
+[22:09:41 INFO]: [CHPerfBench] compendium.spellPageSort/new_snapshot_view: 3.04 ns/op
+[22:09:41 INFO]: [CHPerfBench] compendium.blockPageSort/old_copy_sort: 52982.80 ns/op
+[22:09:41 INFO]: [CHPerfBench] compendium.blockPageSort/new_snapshot_sublist: 6.47 ns/op
+[22:09:42 INFO]: [CHPerfBench] compendium.titleCase/old_rebuild: 226.21 ns/op
+[22:09:42 INFO]: [CHPerfBench] compendium.titleCase/new_memo_lookup: 45.20 ns/op
+[22:09:42 INFO]: [CHPerfBench] round22 µÈ¼ÛÐÔ: spell=true story=true count=true missing=true
+[22:09:43 INFO]: [CHPerfBench] stats.pageCheck36/old_full_path_x36: 9345.90 ns/op
+[22:09:43 INFO]: [CHPerfBench] stats.pageCheck36/new_section_once_relative_x36: 4748.14 ns/op
+[22:09:44 INFO]: [CHPerfBench] stats.countSpells69/old_full_path_rebuild: 19975.26 ns/op
+[22:09:44 INFO]: [CHPerfBench] stats.countSpells69/new_relative_read: 8.40 ns/op
+[22:09:46 INFO]: [CHPerfBench] stats.countStories274/old_full_path_rebuild: 360958.70 ns/op
+[22:09:47 INFO]: [CHPerfBench] stats.countStories274/new_relative_read: 11.30 ns/op
+[22:09:47 INFO]: [CHPerfBench] round23 µÈ¼ÛÐÔ: steady=true invalidation=true afterWrite=true rank=true (count=499)
+[22:09:47 INFO]: [CHPerfBench] stats.countStories274.r23/old_full_path_rebuild: 162030.60 ns/op
+[22:09:48 INFO]: [CHPerfBench] stats.countStories274.r23/mid_relative_nocache: 90351.00 ns/op
+[22:09:49 INFO]: [CHPerfBench] stats.countStories274.r23/new_epoch_cache_hit: 13.58 ns/op
+[22:09:49 INFO]: [CHPerfBench] stats.rankPredicate/new_epoch_cached: 20.66 ns/op
+[22:09:49 INFO]: [CHPerfBench] round24 µÈ¼ÛÐÔ: stave(strings)=true stave(components)=false stave(item)=false story=false
+[22:09:50 INFO]: [CHPerfBench] loreApply.stave20/old_setlore_strings: 25881.76 ns/op
+[22:09:57 INFO]: [CHPerfBench] loreApply.stave20/rejected_lore_components: 60418.62 ns/op
+[22:09:58 INFO]: [CHPerfBench] loreApply.storyN/old_setlore_strings: 24329.48 ns/op
+[22:09:59 ERROR]: --- DO NOT REPORT THIS TO PAPER - THIS IS NOT A BUG OR A CRASH  - 1.21.11-132-c5eb079 (MC: 1.21.11) ---
+[22:09:59 ERROR]: The server has not responded for 10 seconds! Creating thread dump
+[22:09:59 ERROR]: ------------------------------
+[22:09:59 ERROR]: Server thread dump (Look for plugins here before reporting to Paper!):
+[22:09:59 ERROR]: ------------------------------
+[22:09:59 ERROR]: Current Thread: Server thread
+[22:09:59 ERROR]: 	PID: 81 | Suspended: false | Native: false | State: RUNNABLE
+[22:09:59 ERROR]: 	Stack:
+[22:09:59 ERROR]: 		net.minecraft.resources.DelegatingOps.getStringValue(DelegatingOps.java:101)
+[22:09:59 ERROR]: 		com.mojang.serialization.Codec$16.read(Codec.java:638)
+[22:09:59 ERROR]: 		com.mojang.serialization.codecs.PrimitiveCodec.decode(PrimitiveCodec.java:17)
+[22:09:59 ERROR]: 		com.mojang.serialization.Decoder$1.decode(Decoder.java:49)
+[22:09:59 ERROR]: 		com.mojang.serialization.Codec$2.decode(Codec.java:74)
+[22:09:59 ERROR]: 		com.mojang.serialization.Decoder.parse(Decoder.java:18)
+[22:09:59 ERROR]: 		com.mojang.serialization.codecs.OptionalFieldCodec.decode(OptionalFieldCodec.java:34)
+[22:09:59 ERROR]: 		com.mojang.serialization.codecs.RecordCodecBuilder$Instance$3.decode(RecordCodecBuilder.java:248)
+[22:09:59 ERROR]: 		com.mojang.serialization.codecs.RecordCodecBuilder$Instance$5.decode(RecordCodecBuilder.java:322)
+[22:09:59 ERROR]: 		com.mojang.serialization.MapDecoder$4.decode(MapDecoder.java:94)
+[22:09:59 ERROR]: 		com.mojang.serialization.codecs.RecordCodecBuilder$Instance$5.decode(RecordCodecBuilder.java:322)
+[22:09:59 ERROR]: 		com.mojang.serialization.codecs.RecordCodecBuilder$Instance$5.decode(RecordCodecBuilder.java:322)
+[22:09:59 ERROR]: 		com.mojang.serialization.codecs.RecordCodecBuilder$2.decode(RecordCodecBuilder.java:107)
+[22:09:59 ERROR]: 		com.mojang.serialization.codecs.RecordCodecBuilder$Instance$5.decode(RecordCodecBuilder.java:325)
+[22:09:59 ERROR]: 		com.mojang.serialization.codecs.RecordCodecBuilder$2.decode(RecordCodecBuilder.java:107)
+[22:09:59 ERROR]: 		com.mojang.serialization.MapDecoder.lambda$compressedDecode$1(MapDecoder.java:52)
+[22:09:59 ERROR]: 		com.mojang.serialization.MapDecoder$$Lambda/0x00000165b5ca0918.apply(Unknown Source)
+[22:09:59 ERROR]: 		com.mojang.serialization.DataResult$Success.flatMap(DataResult.java:201)
+[22:09:59 ERROR]: 		com.mojang.serialization.MapDecoder.compressedDecode(MapDecoder.java:52)
+[22:09:59 ERROR]: 		com.mojang.serialization.MapCodec$MapCodecCodec.decode(MapCodec.java:159)
+[22:09:59 ERROR]: 		net.minecraft.network.chat.ComponentSerialization$3.decode(ComponentSerialization.java:151)
+[22:09:59 ERROR]: 		com.mojang.serialization.codecs.EitherCodec.decode(EitherCodec.java:18)
+[22:09:59 ERROR]: 		com.mojang.serialization.Decoder$2.decode(Decoder.java:63)
+[22:09:59 ERROR]: 		com.mojang.serialization.Codec$2.decode(Codec.java:74)
+[22:09:59 ERROR]: 		com.mojang.serialization.Codec$RecursiveCodec.decode(Codec.java:219)
+[22:09:59 ERROR]: 		com.mojang.serialization.codecs.ListCodec$DecoderState.accept(ListCodec.java:74)
+[22:09:59 ERROR]: 		com.mojang.serialization.codecs.ListCodec$$Lambda/0x00000165b5ca1ee0.accept(Unknown Source)
+[22:09:59 ERROR]: 		com.google.common.collect.ImmutableList.forEach(ImmutableList.java:421)
+[22:09:59 ERROR]: 		com.mojang.serialization.JavaOps$$Lambda/0x00000165b69521b8.accept(Unknown Source)
+[22:09:59 ERROR]: 		com.mojang.serialization.codecs.ListCodec.lambda$decode$2(ListCodec.java:45)
+[22:09:59 ERROR]: 		com.mojang.serialization.codecs.ListCodec$$Lambda/0x00000165b5ca1a98.apply(Unknown Source)
+[22:09:59 ERROR]: 		com.mojang.serialization.DataResult$Success.flatMap(DataResult.java:201)
+[22:09:59 ERROR]: 		com.mojang.serialization.codecs.ListCodec.decode(ListCodec.java:43)
+[22:09:59 ERROR]: 		com.mojang.serialization.Decoder$1.decode(Decoder.java:49)
+[22:09:59 ERROR]: 		com.mojang.serialization.Codec$2.decode(Codec.java:74)
+[22:09:59 ERROR]: 		com.mojang.serialization.Decoder.parse(Decoder.java:18)
+[22:09:59 ERROR]: 		com.mojang.serialization.codecs.OptionalFieldCodec.decode(OptionalFieldCodec.java:34)
+[22:09:59 ERROR]: 		com.mojang.serialization.MapDecoder$4.decode(MapDecoder.java:94)
+[22:09:59 ERROR]: 		com.mojang.serialization.MapCodec$2.decode(MapCodec.java:78)
+[22:09:59 ERROR]: 		com.mojang.serialization.codecs.RecordCodecBuilder$Instance$5.decode(RecordCodecBuilder.java:324)
+[22:09:59 ERROR]: 		com.mojang.serialization.codecs.RecordCodecBuilder$2.decode(RecordCodecBuilder.java:107)
+[22:09:59 ERROR]: 		com.mojang.serialization.MapDecoder.lambda$compressedDecode$1(MapDecoder.java:52)
+[22:09:59 ERROR]: 		com.mojang.serialization.MapDecoder$$Lambda/0x00000165b5ca0918.apply(Unknown Source)
+[22:09:59 ERROR]: 		com.mojang.serialization.DataResult$Success.flatMap(DataResult.java:201)
+[22:09:59 ERROR]: 		com.mojang.serialization.MapDecoder.compressedDecode(MapDecoder.java:52)
+[22:09:59 ERROR]: 		com.mojang.serialization.MapCodec$MapCodecCodec.decode(MapCodec.java:159)
+[22:09:59 ERROR]: 		net.minecraft.network.chat.ComponentSerialization$3.decode(ComponentSerialization.java:151)
+[22:09:59 ERROR]: 		com.mojang.serialization.codecs.EitherCodec.decode(EitherCodec.java:18)
+[22:09:59 ERROR]: 		com.mojang.serialization.Decoder$2.decode(Decoder.java:63)
+[22:09:59 ERROR]: 		com.mojang.serialization.Codec$2.decode(Codec.java:74)
+[22:09:59 ERROR]: 		com.mojang.serialization.Codec$RecursiveCodec.decode(Codec.java:219)
+[22:09:59 ERROR]: 		io.papermc.paper.adventure.WrapperAwareSerializer.serialize(WrapperAwareSerializer.java:39)
+[22:09:59 ERROR]: 		io.papermc.paper.adventure.WrapperAwareSerializer.serialize(WrapperAwareSerializer.java:13)
+[22:09:59 ERROR]: 		io.papermc.paper.adventure.AdventureComponent.deepConverted(AdventureComponent.java:26)
+[22:09:59 ERROR]: 		org.bukkit.craftbukkit.util.CraftChatMessage.fromComponent(CraftChatMessage.java:304)
+[22:09:59 ERROR]: 		org.bukkit.craftbukkit.inventory.CraftMetaItem$$Lambda/0x00000165b621f590.apply(Unknown Source)
+[22:09:59 ERROR]: 		com.google.common.collect.Lists$TransformingRandomAccessList$1.transform(Lists.java:654)
+[22:09:59 ERROR]: 		com.google.common.collect.TransformedIterator.next(TransformedIterator.java:51)
+[22:09:59 ERROR]: 		java.base@21.0.10/java.util.AbstractCollection.toArray(AbstractCollection.java:148)
+[22:09:59 ERROR]: 		java.base@21.0.10/java.util.ArrayList.<init>(ArrayList.java:181)
+[22:09:59 ERROR]: 		org.bukkit.craftbukkit.inventory.CraftMetaItem.getLore(CraftMetaItem.java:1346)
+[22:09:59 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.lambda$benchRound24$168(CHPerfBench.java:2054)
+[22:09:59 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench$$Lambda/0x00000165b6955000.run(Unknown Source)
+[22:09:59 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.time(CHPerfBench.java:888)
+[22:09:59 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.benchRound24(CHPerfBench.java:2051)
+[22:09:59 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.lambda$runBenchmarks$21(CHPerfBench.java:91)
+[22:09:59 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench$$Lambda/0x00000165b6483b38.run(Unknown Source)
+[22:09:59 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.chainSteps(CHPerfBench.java:107)
+[22:09:59 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench.lambda$chainSteps$22(CHPerfBench.java:113)
+[22:09:59 ERROR]: 		CHPerfBench.jar//ch.perfbench.CHPerfBench$$Lambda/0x00000165b68cd648.run(Unknown Source)
+[22:09:59 ERROR]: 		org.bukkit.craftbukkit.scheduler.CraftTask.run(CraftTask.java:78)
+[22:09:59 ERROR]: 		org.bukkit.craftbukkit.scheduler.CraftScheduler.mainThreadHeartbeat(CraftScheduler.java:474)
+[22:09:59 ERROR]: 		net.minecraft.server.MinecraftServer.tickChildren(MinecraftServer.java:1756)
+[22:09:59 ERROR]: 		net.minecraft.server.MinecraftServer.tickServer(MinecraftServer.java:1611)
+[22:09:59 ERROR]: 		net.minecraft.server.dedicated.DedicatedServer.tickServer(DedicatedServer.java:427)
+[22:09:59 ERROR]: 		net.minecraft.server.MinecraftServer.processPacketsAndTick(MinecraftServer.java:1667)
+[22:09:59 ERROR]: 		net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:1335)
+[22:09:59 ERROR]: 		net.minecraft.server.MinecraftServer.lambda$spin$2(MinecraftServer.java:388)
+[22:09:59 ERROR]: 		net.minecraft.server.MinecraftServer$$Lambda/0x00000165b5f8a400.run(Unknown Source)
+[22:09:59 ERROR]: 		java.base@21.0.10/java.lang.Thread.runWith(Thread.java:1596)
+[22:09:59 ERROR]: 		java.base@21.0.10/java.lang.Thread.run(Thread.java:1583)
+[22:09:59 ERROR]: ------------------------------
+[22:09:59 ERROR]: --- DO NOT REPORT THIS TO PAPER - THIS IS NOT A BUG OR A CRASH ---
+[22:09:59 ERROR]: ------------------------------
+[22:10:02 INFO]: [CHPerfBench] loreApply.storyN/rejected_lore_components: 36075.31 ns/op
+[22:10:02 INFO]: [CHPerfBench] loreConvert.deserializeOnly/per_line: 2107.94 ns/op
+[22:10:03 INFO]: [CHPerfBench] loreConvert.deserializeOnly/cached_refs: 140.70 ns/op
+[22:10:03 INFO]: [CHPerfBench] CHPERFBENCH COMPLETE, blackhole=52906042547892014
+[22:10:29 WARN]: [Skins] Could not fetch skin from Mojang sessions server for e735af9f-f643-415c-a57b-2af77960ba06
+javax.net.ssl.SSLHandshakeException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.ssl.Alert.createSSLException(Alert.java:130) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:383) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:326) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.fatal(TransportContext.java:321) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.checkServerCerts(CertificateMessage.java:1287) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.onConsumeCertificate(CertificateMessage.java:1164) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.consume(CertificateMessage.java:1107) ~[?:?]
+	at java.base/sun.security.ssl.SSLHandshake.consume(SSLHandshake.java:393) ~[?:?]
+	at java.base/sun.security.ssl.HandshakeContext.dispatch(HandshakeContext.java:477) ~[?:?]
+	at java.base/sun.security.ssl.HandshakeContext.dispatch(HandshakeContext.java:448) ~[?:?]
+	at java.base/sun.security.ssl.TransportContext.dispatch(TransportContext.java:206) ~[?:?]
+	at java.base/sun.security.ssl.SSLTransport.decode(SSLTransport.java:172) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.decode(SSLSocketImpl.java:1506) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.readHandshakeRecord(SSLSocketImpl.java:1421) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:455) ~[?:?]
+	at java.base/sun.security.ssl.SSLSocketImpl.startHandshake(SSLSocketImpl.java:426) ~[?:?]
+	at java.base/sun.net.www.protocol.https.HttpsClient.afterConnect(HttpsClient.java:586) ~[?:?]
+	at java.base/sun.net.www.protocol.https.AbstractDelegateHttpsURLConnection.connect(AbstractDelegateHttpsURLConnection.java:187) ~[?:?]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream0(HttpURLConnection.java:1691) ~[?:?]
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1615) ~[?:?]
+	at java.base/sun.net.www.protocol.https.HttpsURLConnectionImpl.getInputStream(HttpsURLConnectionImpl.java:223) ~[?:?]
+	at java.base/java.net.URL.openStream(URL.java:1325) ~[?:?]
+	at Slimefun-5.0.0.jar//io.github.thebusybiscuit.slimefun4.libraries.dough.skins.PlayerSkin.lambda$fromPlayerUUID$0(PlayerSkin.java:121) ~[?:?]
+	at org.bukkit.craftbukkit.scheduler.CraftTask.run(CraftTask.java:78) ~[paper-1.21.11.jar:1.21.11-132-c5eb079]
+	at org.bukkit.craftbukkit.scheduler.CraftAsyncTask.run(CraftAsyncTask.java:57) ~[paper-1.21.11.jar:1.21.11-132-c5eb079]
+	at com.destroystokyo.paper.ServerSchedulerReportingWrapper.run(ServerSchedulerReportingWrapper.java:22) ~[paper-1.21.11.jar:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[?:?]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[?:?]
+Caused by: sun.security.validator.ValidatorException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.validator.PKIXValidator.doBuild(PKIXValidator.java:388) ~[?:?]
+	at java.base/sun.security.validator.PKIXValidator.engineValidate(PKIXValidator.java:271) ~[?:?]
+	at java.base/sun.security.validator.Validator.validate(Validator.java:256) ~[?:?]
+	at java.base/sun.security.ssl.X509TrustManagerImpl.checkTrusted(X509TrustManagerImpl.java:230) ~[?:?]
+	at java.base/sun.security.ssl.X509TrustManagerImpl.checkServerTrusted(X509TrustManagerImpl.java:132) ~[?:?]
+	at java.base/sun.security.ssl.CertificateMessage$T13CertificateConsumer.checkServerCerts(CertificateMessage.java:1271) ~[?:?]
+	... 24 more
+Caused by: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+	at java.base/sun.security.provider.certpath.SunCertPathBuilder.build(SunCertPathBuilder.java:148) ~[?:?]
+	at java.base/sun.security.provider.certpath.SunCertPathBuilder.engineBuild(SunCertPathBuilder.java:129) ~[?:?]
+	at java.base/java.security.cert.CertPathBuilder.build(CertPathBuilder.java:297) ~[?:?]
+	at java.base/sun.security.validator.PKIXValidator.doBuild(PKIXValidator.java:383) ~[?:?]
+	... 29 more
+[22:10:29 WARN]: [Slimefun] Attempted to refresh skin cache, got this response: ExecutionException: javax.net.ssl.SSLHandshakeException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+[22:10:29 WARN]: [Slimefun] This usually means mojang.com is temporarily down or started to rate-limit this connection, nothing to worry about!
+[22:11:36 INFO]: [Slimefun] Auto-saving block data... (Next auto-save: 10m)
+[22:11:36 INFO]: [Slimefun] Saving block data for world "world" (2 change(s) queued)
+[22:12:45 INFO]: Stopping the server
+[22:12:45 INFO]: Stopping server
+[22:12:45 INFO]: [CHPerfBench] Disabling CHPerfBench v1.0.0
+[22:12:45 INFO]: [CrystamaeHistoria] Disabling CrystamaeHistoria v0.4.0
+[22:12:45 INFO]: [CrystamaeHistoria] ÕýÔÚ±£´æÄ§·¨Ë®¾§±àÄêÊ·µÄÊý¾Ý
+[22:12:45 INFO]: [Slimefun] Disabling Slimefun v5.0.0
+[22:12:45 INFO]: [Slimefun] Backed up Slimefun data to: 2026-08-16-22-12.zip
+[22:12:45 INFO]: Saving players
+[22:12:45 INFO]: Saving worlds
+[22:12:45 INFO]: Saving chunks for level 'ServerLevel[world]'/minecraft:overworld
+[22:12:45 INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'world'
+[22:12:45 INFO]: [ChunkHolderManager] Halted chunk system for world 'world'
+[22:12:45 INFO]: [ChunkHolderManager] Saving all chunkholders for world 'world'
+[22:12:45 INFO]: [ChunkHolderManager] Saved 0 block chunks, 0 entity chunks, 0 poi chunks in world 'world' in 0.00s
+[22:12:45 INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'world'
+[22:12:45 INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'world'
+[22:12:45 INFO]: Saving chunks for level 'ServerLevel[world_nether]'/minecraft:the_nether
+[22:12:45 INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'world_nether'
+[22:12:45 INFO]: [ChunkHolderManager] Halted chunk system for world 'world_nether'
+[22:12:45 INFO]: [ChunkHolderManager] Saving all chunkholders for world 'world_nether'
+[22:12:45 INFO]: [ChunkHolderManager] Saved 0 block chunks, 0 entity chunks, 0 poi chunks in world 'world_nether' in 0.00s
+[22:12:45 INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'world_nether'
+[22:12:45 INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'world_nether'
+[22:12:45 INFO]: Saving chunks for level 'ServerLevel[world_the_end]'/minecraft:the_end
+[22:12:45 INFO]: [ChunkHolderManager] Waiting 60s for chunk system to halt for world 'world_the_end'
+[22:12:45 INFO]: [ChunkHolderManager] Halted chunk system for world 'world_the_end'
+[22:12:45 INFO]: [ChunkHolderManager] Saving all chunkholders for world 'world_the_end'
+[22:12:45 INFO]: [ChunkHolderManager] Saved 0 block chunks, 0 entity chunks, 0 poi chunks in world 'world_the_end' in 0.00s
+[22:12:45 INFO]: [ChunkHolderManager] Waiting 60s for chunk I/O to halt for world 'world_the_end'
+[22:12:45 INFO]: [ChunkHolderManager] Halted I/O scheduler for world 'world_the_end'
+[22:12:45 INFO]: ThreadedAnvilChunkStorage (world): All chunks are saved
+[22:12:45 INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[22:12:45 INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[22:12:45 INFO]: ThreadedAnvilChunkStorage: All dimensions are saved
+[22:12:45 INFO]: Waiting for all RegionFile I/O tasks to complete...
+[22:12:45 INFO]: All RegionFile I/O tasks to complete
+[22:12:45 INFO]: [MoonriseCommon] Awaiting termination of worker pool for up to 60s...
+[22:12:45 INFO]: [MoonriseCommon] Awaiting termination of I/O pool for up to 60s...

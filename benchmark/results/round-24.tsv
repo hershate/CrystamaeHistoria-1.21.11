@@ -1,0 +1,5 @@
+bench	variant	median_ns_op	min_ns_op	p95_ns_op
+loreConvert.stave20	new_cached_refs_one_convert	249.82
+loreConvert.stave20	old_deserialize_per_line	1918.25
+loreConvert.story12	new_cached_refs	52.96
+loreConvert.story12	old_deserialize_per_line	572.23

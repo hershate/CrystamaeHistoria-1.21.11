@@ -87,7 +87,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound19(w),
                 () -> benchRound21(w),
                 () -> benchRound22(w),
-                () -> benchRound23(w)
+                () -> benchRound23(w),
+                () -> benchRound24(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -1959,6 +1960,214 @@ public final class CHPerfBench extends JavaPlugin {
             // 清理合成数据
             stats.set(player.toString(), null);
         }
+    }
+
+    /** 第 24 轮：lore 展示写入组件化（真实 ItemMeta：setLore(Strings) vs lore(Components)） */
+    @SuppressWarnings("deprecation")
+    private void benchRound24(PrintWriter w) {
+        final net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer LEGACY =
+            net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection();
+
+        // —— 构造 4 板法杖实例（新实现路径）与旧副本对照 ——
+        final ItemStack staveStack = new ItemStack(Material.BLAZE_ROD);
+        final io.github.sefiraat.crystamaehistoria.magic.spells.core.InstanceStave stave =
+            new io.github.sefiraat.crystamaehistoria.magic.spells.core.InstanceStave(staveStack);
+        final SpellType[] enabled = SpellType.getEnabledSpells();
+        final io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot[] slots =
+            io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot.getCashedValues();
+        for (int i = 0; i < slots.length; i++) {
+            stave.setSlot(slots[i], new io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate(
+                1, enabled[i % enabled.length], 10 + i));
+        }
+
+        // —— 故事样本（跨稀有度）——
+        final io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity[] rarities = {
+            io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity.COMMON,
+            io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity.RARE,
+            io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity.MYTHICAL
+        };
+        final java.util.List<io.github.sefiraat.crystamaehistoria.stories.Story> stories = new java.util.ArrayList<>();
+        for (io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity rarity : rarities) {
+            final java.util.Map<io.github.sefiraat.crystamaehistoria.stories.definition.StoryType,
+                java.util.List<io.github.sefiraat.crystamaehistoria.stories.Story>> byType =
+                CrystamaeHistoria.getStoriesManager().getStoriesByRarityAndType().get(rarity);
+            if (byType != null && !byType.isEmpty()) {
+                stories.add(byType.values().iterator().next().get(0));
+            }
+        }
+
+        // —— 等价性断言：旧字符串路径 vs 被否决的组件路径（三重诊断） ——
+        boolean equivStaveStrings;
+        boolean equivStaveComponents;
+        boolean equivStaveItem;
+        boolean equivStory;
+        {
+            final ItemMeta metaOld = staveStack.getItemMeta();
+            round24OldBuildLore(stave, metaOld);
+            final ItemMeta metaNew = staveStack.getItemMeta();
+            round24NewBuildLore(stave, metaNew, LEGACY);
+            final ItemStack oldItem = new ItemStack(Material.BLAZE_ROD);
+            oldItem.setItemMeta(metaOld);
+            final ItemStack newItem = new ItemStack(Material.BLAZE_ROD);
+            newItem.setItemMeta(metaNew);
+            equivStaveStrings = java.util.Objects.equals(metaOld.getLore(), metaNew.getLore());
+            equivStaveComponents = java.util.Objects.equals(metaOld.lore(), metaNew.lore());
+            equivStaveItem = oldItem.isSimilar(newItem);
+
+            final ItemMeta storyOld = new ItemStack(Material.STONE).getItemMeta();
+            round24OldStoryLore(stories, storyOld);
+            final ItemMeta storyNew = new ItemStack(Material.STONE).getItemMeta();
+            newStoryLore(stories, storyNew, LEGACY);
+            final ItemStack storyOldItem = new ItemStack(Material.STONE);
+            storyOldItem.setItemMeta(storyOld);
+            final ItemStack storyNewItem = new ItemStack(Material.STONE);
+            storyNewItem.setItemMeta(storyNew);
+            equivStory = java.util.Objects.equals(storyOld.getLore(), storyNew.getLore())
+                && java.util.Objects.equals(storyOld.lore(), storyNew.lore())
+                && storyOldItem.isSimilar(storyNewItem);
+        }
+        getLogger().info("round24 等价性: stave(strings)=" + equivStaveStrings
+            + " stave(components)=" + equivStaveComponents
+            + " stave(item)=" + equivStaveItem + " story=" + equivStory);
+
+        // —— 法杖 lore 应用（20 行形态）——
+        time(w, "loreApply.stave20", "old_setlore_strings", 5_000, () -> {
+            final ItemMeta meta = staveStack.getItemMeta();
+            round24OldBuildLore(stave, meta);
+            bh += meta.getLore().size();
+        });
+        time(w, "loreApply.stave20", "rejected_lore_components", 20_000, () -> {
+            final ItemMeta meta = staveStack.getItemMeta();
+            round24NewBuildLore(stave, meta, LEGACY);
+            bh += meta.getLore().size();
+        });
+
+        // —— 故事 lore 应用（N 故事形态）——
+        time(w, "loreApply.storyN", "old_setlore_strings", 5_000, () -> {
+            final ItemMeta meta = new ItemStack(Material.STONE).getItemMeta();
+            round24OldStoryLore(stories, meta);
+            bh += meta.getLore().size();
+        });
+        time(w, "loreApply.storyN", "rejected_lore_components", 20_000, () -> {
+            final ItemMeta meta = new ItemStack(Material.STONE).getItemMeta();
+            newStoryLore(stories, meta, LEGACY);
+            bh += meta.getLore().size();
+        });
+
+        // —— 纯转换成本参照（无 ItemMeta）：转换本就廉价，瓶颈归因修正的关键证据 ——
+        final java.util.List<String> lines = new java.util.ArrayList<>();
+        for (io.github.sefiraat.crystamaehistoria.stories.Story s : stories) {
+            lines.add(s.getDisplayName());
+            lines.addAll(s.getStoryLore());
+        }
+        final net.kyori.adventure.text.Component[] cached = new net.kyori.adventure.text.Component[lines.size()];
+        for (int i = 0; i < lines.size(); i++) {
+            cached[i] = LEGACY.deserialize(lines.get(i));
+        }
+        time(w, "loreConvert.deserializeOnly", "per_line", 50_000, () -> {
+            long c = 0;
+            for (String line : lines) {
+                c += LEGACY.deserialize(line).hashCode();
+            }
+            bh += c;
+        });
+        time(w, "loreConvert.deserializeOnly", "cached_refs", 1_000_000, () -> {
+            long c = 0;
+            for (net.kyori.adventure.text.Component comp : cached) {
+                c += comp.hashCode();
+            }
+            bh += c;
+        });
+        bh += LEGACY.deserialize("").hashCode();
+    }
+
+    /** 被否决方案的组件化 buildLore 副本（遗留字符串 + legacySection 反序列化 + lore(Components)） */
+    private void round24NewBuildLore(
+        io.github.sefiraat.crystamaehistoria.magic.spells.core.InstanceStave stave, ItemMeta itemMeta,
+        net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacy) {
+        final io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot[] slots =
+            io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot.getCashedValues();
+        final java.util.List<net.kyori.adventure.text.Component> lore = new java.util.ArrayList<>();
+        lore.add(legacy.deserialize(io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.PASSIVE.getColor()
+            + "可以进行法术绑定的法杖"));
+        for (int i = 0; i < slots.length; i++) {
+            final io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate plate =
+                stave.getSpellInstanceMap().get(slots[i]);
+            if (plate != null) {
+                lore.add(legacy.deserialize(""));
+                lore.add(legacy.deserialize(io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.RARITY_MYTHICAL.getColor()
+                    + slots[i].getDescription()));
+                lore.add(legacy.deserialize(io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.PASSIVE.getColor()
+                    + "法术: " + io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.NOTICE.getColor()
+                    + plate.getStoredSpell().getSpell().getName()));
+                lore.add(legacy.deserialize(io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.PASSIVE.getColor()
+                    + "充能: " + io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.NOTICE.getColor()
+                    + plate.getCrysta()));
+            }
+        }
+        lore.add(legacy.deserialize(""));
+        lore.add(legacy.deserialize(io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.applyThemeToString(
+            io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.CLICK_INFO,
+            io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.STAVE.getLoreLine())));
+        itemMeta.lore(lore);
+    }
+
+    /** 同构副本：0.4.0 的 InstanceStave.buildLore（字符串组装 + setLore） */
+    @SuppressWarnings("deprecation")
+    private void round24OldBuildLore(
+        io.github.sefiraat.crystamaehistoria.magic.spells.core.InstanceStave stave, ItemMeta itemMeta) {
+        final java.util.List<String> finalLore = new java.util.ArrayList<>();
+        finalLore.add(io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.PASSIVE.getColor() + "可以进行法术绑定的法杖");
+        final io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot[] slots =
+            io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot.getCashedValues();
+        for (int i = 0; i < slots.length; i++) {
+            final io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate plate =
+                stave.getSpellInstanceMap().get(slots[i]);
+            if (plate != null) {
+                final String magic = plate.getStoredSpell().getSpell().getName();
+                final String crysta = String.valueOf(plate.getCrysta());
+                finalLore.add("");
+                finalLore.add(io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.RARITY_MYTHICAL.getColor()
+                    + slots[i].getDescription());
+                finalLore.add(io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.PASSIVE.getColor()
+                    + "法术: " + io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.NOTICE.getColor() + magic);
+                finalLore.add(io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.PASSIVE.getColor()
+                    + "充能: " + io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.NOTICE.getColor() + crysta);
+            }
+        }
+        finalLore.add("");
+        finalLore.add(io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.applyThemeToString(
+            io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.CLICK_INFO,
+            io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.STAVE.getLoreLine()));
+        itemMeta.setLore(finalLore);
+    }
+
+    /** 同构副本：0.4.0 的 rebuildStoriedStack lore 组装（字符串 + setLore） */
+    @SuppressWarnings("deprecation")
+    private void round24OldStoryLore(java.util.List<io.github.sefiraat.crystamaehistoria.stories.Story> stories,
+                                     ItemMeta itemMeta) {
+        final java.util.List<String> lore = new java.util.ArrayList<>();
+        for (io.github.sefiraat.crystamaehistoria.stories.Story story : stories) {
+            lore.add("");
+            lore.add(story.getDisplayName());
+            lore.addAll(story.getStoryLore());
+        }
+        itemMeta.setLore(lore);
+    }
+
+    /** 被否决方案的组件化故事 lore 组装副本 */
+    private void newStoryLore(java.util.List<io.github.sefiraat.crystamaehistoria.stories.Story> stories,
+                              ItemMeta itemMeta,
+                              net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacy) {
+        final java.util.List<net.kyori.adventure.text.Component> lore = new java.util.ArrayList<>();
+        for (io.github.sefiraat.crystamaehistoria.stories.Story story : stories) {
+            lore.add(legacy.deserialize(""));
+            lore.add(legacy.deserialize(story.getDisplayName()));
+            for (String line : story.getStoryLore()) {
+                lore.add(legacy.deserialize(line));
+            }
+        }
+        itemMeta.lore(lore);
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
