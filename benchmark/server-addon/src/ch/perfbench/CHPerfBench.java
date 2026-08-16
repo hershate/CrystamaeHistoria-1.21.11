@@ -95,7 +95,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound29(w),
                 () -> benchRound31(w),
                 () -> benchRound34(w),
-                () -> benchRound35(w)
+                () -> benchRound35(w),
+                () -> benchRound38(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -2888,6 +2889,91 @@ public final class CHPerfBench extends JavaPlugin {
             world.getNearbyEntities(center, 3, 3, 3, org.bukkit.entity.Item.class::isInstance);
             // 首扫空 → 跳过次扫
         });
+    }
+
+    /** 第 38 轮：粒子展示任务的玩家筛除（Proxy 玩家桩，20 在线形态） */
+    private void benchRound38(PrintWriter w) {
+        final World world = Bukkit.getWorlds().get(0);
+        final org.bukkit.Location standLoc = new Location(world, 6000.5, 130.5, 6000.5);
+        final ItemStack dirtStack = new ItemStack(Material.DIRT);
+
+        // 玩家桩：java.lang.reflect.Proxy，按返回类型给默认值
+        final java.util.function.Function<java.util.Objects, ?> none = null;
+        final org.bukkit.entity.Player[] players = new org.bukkit.entity.Player[20];
+        final java.lang.reflect.InvocationHandler handler = (proxy, method, args) -> {
+            switch (method.getName()) {
+                case "getInventory":
+                    return java.lang.reflect.Proxy.newProxyInstance(
+                        getClass().getClassLoader(),
+                        new Class[]{org.bukkit.inventory.PlayerInventory.class},
+                        (p2, m2, a2) -> m2.getName().equals("getItemInMainHand") ? dirtStack : defaultValue(m2.getReturnType()));
+                case "getLocation":
+                    return standLoc;
+                default:
+                    return defaultValue(method.getReturnType());
+            }
+        };
+        for (int i = 0; i < players.length; i++) {
+            players[i] = (org.bukkit.entity.Player) java.lang.reflect.Proxy.newProxyInstance(
+                getClass().getClassLoader(), new Class[]{org.bukkit.entity.Player.class}, handler);
+        }
+
+        // ———— 等价性：非持勺玩家两形态判定一致（均筛除，不取块） ————
+        boolean equivGating = true;
+        for (org.bukkit.entity.Player player : players) {
+            final SlimefunItem item = SlimefunItem.getByItem(player.getInventory().getItemInMainHand());
+            final boolean oldHolds = item instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.tools.LuminescenceScoop;
+            equivGating &= !oldHolds; // 桩持泥土：两形态都必须筛除
+        }
+        getLogger().info("round38 等价性(非持勺筛除一致): " + equivGating);
+
+        // ———— 每玩家循环体：旧（判定前取块快照）vs 新（判定后取） ————
+        time(w, "particleDisplay.playerLoop20", "old_fetch_block_before_gate", 50_000, () -> {
+            int c = 0;
+            for (org.bukkit.entity.Player player : players) {
+                final SlimefunItem item = SlimefunItem.getByItem(player.getInventory().getItemInMainHand());
+                final Block block = player.getLocation().getBlock();
+                if (!(item instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.tools.LuminescenceScoop)) {
+                    continue;
+                }
+                c += block.getX();
+            }
+            bh += c;
+        });
+        time(w, "particleDisplay.playerLoop20", "new_gate_first", 100_000, () -> {
+            int c = 0;
+            for (org.bukkit.entity.Player player : players) {
+                final SlimefunItem item = SlimefunItem.getByItem(player.getInventory().getItemInMainHand());
+                if (!(item instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.tools.LuminescenceScoop)) {
+                    continue;
+                }
+                c += player.getLocation().getBlock().getX();
+            }
+            bh += c;
+        });
+    }
+
+    /** Proxy 桩的按类型默认值（对象 null / 基元零值） */
+    private static Object defaultValue(Class<?> type) {
+        if (!type.isPrimitive() || type == void.class) {
+            return null;
+        }
+        if (type == boolean.class) {
+            return false;
+        }
+        if (type == char.class) {
+            return (char) 0;
+        }
+        if (type == float.class) {
+            return 0f;
+        }
+        if (type == double.class) {
+            return 0d;
+        }
+        if (type == long.class) {
+            return 0L;
+        }
+        return 0;
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
