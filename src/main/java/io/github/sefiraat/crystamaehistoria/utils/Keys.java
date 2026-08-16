@@ -40,6 +40,9 @@ public final class Keys {
     // Items
     public static final NamespacedKey PDC_IS_STORIED = newKey("is_s");
     public static final NamespacedKey PDC_POTENTIAL_STORIES = newKey("s_pot");
+    /** 故事上限扁平 int 键（v2）：原 JSON 编码（JS_S_AS/JS_S_T）中 tier 只写不读，
+     * 消费值仅 available count 一个数字；读取 int 优先、JSON 回退（旧存档兼容） */
+    public static final NamespacedKey PDC_STORY_LIMIT = newKey("s_lim_i");
     public static final NamespacedKey PDC_CURRENT_NUMBER_OF_STORIES = newKey("s_cur_n");
     public static final NamespacedKey PDC_STORIES = newKey("s_list");
     /** 故事列表 v2 瘦编码（单容器两键：合并 id 串 + 稀有度 int[]）；读取 v2 优先，回退 v1 */

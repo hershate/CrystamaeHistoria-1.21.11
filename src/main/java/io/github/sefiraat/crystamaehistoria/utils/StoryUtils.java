@@ -123,9 +123,30 @@ public class StoryUtils {
         // （原实现 getStoryLimits 内部再克隆一次；getInitialStoryLimits 的及早求值顺序保持不变）
         final ItemMeta itemMeta = itemStack.getItemMeta();
         PersistentDataAPI.setBoolean(itemMeta, Keys.PDC_IS_STORIED, true);
-        setStoryLimits(itemMeta, PersistentDataAPI.getJsonObject(
-            itemMeta, Keys.PDC_POTENTIAL_STORIES, getInitialStoryLimits(itemStack)));
+        // v2 扁平化：原 JSON 编码（gson 逐次解析；tier 只写不读）迁移为单 int 键，
+        // 已存在的 JSON（重复 makeStoried 场景保持原值）解析后落 int 并移除 JSON 键
+        final JsonObject limits = PersistentDataAPI.getJsonObject(
+            itemMeta, Keys.PDC_POTENTIAL_STORIES, getInitialStoryLimits(itemStack));
+        PersistentDataAPI.setInt(itemMeta, Keys.PDC_STORY_LIMIT, extractStoryLimit(limits));
+        itemMeta.getPersistentDataContainer().remove(Keys.PDC_POTENTIAL_STORIES);
         itemStack.setItemMeta(itemMeta);
+    }
+
+    /**
+     * 从（不可信的）故事上限 JSON 提取 available 计数：缺失/非数字/异常按 0
+     * （无剩余槽位），与原 getMaxStoryAmount 的防御语义一致。
+     */
+    private static int extractStoryLimit(@Nullable JsonObject limits) {
+        try {
+            if (limits == null || !limits.has(Keys.JS_S_AVAILABLE_STORIES)
+                || !limits.get(Keys.JS_S_AVAILABLE_STORIES).isJsonPrimitive()
+            ) {
+                return 0;
+            }
+            return limits.get(Keys.JS_S_AVAILABLE_STORIES).getAsInt();
+        } catch (RuntimeException e) {
+            return 0;
+        }
     }
 
     /**
@@ -218,38 +239,27 @@ public class StoryUtils {
      */
     @ParametersAreNonnullByDefault
     public static int getMaxStoryAmount(ItemStack itemStack) {
-        // PDC 中的 JsonObject 不可信（改造客户端可伪造部分键/非数字/坏 JSON）：
-        // 异常或缺失一律按 0 处理（无剩余槽位），避免每 tick 异常卡死机械
-        try {
-            final JsonObject limits = getStoryLimits(itemStack);
-            if (limits == null || !limits.has(Keys.JS_S_AVAILABLE_STORIES)
-                || !limits.get(Keys.JS_S_AVAILABLE_STORIES).isJsonPrimitive()
-            ) {
-                return 0;
-            }
-            return limits.get(Keys.JS_S_AVAILABLE_STORIES).getAsInt();
-        } catch (RuntimeException e) {
-            return 0;
-        }
+        return getMaxStoryAmount(itemStack.getItemMeta());
     }
 
     /**
      * 同 {@link #getMaxStoryAmount(ItemStack)}，但接受调用方已读取的 ItemMeta。
+     * v2 扁平 int 键优先，旧 JSON 编码回退（旧存档兼容）；缺失/损坏按 0
+     * （无剩余槽位），避免每 tick 异常卡死机械。
      */
     public static int getMaxStoryAmount(@Nullable ItemMeta itemMeta) {
-        // PDC 中的 JsonObject 不可信（改造客户端可伪造部分键/非数字/坏 JSON）：
-        // 异常或缺失一律按 0 处理（无剩余槽位），避免每 tick 异常卡死机械
+        if (itemMeta == null) {
+            return 0;
+        }
+        // int 键存在即用（PDC 值类型不匹配按缺失处理，crafted 防御）
+        if (DataTypeMethods.hasCustom(itemMeta, Keys.PDC_STORY_LIMIT, org.bukkit.persistence.PersistentDataType.INTEGER)) {
+            final Integer value = DataTypeMethods.getCustom(itemMeta, Keys.PDC_STORY_LIMIT, org.bukkit.persistence.PersistentDataType.INTEGER);
+            return value != null ? value : 0;
+        }
+        // 旧 JSON 编码回退：不可信（伪造部分键/非数字/坏 JSON）按 0
         try {
-            if (itemMeta == null) {
-                return 0;
-            }
             final JsonObject limits = PersistentDataAPI.getJsonObject(itemMeta, Keys.PDC_POTENTIAL_STORIES, null);
-            if (limits == null || !limits.has(Keys.JS_S_AVAILABLE_STORIES)
-                || !limits.get(Keys.JS_S_AVAILABLE_STORIES).isJsonPrimitive()
-            ) {
-                return 0;
-            }
-            return limits.get(Keys.JS_S_AVAILABLE_STORIES).getAsInt();
+            return extractStoryLimit(limits);
         } catch (RuntimeException e) {
             return 0;
         }
