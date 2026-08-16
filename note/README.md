@@ -33,8 +33,10 @@ v0.2.0 全套基准 + 10 分钟 soak 终验 0 异常 0 tick 落后。
 路径 O(1) 化（弹射物/下落方块反查 20-38.5x、无敌内存注册表 4.3-5.7x、
 召唤物类型门控 5.0x）；第 11 轮液化池路径全套（syncBlock 脏标记 431x、
 配方索引 140x、top-3 单遍 7.5x）；第 12 轮启动路径（稳态零配置落盘 16x、
-首启批量补键 63.8x、分段计时画像）。见 [round-10](report/perf/round-10.md)、
-[round-11](report/perf/round-11.md)、[round-12](report/perf/round-12.md)。
+首启批量补键 63.8x、分段计时画像）；第 13 轮剩余全局监听器门控审计收官
+（isStoried 元克隆门控 5.8x ×4 处）。见 [round-10](report/perf/round-10.md)、
+[round-11](report/perf/round-11.md)、[round-12](report/perf/round-12.md)、
+[round-13](report/perf/round-13.md)。
 
 ## 维护要点（改代码前必读）
 
