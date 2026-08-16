@@ -96,7 +96,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound31(w),
                 () -> benchRound34(w),
                 () -> benchRound35(w),
-                () -> benchRound38(w)
+                () -> benchRound38(w),
+                () -> benchRound39(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -2974,6 +2975,46 @@ public final class CHPerfBench extends JavaPlugin {
             return 0L;
         }
         return 0;
+    }
+
+    /** 第 39 轮：展示架 afterTick 的 getByItem 每 tick 读取缓存化（真实实体 + Slimefun 物品） */
+    private void benchRound39(PrintWriter w) {
+        final World world = Bukkit.getWorlds().get(0);
+        final Location loc = new Location(world, 6000.5, 135.5, 6000.5);
+
+        // 取一个真实注册的 Slimefun 物品堆
+        SlimefunItem anySf = null;
+        for (SlimefunItem sf : io.github.thebusybiscuit.slimefun4.implementation.Slimefun.getRegistry().getEnabledSlimefunItems()) {
+            anySf = sf;
+            break;
+        }
+        final ItemStack sfStack = anySf.getItem();
+        final org.bukkit.entity.Item display = world.dropItem(loc, sfStack);
+        display.setGravity(false);
+
+        // 弱缓存同构副本
+        final java.util.Map<org.bukkit.entity.Item, SlimefunItem> cache = new java.util.WeakHashMap<>();
+
+        // ———— 等价性：缓存解析与直读一致（多次/移除重解析） ————
+        boolean equiv = SlimefunItem.getByItem(display.getItemStack()) == cache.computeIfAbsent(display, d -> SlimefunItem.getByItem(d.getItemStack()));
+        cache.remove(display);
+        equiv &= cache.computeIfAbsent(display, d -> SlimefunItem.getByItem(d.getItemStack())) == SlimefunItem.getByItem(display.getItemStack());
+        getLogger().info("round39 等价性(缓存解析一致): " + equiv);
+
+        // ———— 每 tick 解析：直读 vs 弱缓存命中 ————
+        time(w, "standTick.resolveItem", "old_getByItem_per_tick", 50_000, () -> {
+            bh += SlimefunItem.getByItem(display.getItemStack()) != null ? 1 : 0;
+        });
+        time(w, "standTick.resolveItem", "new_weakmap_hit", 500_000, () -> {
+            SlimefunItem r = cache.get(display);
+            if (r == null && !cache.containsKey(display)) {
+                r = SlimefunItem.getByItem(display.getItemStack());
+                cache.put(display, r);
+            }
+            bh += r != null ? 1 : 0;
+        });
+
+        display.remove();
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */

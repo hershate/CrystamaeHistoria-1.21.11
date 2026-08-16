@@ -131,7 +131,10 @@ round-13~29 等价性断言全 true）+ 纯空闲 soak（0 SEVERE 0 tick 落后
 [report/perf/round-36](report/perf/round-36.md)。第 37 轮判定：伤害权限门控
 为环境依赖边界（基础 ~百 ns；集成环境 µs-ms，缓存因 cast 中途语义
 风险拒绝）。第 38 轮粒子展示任务玩家筛除（1.20x 噪声级，卫生性变更；
-Proxy 玩家桩基准方法论沉淀）。
+Proxy 玩家桩基准方法论沉淀）。第 39 轮展示架 afterTick 解析弱缓存化（复查轮实质发现，
+r7 gadget 清扫未覆盖 Stand 子类）：每 tick 每 架 getByItem 全量
+meta+PDC 读 → WeakHashMap 弱缓存——178x（1305→7.32ns，每架每 tick
+-1.3µs）。
 
 ## 维护要点（改代码前必读）
 
