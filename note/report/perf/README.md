@@ -47,6 +47,7 @@
 | 轮次 | 优化点 | 状态 |
 |------|--------|------|
 | 26 | 故事列表 PDC v2 瘦编码（单容器两键替代 N 子容器×2 键）：serialize5 2.09x / deserialize5 1.79x / 首故事提交端到端 1.22x，物品 NBT 负载缩小；v1 双读兼容（旧存档可读，一经写入即迁移），crafted 损坏降级语义与 v1 同级；迁移/往返/双读断言全 true（[round-26](round-26.md)） | ✅ 完成（服务器回归通过，0 SEVERE） |
+| 27 | 故事上限 JSON → 扁平 int 键（tier 只写不读，消费值仅 1 数字）：判定链/提交的 gson 逐次解析消除——read 1.93x / makeStoried 1.52x；JSON 双读回退（旧存档永久兼容）+ makeStoried 迁移；makeStoried/jsonFallback/crafted 断言全 true（[round-27](round-27.md)） | ✅ 完成（服务器回归通过，0 SEVERE） |
 
 ## 收敛判定（round-25）
 

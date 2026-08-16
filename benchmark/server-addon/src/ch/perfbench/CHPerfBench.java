@@ -89,7 +89,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound22(w),
                 () -> benchRound23(w),
                 () -> benchRound24(w),
-                () -> benchRound26(w)
+                () -> benchRound26(w),
+                () -> benchRound27(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -2336,6 +2337,122 @@ public final class CHPerfBench extends JavaPlugin {
             itemMeta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS);
         }
         io.github.sefiraat.crystamaehistoria.managers.StoriesManager.rebuildStoriedStack(itemStack, itemMeta, storyList);
+        itemStack.setItemMeta(itemMeta);
+    }
+
+    /** 第 27 轮：故事上限 JSON → 扁平 int 键（真实 PDC + gson 对照） */
+    @SuppressWarnings("deprecation")
+    private void benchRound27(PrintWriter w) {
+        // ———— 等价性 ————
+        boolean equivMakeStoried;
+        boolean equivJsonFallback;
+        boolean equivCrafted;
+        {
+            // 新 makeStoried：int 键落盘 + JSON 键移除，读数与 JSON 编码一致
+            final ItemStack item = new ItemStack(Material.STONE);
+            io.github.sefiraat.crystamaehistoria.utils.StoryUtils.makeStoried(item);
+            final int newRead = io.github.sefiraat.crystamaehistoria.utils.StoryUtils.getMaxStoryAmount(item.getItemMeta());
+            final boolean jsonRemoved = !item.getItemMeta().getPersistentDataContainer().getKeys()
+                .contains(io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_POTENTIAL_STORIES);
+            final boolean intPresent = item.getItemMeta().getPersistentDataContainer().getKeys()
+                .contains(io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_STORY_LIMIT);
+            // 旧编码对照：手写 JSON（JS_S_AS=4/JS_S_T=1）→ 双读应得 4
+            final ItemStack legacy = new ItemStack(Material.STONE);
+            final ItemMeta lm = legacy.getItemMeta();
+            final com.google.gson.JsonObject json = new com.google.gson.JsonObject();
+            json.add(io.github.sefiraat.crystamaehistoria.utils.Keys.JS_S_AVAILABLE_STORIES,
+                new com.google.gson.JsonPrimitive(4));
+            json.add(io.github.sefiraat.crystamaehistoria.utils.Keys.JS_S_TIER,
+                new com.google.gson.JsonPrimitive(1));
+            io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI
+                .setJsonObject(lm, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_POTENTIAL_STORIES, json);
+            legacy.setItemMeta(lm);
+            equivMakeStoried = newRead >= 1 && newRead <= 5 && jsonRemoved && intPresent;
+            equivJsonFallback = io.github.sefiraat.crystamaehistoria.utils.StoryUtils
+                .getMaxStoryAmount(legacy.getItemMeta()) == 4;
+            // crafted 坏 JSON（非数字）→ 0
+            final ItemStack crafted = new ItemStack(Material.STONE);
+            final ItemMeta cm = crafted.getItemMeta();
+            final com.google.gson.JsonObject bad = new com.google.gson.JsonObject();
+            bad.add(io.github.sefiraat.crystamaehistoria.utils.Keys.JS_S_AVAILABLE_STORIES,
+                new com.google.gson.JsonPrimitive("not-a-number"));
+            io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI
+                .setJsonObject(cm, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_POTENTIAL_STORIES, bad);
+            crafted.setItemMeta(cm);
+            equivCrafted = io.github.sefiraat.crystamaehistoria.utils.StoryUtils
+                .getMaxStoryAmount(crafted.getItemMeta()) == 0;
+        }
+        getLogger().info("round27 等价性: makeStoried=" + equivMakeStoried
+            + " jsonFallback=" + equivJsonFallback + " crafted=" + equivCrafted);
+
+        // ———— 上限读取（判定链/提交路径每物品实例多次） ————
+        final ItemStack legacyItem = new ItemStack(Material.STONE);
+        {
+            final ItemMeta m = legacyItem.getItemMeta();
+            final com.google.gson.JsonObject json = new com.google.gson.JsonObject();
+            json.add(io.github.sefiraat.crystamaehistoria.utils.Keys.JS_S_AVAILABLE_STORIES,
+                new com.google.gson.JsonPrimitive(4));
+            json.add(io.github.sefiraat.crystamaehistoria.utils.Keys.JS_S_TIER,
+                new com.google.gson.JsonPrimitive(1));
+            io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI
+                .setJsonObject(m, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_POTENTIAL_STORIES, json);
+            legacyItem.setItemMeta(m);
+        }
+        final ItemStack flatItem = new ItemStack(Material.STONE);
+        io.github.sefiraat.crystamaehistoria.utils.StoryUtils.makeStoried(flatItem);
+        time(w, "storyLimit.read", "old_json_parse", 50_000, () -> {
+            bh += round27OldJsonLimit(legacyItem.getItemMeta());
+        });
+        time(w, "storyLimit.read", "new_int_read", 500_000, () -> {
+            bh += io.github.sefiraat.crystamaehistoria.utils.StoryUtils.getMaxStoryAmount(flatItem.getItemMeta());
+        });
+
+        // ———— makeStoried 端到端 ————
+        time(w, "storyLimit.makeStoried", "old_json_write", 5_000, () -> {
+            final ItemStack item = new ItemStack(Material.STONE);
+            round27OldMakeStoried(item);
+            bh += item.getType().ordinal();
+        });
+        time(w, "storyLimit.makeStoried", "new_int_write", 20_000, () -> {
+            final ItemStack item = new ItemStack(Material.STONE);
+            io.github.sefiraat.crystamaehistoria.utils.StoryUtils.makeStoried(item);
+            bh += item.getType().ordinal();
+        });
+    }
+
+    /** 同构副本：旧 JSON 编码的上限读取（防御解析逐行一致） */
+    @SuppressWarnings("deprecation")
+    private int round27OldJsonLimit(ItemMeta itemMeta) {
+        try {
+            if (itemMeta == null) {
+                return 0;
+            }
+            final com.google.gson.JsonObject limits = io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI
+                .getJsonObject(itemMeta, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_POTENTIAL_STORIES, null);
+            if (limits == null || !limits.has(io.github.sefiraat.crystamaehistoria.utils.Keys.JS_S_AVAILABLE_STORIES)
+                || !limits.get(io.github.sefiraat.crystamaehistoria.utils.Keys.JS_S_AVAILABLE_STORIES).isJsonPrimitive()
+            ) {
+                return 0;
+            }
+            return limits.get(io.github.sefiraat.crystamaehistoria.utils.Keys.JS_S_AVAILABLE_STORIES).getAsInt();
+        } catch (RuntimeException e) {
+            return 0;
+        }
+    }
+
+    /** 同构副本：旧 JSON 编码的 makeStoried（getInitialStoryLimits 以固定 4 代替随机，两变体同侧） */
+    @SuppressWarnings("deprecation")
+    private void round27OldMakeStoried(ItemStack itemStack) {
+        final ItemMeta itemMeta = itemStack.getItemMeta();
+        io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI
+            .setBoolean(itemMeta, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_IS_STORIED, true);
+        final com.google.gson.JsonObject json = new com.google.gson.JsonObject();
+        json.add(io.github.sefiraat.crystamaehistoria.utils.Keys.JS_S_AVAILABLE_STORIES,
+            new com.google.gson.JsonPrimitive(4));
+        json.add(io.github.sefiraat.crystamaehistoria.utils.Keys.JS_S_TIER,
+            new com.google.gson.JsonPrimitive(1));
+        io.github.thebusybiscuit.slimefun4.libraries.dough.data.persistent.PersistentDataAPI
+            .setJsonObject(itemMeta, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_POTENTIAL_STORIES, json);
         itemStack.setItemMeta(itemMeta);
     }
 

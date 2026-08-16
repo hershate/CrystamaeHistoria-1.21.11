@@ -85,7 +85,10 @@ round-13~23 全部等价性断言 true）+ 纯空闲 soak（0 SEVERE 0 tick 落�
 瘦编码——单容器两键（NUL 连接 id 串 + 稀有度 int[]）替代 N 子容器×2 键，
 serialize5 2.09x / deserialize5 1.79x / 首故事提交端到端 1.22x，物品
 NBT 负载缩小；v1 双读兼容（旧存档可读，一经写入即迁移），crafted
-损坏降级语义与 v1 同级；往返/双读/迁移断言全 true。
+损坏降级语义与 v1 同级；往返/双读/迁移断言全 true。第 27 轮故事上限
+JSON → 扁平 int 键（tier 只写不读，消费值仅 1 数字）——判定链/提交的
+gson 逐次解析消除，read 1.93x / makeStoried 1.52x；JSON 双读回退 +
+makeStoried 迁移，断言全 true。
 
 ## 维护要点（改代码前必读）
 
