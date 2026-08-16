@@ -121,15 +121,44 @@ public class ConfigManager {
     }
 
     public void saveAll() {
+        saveAll(false);
+    }
+
+    /**
+     * 周期落盘（10 分钟）带脏判定跳过：统计纪元（PlayerStatistics，全部
+     * 6 个写点递增）与上次保存时的水位线比较——无写入则跳过
+     * player_stats.yml 的全量 YAML 序列化与磁盘写（稳态零落盘）；
+     * config.yml 运行期无写入方，首个周期后同样跳过。
+     * 关服路径 force=true 无条件落盘（最终冲刷）。
+     */
+    public void saveAll(boolean force) {
+        final int currentEpoch = io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getStatsEpoch();
+        final boolean statsDirty = force || currentEpoch != savedStatsEpoch;
+        final boolean configDirty = force || !configSavedOnce;
+        if (!statsDirty && !configDirty) {
+            return;
+        }
         CrystamaeHistoria.getInstance().getLogger().info("正在保存魔法水晶编年史的数据");
         final File configFile = new File(CrystamaeHistoria.getInstance().getDataFolder(), "config.yml");
         try {
-            CrystamaeHistoria.getInstance().getConfig().save(configFile);
+            if (configDirty) {
+                CrystamaeHistoria.getInstance().getConfig().save(configFile);
+                configSavedOnce = true;
+            }
         } catch (IOException exception) {
             exception.printStackTrace();
         }
-        saveResearches();
+        if (statsDirty) {
+            saveResearches();
+            savedStatsEpoch = currentEpoch;
+        }
     }
+
+    /** 上次 player_stats 落盘时的统计纪元（-1 保证首个周期必落盘） */
+    private int savedStatsEpoch = -1;
+
+    /** config.yml 是否已落盘过（运行期无写入方，一次即稳态） */
+    private boolean configSavedOnce;
 
     private void saveResearches() {
         File file = new File(CrystamaeHistoria.getInstance().getDataFolder(), "player_stats.yml");

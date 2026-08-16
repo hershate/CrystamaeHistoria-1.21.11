@@ -29,6 +29,11 @@ public class PlayerStatistics {
         statsEpoch++;
     }
 
+    /** 当前统计纪元（周期落盘的脏判定水位线：与上次保存时的纪元比较） */
+    public static int getStatsEpoch() {
+        return statsEpoch;
+    }
+
     /**
      * 成员资格纪元：仅 3 个解锁写方法（unlockSpell/unlockUniqueStory/
      * unlockStoryGilded）递增——计数类写入（addUsage/addChronicle/

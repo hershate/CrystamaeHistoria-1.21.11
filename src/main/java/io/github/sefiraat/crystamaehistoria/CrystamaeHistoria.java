@@ -221,7 +221,8 @@ public class CrystamaeHistoria extends JavaPlugin implements SlimefunAddon {
             }
 
             spellMemory.clearAll();
-            configManager.saveAll();
+            // 关服最终冲刷：无条件落盘
+            configManager.saveAll(true);
             instance = null;
         }
     }
