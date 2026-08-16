@@ -1010,7 +1010,7 @@ public final class CHPerfBench extends JavaPlugin {
         DataTypeMethods.setCustom(staveBaseMeta, Keys.PDC_STAVE_STORAGE, PersistentStaveDataType.TYPE, plates);
         stave.setItemMeta(staveBaseMeta);
         final InstanceStave staveInstance = new InstanceStave(stave);
-        time(w, "writePath.staveLoreRebuild", "old_dynamic_strings", 100_000, () -> {
+        time(w, "writePath.staveLoreRebuild", "old_dynamic_strings", 40_000, () -> {
             // 同构副本：0.3.0 的 buildLore（动态拼接；getName 为各法术覆写的常量返回）
             final ItemMeta m = stave.getItemMeta();
             final String[] lore = new String[]{"可以进行法术绑定的法杖"};
@@ -1041,7 +1041,7 @@ public final class CHPerfBench extends JavaPlugin {
             m.setLore(finalLore);
             stave.setItemMeta(m);
         });
-        time(w, "writePath.staveLoreRebuild", "new_static_fragments", 100_000, () -> {
+        time(w, "writePath.staveLoreRebuild", "new_static_fragments", 40_000, () -> {
             final ItemMeta m = stave.getItemMeta();
             staveInstance.buildLore(m);
             stave.setItemMeta(m);
