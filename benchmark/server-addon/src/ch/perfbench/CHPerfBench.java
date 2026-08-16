@@ -58,26 +58,49 @@ public final class CHPerfBench extends JavaPlugin {
     }
 
     private void runBenchmarks() {
-        File outDir = new File(getDataFolder().getParentFile(), "CHPerfBench");
+        final File outDir = new File(getDataFolder().getParentFile(), "CHPerfBench");
         outDir.mkdirs();
-        try (PrintWriter w = new PrintWriter(new File(outDir, "results.tsv"), "UTF-8")) {
+        try {
+            final PrintWriter w = new PrintWriter(new File(outDir, "results.tsv"), "UTF-8");
             w.println("bench\tvariant\tmedian_ns_op");
-            benchRaycast(w);
-            benchStavePdc(w);
-            benchInteractPaths(w);
-            benchMachineTick(w);
-            benchMachineTickMemo(w);
-            benchStaveCast(w);
-            benchGadgetTick(w);
-            benchStoryPick(w);
-            benchStatsPath(w);
-            benchRound10(w);
-            benchRound11(w);
+            w.flush();
+            // 基准组链式调度：每组之间让出至少 2 tick，避免连续阻塞主线程超过
+            // 服务器 watchdog 阈值（曾触发线程转储乃至强制停机）
+            final Runnable[] steps = {
+                () -> benchRaycast(w),
+                () -> benchStavePdc(w),
+                () -> benchInteractPaths(w),
+                () -> benchMachineTick(w),
+                () -> benchMachineTickMemo(w),
+                () -> benchStaveCast(w),
+                () -> benchGadgetTick(w),
+                () -> benchStoryPick(w),
+                () -> benchStatsPath(w),
+                () -> benchRound10(w),
+                () -> benchRound11(w),
+                () -> benchRound12(w)
+            };
+            chainSteps(w, steps, 0);
         } catch (Exception e) {
             getLogger().severe("基准失败: " + e);
             e.printStackTrace();
         }
-        getLogger().info("CHPERFBENCH COMPLETE, blackhole=" + bh);
+    }
+
+    private void chainSteps(PrintWriter w, Runnable[] steps, int index) {
+        if (index >= steps.length) {
+            w.close();
+            getLogger().info("CHPERFBENCH COMPLETE, blackhole=" + bh);
+            return;
+        }
+        try {
+            steps[index].run();
+        } catch (Exception e) {
+            getLogger().severe("基准组 " + index + " 失败: " + e);
+            e.printStackTrace();
+        }
+        // 让出 2 tick（约 100ms）供服务器呼吸，重置 watchdog 计时
+        Bukkit.getScheduler().runTaskLater(this, () -> chainSteps(w, steps, index + 1), 2L);
     }
 
     /** 变体：A=旧构造器（两次 raycast），B=新构造器（单次 rayTraceBlocks）；miss=50格无命中，hit=5格石墙命中 */
@@ -684,6 +707,96 @@ public final class CHPerfBench extends JavaPlugin {
             bh += cachedCenter.getBlockX() + (int) cachedDust.getSize());
         basinBlock.setType(Material.AIR);
         bsBlock.setType(Material.AIR);
+    }
+
+    /** 第 12 轮：启动路径（配置文件落盘策略、法术配置首次启动写盘、故事解析列表读取） */
+    private void benchRound12(PrintWriter w) {
+        final java.io.File dataDir = new File(getDataFolder().getParentFile(), "CHPerfBench");
+        final java.io.File blocksFile =
+            new java.io.File(CrystamaeHistoria.getInstance().getDataFolder(), "blocks.yml");
+
+        // —— blocks.yml 稳态启动落盘：旧（无条件 save）vs 新（默认键存在性检查后跳过）——
+        try {
+            final org.bukkit.configuration.file.YamlConfiguration blocksCfg =
+                org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(blocksFile);
+            final java.io.File tmpBlocks = new java.io.File(dataDir, "tmp-blocks.yml");
+            time(w, "startup.configSave", "old_unconditional_save", 10, () -> {
+                try {
+                    blocksCfg.save(tmpBlocks);
+                } catch (Exception e) {
+                    bh++;
+                }
+            });
+            time(w, "startup.configSave", "new_presence_check_skip", 200, () -> {
+                boolean missing = false;
+                for (String key : blocksCfg.getKeys(true)) {
+                    if (!blocksCfg.contains(key)) {
+                        missing = true;
+                        break;
+                    }
+                }
+                bh += missing ? 1 : 0;
+            });
+            // 检查的忠实性验证：自身键必然全部包含（missing 恒 false）
+            tmpBlocks.delete();
+        } catch (Exception e) {
+            getLogger().severe("round12 blocks 基准失败: " + e);
+        }
+
+        // —— spells.yml 首次启动补键：旧（每键一存，≤69 次全量写）vs 新（补齐后一存）——
+        try {
+            final org.bukkit.configuration.file.YamlConfiguration spellsCfg =
+                new org.bukkit.configuration.file.YamlConfiguration();
+            for (int i = 0; i < 69; i++) {
+                spellsCfg.set("SPELL_" + i, true);
+            }
+            final java.io.File tmpSpells = new java.io.File(dataDir, "tmp-spells.yml");
+            final org.bukkit.configuration.file.YamlConfiguration freshCfg =
+                new org.bukkit.configuration.file.YamlConfiguration();
+            time(w, "startup.spellsFirstBoot", "old_save_per_key", 3, () -> {
+                for (int i = 0; i < 69; i++) {
+                    freshCfg.set("SPELL_" + i, true);
+                    try {
+                        freshCfg.save(tmpSpells);
+                    } catch (Exception e) {
+                        bh++;
+                    }
+                }
+            });
+            time(w, "startup.spellsFirstBoot", "new_single_save", 100, () -> {
+                final org.bukkit.configuration.file.YamlConfiguration cfg =
+                    new org.bukkit.configuration.file.YamlConfiguration();
+                for (int i = 0; i < 69; i++) {
+                    cfg.set("SPELL_" + i, true);
+                }
+                try {
+                    cfg.save(tmpSpells);
+                } catch (Exception e) {
+                    bh++;
+                }
+            });
+            tmpSpells.delete();
+        } catch (Exception e) {
+            getLogger().severe("round12 spells 基准失败: " + e);
+        }
+
+        // —— 故事构造 shards 列表读取：旧（两次 getIntegerList）vs 新（一次）——
+        final org.bukkit.configuration.file.YamlConfiguration storyCfg =
+            new org.bukkit.configuration.file.YamlConfiguration();
+        try {
+            storyCfg.loadFromString(
+                "test:\n  name: T\n  type: ELEMENTAL\n  shards: [1,2,3,4,5,6,7,8,9]\n  lore: [a,b,c]\n");
+        } catch (Exception e) {
+            getLogger().severe("round12 story 段构造失败: " + e);
+        }
+        final org.bukkit.configuration.ConfigurationSection storySection = storyCfg.getConfigurationSection("test");
+        time(w, "startup.storyShardsRead", "old_double_read", 200_000, () -> {
+            bh += storySection.getIntegerList("shards").size()
+                + storySection.getIntegerList("shards").size();
+        });
+        time(w, "startup.storyShardsRead", "new_single_read", 500_000, () -> {
+            bh += storySection.getIntegerList("shards").size();
+        });
     }
 
     /** 时间驱动预热 + 分批中位数（主线程内，每变体约 1s） */
