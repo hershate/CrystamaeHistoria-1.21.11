@@ -70,6 +70,7 @@
 | 37 | **伤害权限门控判定轮**（复查 round-33 教训内化）：`ProtectionManager.hasPermission` 反汇编确认为保护模块迭代——基础环境 ~百 ns 边界 / 集成环境（WorldGuard）µs-ms **环境依赖**；权限缓存因 cast 中途语义漂移风险拒绝（[round-37](round-37.md)） | ✅ 完成（判定轮，无变更） |
 | 38 | 粒子展示任务玩家筛除（复查轮发现）：非持勺玩家的判定前块快照取消除——1.20x 但**绝对量噪声级**（JIT 逃逸分析已消除未使用分配，与 r19 结论互证）；LIGHT 注册表方案因跨重启持久化 + 他插件光源覆盖问题否决；新增 Proxy 玩家桩基准方法论（[round-38](round-38.md)） | ✅ 完成（服务器回归通过，0 SEVERE） |
 | 39 | 展示架 afterTick 解析弱缓存化（复查轮实质发现，r7/r11 均未覆盖）：`Stand.onTick` 每 tick 调 afterTick → getByItem 全量 meta+PDC 读——`resolveDisplayItem` WeakHashMap 弱缓存（实体替换即新键 + 回收自清理，零失效协议）：**178x**（1305 → 7.32ns，每架每 tick -1.3µs）；缓存解析一致断言 true（[round-39](round-39.md)） | ✅ 完成（服务器回归通过，0 SEVERE） |
+| 40 | 共享 SF 解析弱缓存（r39 同族扩展）：`utils/SlimefunItemResolver` 统一三处 tick 路径（液化池满池滞留水晶 / 镀金器拉取中物品 / Stand 委托）——**177x**（1279 → 7.22ns）；direct/stableInstance 断言 true；复查节奏累计战绩表见报告（[round-40](round-40.md)） | ✅ 完成（服务器回归通过，0 SEVERE） |
 
 ## 收敛判定（round-32）
 

@@ -134,7 +134,9 @@ round-13~29 等价性断言全 true）+ 纯空闲 soak（0 SEVERE 0 tick 落后
 Proxy 玩家桩基准方法论沉淀）。第 39 轮展示架 afterTick 解析弱缓存化（复查轮实质发现，
 r7 gadget 清扫未覆盖 Stand 子类）：每 tick 每 架 getByItem 全量
 meta+PDC 读 → WeakHashMap 弱缓存——178x（1305→7.32ns，每架每 tick
--1.3µs）。
+-1.3µs）。第 40 轮共享 SF 解析弱缓存（r39 同族扩展）：
+utils/SlimefunItemResolver 统一液化池满池滞留/镀金器拉取中物品/
+Stand 三处 tick 路径——177x（1279→7.22ns）。
 
 ## 维护要点（改代码前必读）
 

@@ -97,7 +97,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound34(w),
                 () -> benchRound35(w),
                 () -> benchRound38(w),
-                () -> benchRound39(w)
+                () -> benchRound39(w),
+                () -> benchRound40(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -3015,6 +3016,42 @@ public final class CHPerfBench extends JavaPlugin {
         });
 
         display.remove();
+    }
+
+    /** 第 40 轮：共享 SF 解析弱缓存（真实水晶实体——满池滞留形态） */
+    private void benchRound40(PrintWriter w) {
+        final World world = Bukkit.getWorlds().get(0);
+        final Location loc = new Location(world, 6000.5, 140.5, 6000.5);
+
+        // 真实水晶物品（Crystal 为注册 SF 物品，走完整解析路径）
+        SlimefunItem crystalSf = SlimefunItem.getById("CH_CRYSTAL_ELEMENTAL_COMMON");
+        if (crystalSf == null) {
+            // 兜底：任意已注册 SF 物品
+            for (SlimefunItem sf : io.github.thebusybiscuit.slimefun4.implementation.Slimefun.getRegistry().getEnabledSlimefunItems()) {
+                crystalSf = sf;
+                break;
+            }
+        }
+        final ItemStack crystalStack = crystalSf.getItem();
+        final org.bukkit.entity.Item standing = world.dropItem(loc, crystalStack);
+        standing.setGravity(false);
+
+        // ———— 等价性：共享解析器与直读一致（多次命中/移除重解析/水晶身份） ————
+        boolean equiv = io.github.sefiraat.crystamaehistoria.utils.SlimefunItemResolver.resolve(standing)
+            == SlimefunItem.getByItem(standing.getItemStack());
+        final SlimefunItem first = io.github.sefiraat.crystamaehistoria.utils.SlimefunItemResolver.resolve(standing);
+        final SlimefunItem second = io.github.sefiraat.crystamaehistoria.utils.SlimefunItemResolver.resolve(standing);
+        getLogger().info("round40 等价性(共享解析器): direct=" + equiv + " stableInstance=" + (first == second));
+
+        // ———— 满/滞留物品每 tick 解析：直读 vs 共享缓存命中 ————
+        time(w, "tickItem.resolve", "old_getByItem_per_tick", 50_000, () -> {
+            bh += SlimefunItem.getByItem(standing.getItemStack()) != null ? 1 : 0;
+        });
+        time(w, "tickItem.resolve", "new_shared_resolver_hit", 500_000, () -> {
+            bh += io.github.sefiraat.crystamaehistoria.utils.SlimefunItemResolver.resolve(standing) != null ? 1 : 0;
+        });
+
+        standing.remove();
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
