@@ -19,8 +19,8 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.UUID;
 
 /**
- * Removed due to issues. Will be replaced with a raycast version of the same spell.
- * Given the powerful nature of the spell, I want this to await tier 2 spells first.
+ * 隧道钻探：在施法者上方生成钻探实体，周期清理行进路径上半径内的方块。
+ * （原类注释"Removed due to issues"已过时——本法术在 SpellType 中注册且可达。）
  */
 public class TunnelBore extends Spell {
 

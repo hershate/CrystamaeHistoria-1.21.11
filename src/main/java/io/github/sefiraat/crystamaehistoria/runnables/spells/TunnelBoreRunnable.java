@@ -2,7 +2,6 @@ package io.github.sefiraat.crystamaehistoria.runnables.spells;
 
 import io.github.sefiraat.crystamaehistoria.utils.GeneralUtils;
 import io.github.sefiraat.crystamaehistoria.utils.ParticleUtils;
-import io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -11,13 +10,11 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 /**
- * Removed due to issues. Will be replaced with a raycast version of the same spell.
- * Given the powerful nature of the spell, I want this to await tier 2 spells first.
+ * 隧道钻探法术的周期钻进任务：每 tick 以钻探实体为中心清理半径内可破坏方块。
+ * （原类注释"Removed due to issues"已过时——法术在 SpellType 中注册且可达。）
  */
 public class TunnelBoreRunnable extends BukkitRunnable {
 
@@ -45,24 +42,23 @@ public class TunnelBoreRunnable extends BukkitRunnable {
         if (iterations <= 0) {
             this.cancel();
         } else {
+            // 直接按坐标遍历方块：三重循环的 (x,y,z) 组合构造上互异，原实现的
+            // BlockPosition 列表 + contains 去重（O(n²)，半径 5 时约 88 万次比较/迭代）
+            // 与至多 1331 个中间对象分配均为无效工作；访问顺序与原集合构建序一致
             final Location location = bore.getLocation();
-            final List<BlockPosition> blocks = new ArrayList<>();
+            final org.bukkit.World world = location.getWorld();
+            final int baseX = location.getBlockX();
+            final int baseY = location.getBlockY();
+            final int baseZ = location.getBlockZ();
 
-            for (int x = location.getBlockX() - radius; x <= location.getBlockX() + radius; x++) {
-                for (int y = location.getBlockY() - radius; y <= location.getBlockY() + radius; y++) {
-                    for (int z = location.getBlockZ() - radius; z <= location.getBlockZ() + radius; z++) {
-                        final BlockPosition blockPosition = new BlockPosition(location.getWorld(), x, y, z);
-                        if (!blocks.contains(blockPosition)) {
-                            blocks.add(blockPosition);
+            for (int x = baseX - radius; x <= baseX + radius; x++) {
+                for (int y = baseY - radius; y <= baseY + radius; y++) {
+                    for (int z = baseZ - radius; z <= baseZ + radius; z++) {
+                        final Block block = world.getBlockAt(x, y, z);
+                        if (GeneralUtils.blockCanBeBroken(this.owner, block)) {
+                            block.setType(Material.AIR);
                         }
                     }
-                }
-            }
-
-            for (BlockPosition blockPosition : blocks) {
-                final Block block = blockPosition.getBlock();
-                if (GeneralUtils.blockCanBeBroken(this.owner, block)) {
-                    block.setType(Material.AIR);
                 }
             }
 

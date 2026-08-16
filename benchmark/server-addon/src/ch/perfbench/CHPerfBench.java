@@ -82,7 +82,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound13(w),
                 () -> benchRound15(w),
                 () -> benchRound16(w),
-                () -> benchRound17(w)
+                () -> benchRound17(w),
+                () -> benchRound18(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -1408,6 +1409,83 @@ public final class CHPerfBench extends JavaPlugin {
         time(w, "mobGoal.followDistance", "old_distance_sqrt", 2_000_000, () -> bh += a.distance(b) > 5 ? 1 : 0);
         time(w, "mobGoal.followDistance", "new_distanceSquared", 5_000_000, () ->
             bh += a.distanceSquared(b) > 25 ? 1 : 0);
+    }
+
+    /**
+     * 第 18 轮：法术周期效果与周期任务路径。
+     * - tunnelBore.blockScan.r3/.r5：钻探任务块扫描（旧 BlockPosition + O(n²) 去重
+     *   vs 直接坐标遍历；半径 3=343 块 / 半径 5=1331 块，对应法杖等级 3/5）
+     * 等价性断言：两半径下坐标序列逐项一致。
+     * 域内其余周期路径（SpellTickRunnable/FloatingHeadAnimation/ParticleDisplayRunnable/
+     * TemporaryEffectsRunnable/SaveConfigRunnable）经核查无可测优化点，论证见报告不做项。
+     */
+    private void benchRound18(PrintWriter w) {
+        final World world = Bukkit.getWorlds().get(0);
+        final Location base = new Location(world, 5000.5, 120.5, 5000.5);
+
+        for (final int radius : new int[]{3, 5}) {
+            // 等价性：坐标序列（同序）
+            final java.util.List<String> oldCoords = new java.util.ArrayList<>();
+            final java.util.List<String> newCoords = new java.util.ArrayList<>();
+            {
+                final java.util.List<io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition> blocks =
+                    new java.util.ArrayList<>();
+                for (int x = base.getBlockX() - radius; x <= base.getBlockX() + radius; x++) {
+                    for (int y = base.getBlockY() - radius; y <= base.getBlockY() + radius; y++) {
+                        for (int z = base.getBlockZ() - radius; z <= base.getBlockZ() + radius; z++) {
+                            final io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition bp =
+                                new io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition(world, x, y, z);
+                            if (!blocks.contains(bp)) {
+                                blocks.add(bp);
+                            }
+                        }
+                    }
+                }
+                for (final io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition bp : blocks) {
+                    oldCoords.add(bp.getX() + "," + bp.getY() + "," + bp.getZ());
+                }
+                for (int x = base.getBlockX() - radius; x <= base.getBlockX() + radius; x++) {
+                    for (int y = base.getBlockY() - radius; y <= base.getBlockY() + radius; y++) {
+                        for (int z = base.getBlockZ() - radius; z <= base.getBlockZ() + radius; z++) {
+                            newCoords.add(x + "," + y + "," + z);
+                        }
+                    }
+                }
+            }
+            getLogger().info("round18 等价性(坐标序列 r" + radius + "): " + oldCoords.equals(newCoords));
+
+            final String benchName = "tunnelBore.blockScan.r" + radius;
+            time(w, benchName, "old_blockposition_dedup", radius == 3 ? 4_000 : 600, () -> {
+                final java.util.List<io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition> blocks =
+                    new java.util.ArrayList<>();
+                for (int x = base.getBlockX() - radius; x <= base.getBlockX() + radius; x++) {
+                    for (int y = base.getBlockY() - radius; y <= base.getBlockY() + radius; y++) {
+                        for (int z = base.getBlockZ() - radius; z <= base.getBlockZ() + radius; z++) {
+                            final io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition bp =
+                                new io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition(world, x, y, z);
+                            if (!blocks.contains(bp)) {
+                                blocks.add(bp);
+                            }
+                        }
+                    }
+                }
+                for (final io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition bp : blocks) {
+                    bh += bp.getBlock().getType().ordinal();
+                }
+            });
+            time(w, benchName, "new_direct_coords", 4_000, () -> {
+                final int bx = base.getBlockX();
+                final int by = base.getBlockY();
+                final int bz = base.getBlockZ();
+                for (int x = bx - radius; x <= bx + radius; x++) {
+                    for (int y = by - radius; y <= by + radius; y++) {
+                        for (int z = bz - radius; z <= bz + radius; z++) {
+                            bh += world.getBlockAt(x, y, z).getType().ordinal();
+                        }
+                    }
+                }
+            });
+        }
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
