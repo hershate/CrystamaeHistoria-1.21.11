@@ -79,7 +79,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound10(w),
                 () -> benchRound11(w),
                 () -> benchRound12(w),
-                () -> benchRound13(w)
+                () -> benchRound13(w),
+                () -> benchRound15(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -884,5 +885,338 @@ public final class CHPerfBench extends JavaPlugin {
         w.printf("%s\t%s\t%.2f%n", bench, variant, medians[2]);
         w.flush();
         getLogger().info(String.format("%s/%s: %.2f ns/op", bench, variant, medians[2]));
+    }
+
+    /**
+     * 时间驱动预热 + 分批中位数（状态增长型操作专用）：被测操作会使物品状态单调增长
+     * （每次追加一条故事），预热期周期复位、每批判前复位到模板，保证两变体在相同的
+     * 列表长度区间内计量（批内仍从 preset 增长 batchOps 条，两变体增长曲线一致）。
+     */
+    private void timeResettable(PrintWriter w, String bench, String variant, int batchOps,
+                                Runnable reset, Runnable op) {
+        long warmupEnd = System.nanoTime() + 300_000_000L;
+        int warmupOps = 0;
+        while (System.nanoTime() < warmupEnd) {
+            op.run();
+            if (++warmupOps % 32 == 0) {
+                reset.run();
+            }
+        }
+        reset.run();
+        double[] medians = new double[5];
+        for (int i = 0; i < medians.length; i++) {
+            reset.run();
+            long start = System.nanoTime();
+            for (int j = 0; j < batchOps; j++) {
+                op.run();
+            }
+            medians[i] = (System.nanoTime() - start) / (double) batchOps;
+        }
+        java.util.Arrays.sort(medians);
+        w.printf("%s\t%s\t%.2f%n", bench, variant, medians[2]);
+        w.flush();
+        getLogger().info(String.format("%s/%s: %.2f ns/op (resettable)", bench, variant, medians[2]));
+    }
+
+    /**
+     * 第 15 轮：写路径单次元数据往返归一。
+     * - writePath.storyCommit：记录者面板每条故事落盘（旧链 8 次克隆 vs 新 1 次）
+     * - writePath.storyCommitUnique：终格常规+独特提交（旧链 10 次克隆 vs 新 1 次）
+     * - writePath.roundTripCommitExtract：发掘+提取全往返（状态自稳定）
+     * - writePath.statsIncrement：统计计数读改写（路径双构建 vs 单构建）
+     * - writePath.staveLoreRebuild：施法写回 lore 重建（动态拼接 vs 静态片段+名称缓存）
+     * 先做四组终态等价性断言（PDC 字节/lore/名称/附魔/标志），失败则以 severe 日志暴露。
+     */
+    private void benchRound15(PrintWriter w) {
+        final io.github.sefiraat.crystamaehistoria.managers.StoriesManager manager =
+            CrystamaeHistoria.getStoriesManager();
+        final List<io.github.sefiraat.crystamaehistoria.stories.Story> commonPool =
+            manager.getStories(io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity.COMMON,
+                StoryType.ELEMENTAL);
+        final io.github.sefiraat.crystamaehistoria.stories.BlockDefinition stoneDef =
+            manager.getBlockDefinitionMap().get(Material.STONE);
+        if (commonPool == null || commonPool.isEmpty() || stoneDef == null) {
+            getLogger().severe("round15 前置数据缺失，跳过: pool=" + commonPool + " def=" + stoneDef);
+            return;
+        }
+        final io.github.sefiraat.crystamaehistoria.stories.Story story = commonPool.get(0);
+        final io.github.sefiraat.crystamaehistoria.stories.Story uniqueStory =
+            stoneDef.getUnique() != null ? stoneDef.getUnique() : commonPool.get(1);
+
+        // —— 等价性断言（先于计时）——
+        round15Equivalence(story, uniqueStory);
+
+        // —— 提交（状态增长型，批间复位到模板）——
+        final ItemStack commitItem = round15Template(2, 5, story);
+        final ItemMeta commitTemplateMeta = commitItem.getItemMeta();
+        timeResettable(w, "writePath.storyCommit", "old_chain_8clones", 48,
+            () -> commitItem.setItemMeta(commitTemplateMeta),
+            () -> round15OldCommit(commitItem, story, null));
+        timeResettable(w, "writePath.storyCommit", "new_single_roundtrip", 48,
+            () -> commitItem.setItemMeta(commitTemplateMeta),
+            () -> StoryUtils.commitStory(commitItem, story, null));
+
+        // —— 终格提交（常规 + 独特，满槽触发附魔分支）——
+        final ItemStack uniqueItem = round15Template(4, 5, story);
+        final ItemMeta uniqueTemplateMeta = uniqueItem.getItemMeta();
+        timeResettable(w, "writePath.storyCommitUnique", "old_chain_10clones", 48,
+            () -> uniqueItem.setItemMeta(uniqueTemplateMeta),
+            () -> round15OldCommit(uniqueItem, story, uniqueStory));
+        timeResettable(w, "writePath.storyCommitUnique", "new_single_roundtrip", 48,
+            () -> uniqueItem.setItemMeta(uniqueTemplateMeta),
+            () -> StoryUtils.commitStory(uniqueItem, story, uniqueStory));
+
+        // —— 发掘+提取全往返（提交后立即提取，列表回到模板长度，状态自稳定）——
+        final ItemStack rtItem = round15Template(3, 5, story);
+        time(w, "writePath.roundTripCommitExtract", "old_chains", 2_000, () -> {
+            round15OldCommit(rtItem, story, null);
+            bh += round15OldExtract(rtItem) ? 1 : 0;
+        });
+        time(w, "writePath.roundTripCommitExtract", "new_single_roundtrips", 2_000, () -> {
+            StoryUtils.commitStory(rtItem, story, null);
+            final ItemMeta m = rtItem.getItemMeta();
+            final List<io.github.sefiraat.crystamaehistoria.stories.Story> l =
+                StoryUtils.getAllStories(m);
+            bh += io.github.sefiraat.crystamaehistoria.utils.GildingUtils.isGilded(m) ? 0 : 1;
+            bh += StoryUtils.removeStoryAndRebuild(rtItem, m, l.get(0), l) == 0 ? 1 : 0;
+        });
+
+        // —— 统计计数（读改写：路径双构建 vs 单构建；真实 player_stats 配置）——
+        final UUID statPlayer = UUID.fromString("12345678-1234-1234-1234-123456789012");
+        final String statId = SpellType.HEAL.get().getId();
+        final org.bukkit.configuration.file.FileConfiguration stats =
+            CrystamaeHistoria.getConfigManager().getPlayerStats();
+        time(w, "writePath.statsIncrement", "old_double_path_build", 200_000, () -> {
+            int uses = stats.getInt(statPlayer + ".SPELL." + statId + ".TIMES_CAST");
+            uses++;
+            stats.set(statPlayer + ".SPELL." + statId + ".TIMES_CAST", uses);
+        });
+        time(w, "writePath.statsIncrement", "new_single_path", 200_000, () ->
+            io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.addUsage(statPlayer, SpellType.HEAL));
+
+        // —— 法杖 lore 重建（施法写回路径：旧动态拼接+即时 toTitleCase vs 新静态片段+缓存名）——
+        final ItemStack stave = new ItemStack(Material.BLAZE_ROD);
+        final ItemMeta staveBaseMeta = stave.getItemMeta();
+        final Map<SpellSlot, InstancePlate> plates = new EnumMap<>(SpellSlot.class);
+        for (SpellSlot slot : SpellSlot.values()) {
+            plates.put(slot, new InstancePlate(1, SpellType.HEAL, 100));
+        }
+        DataTypeMethods.setCustom(staveBaseMeta, Keys.PDC_STAVE_STORAGE, PersistentStaveDataType.TYPE, plates);
+        stave.setItemMeta(staveBaseMeta);
+        final InstanceStave staveInstance = new InstanceStave(stave);
+        final String spellId = SpellType.HEAL.get().getId();
+        time(w, "writePath.staveLoreRebuild", "old_dynamic_strings", 100_000, () -> {
+            // 同构副本：0.3.0 的 buildLore（动态拼接 + getName 即时 toTitleCase）
+            final ItemMeta m = stave.getItemMeta();
+            final String[] lore = new String[]{"可以进行法术绑定的法杖"};
+            final net.md_5.bungee.api.ChatColor passiveColor =
+                io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.PASSIVE.getColor();
+            final List<String> finalLore = new java.util.ArrayList<>();
+            for (String s : lore) {
+                finalLore.add(passiveColor + s);
+            }
+            for (SpellSlot slot : SpellSlot.getCashedValues()) {
+                final InstancePlate instancePlate = staveInstance.getSpellInstanceMap().get(slot);
+                if (instancePlate != null) {
+                    finalLore.add("");
+                    final String magic = io.github.sefiraat.crystamaehistoria.utils.TextUtils.toTitleCase(spellId);
+                    final String crysta = String.valueOf(instancePlate.getCrysta());
+                    finalLore.add(io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.RARITY_MYTHICAL.getColor()
+                        + slot.getDescription());
+                    finalLore.add(passiveColor + "法术: "
+                        + io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.NOTICE.getColor() + magic);
+                    finalLore.add(passiveColor + "充能: "
+                        + io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.NOTICE.getColor() + crysta);
+                }
+            }
+            finalLore.add("");
+            finalLore.add(io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.applyThemeToString(
+                io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.CLICK_INFO,
+                io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.STAVE.getLoreLine()));
+            m.setLore(finalLore);
+            stave.setItemMeta(m);
+        });
+        time(w, "writePath.staveLoreRebuild", "new_static_fragments", 100_000, () -> {
+            final ItemMeta m = stave.getItemMeta();
+            staveInstance.buildLore(m);
+            stave.setItemMeta(m);
+        });
+    }
+
+    /** 构造确定性的已记录物品模板（固定故事上限/预置故事数，绕开随机上限） */
+    private ItemStack round15Template(int presetStories, int maxStories,
+                                      io.github.sefiraat.crystamaehistoria.stories.Story story) {
+        final ItemStack item = new ItemStack(Material.STONE);
+        final ItemMeta meta = item.getItemMeta();
+        PersistentDataAPI.setBoolean(meta, Keys.PDC_IS_STORIED, true);
+        final com.google.gson.JsonObject limits = new com.google.gson.JsonObject();
+        limits.add(Keys.JS_S_AVAILABLE_STORIES, new com.google.gson.JsonPrimitive(maxStories));
+        limits.add(Keys.JS_S_TIER, new com.google.gson.JsonPrimitive(1));
+        PersistentDataAPI.setJsonObject(meta, Keys.PDC_POTENTIAL_STORIES, limits);
+        final List<io.github.sefiraat.crystamaehistoria.stories.Story> list = new java.util.ArrayList<>();
+        for (int i = 0; i < presetStories; i++) {
+            list.add(story);
+        }
+        DataTypeMethods.setCustom(meta, Keys.PDC_STORIES,
+            io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoriesDataType.TYPE, list);
+        PersistentDataAPI.setInt(meta, Keys.PDC_CURRENT_NUMBER_OF_STORIES, presetStories);
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    /** 旧提交链（与 0.3.0 实现逐调用同构，调用插件保留的旧公开方法） */
+    private void round15OldCommit(ItemStack item,
+                                  io.github.sefiraat.crystamaehistoria.stories.Story main,
+                                  io.github.sefiraat.crystamaehistoria.stories.Story unique) {
+        if (main != null) {
+            StoryUtils.applyStory(item, main);
+            StoryUtils.incrementStoryAmount(item);
+        }
+        if (unique != null) {
+            StoryUtils.applyStory(item, unique);
+        }
+        io.github.sefiraat.crystamaehistoria.managers.StoriesManager.rebuildStoriedStack(item);
+    }
+
+    /** 旧提取链（与 0.3.0 祭坛路径逐调用同构）：返回是否非空 */
+    private boolean round15OldExtract(ItemStack item) {
+        final List<io.github.sefiraat.crystamaehistoria.stories.Story> storyList =
+            StoryUtils.getAllStories(item);
+        final io.github.sefiraat.crystamaehistoria.stories.Story story = storyList.get(0);
+        bh += io.github.sefiraat.crystamaehistoria.utils.GildingUtils.isGilded(item) ? 1 : 0;
+        final int remaining = StoryUtils.removeStory(item, story);
+        if (remaining > 0) {
+            io.github.sefiraat.crystamaehistoria.managers.StoriesManager.rebuildStoriedStack(item);
+        }
+        return remaining > 0;
+    }
+
+    /** 第 15 轮终态等价性断言：旧链 vs 新链的物品状态必须逐字段一致 */
+    private void round15Equivalence(io.github.sefiraat.crystamaehistoria.stories.Story story,
+                                    io.github.sefiraat.crystamaehistoria.stories.Story unique) {
+        // A. 常规提交（2 条预置 → 3 条）
+        final ItemStack tA = round15Template(2, 5, story);
+        final ItemStack oldA = tA.clone();
+        final ItemStack newA = tA.clone();
+        round15OldCommit(oldA, story, null);
+        StoryUtils.commitStory(newA, story, null);
+        getLogger().info("round15 等价性(A 常规提交): " + round15ItemStateEquals(oldA, newA));
+
+        // B. 终格常规+独特提交（4 条预置 → 满 5 条 + 满槽附魔分支）
+        final ItemStack tB = round15Template(4, 5, story);
+        final ItemStack oldB = tB.clone();
+        final ItemStack newB = tB.clone();
+        round15OldCommit(oldB, story, unique);
+        StoryUtils.commitStory(newB, story, unique);
+        getLogger().info("round15 等价性(B 终格独特提交): " + round15ItemStateEquals(oldB, newB));
+
+        // C. 提取（3 条预置 → 2 条）
+        final ItemStack tC = round15Template(3, 5, story);
+        final ItemStack oldC = tC.clone();
+        final ItemStack newC = tC.clone();
+        round15OldExtract(oldC);
+        {
+            final ItemMeta m = newC.getItemMeta();
+            final List<io.github.sefiraat.crystamaehistoria.stories.Story> l = StoryUtils.getAllStories(m);
+            bh += io.github.sefiraat.crystamaehistoria.utils.GildingUtils.isGilded(m) ? 1 : 0;
+            StoryUtils.removeStoryAndRebuild(newC, m, l.get(0), l);
+        }
+        getLogger().info("round15 等价性(C 提取): " + round15ItemStateEquals(oldC, newC));
+
+        // D. 法杖 lore（旧动态拼接 vs 新静态片段，同一 4 板法杖）
+        final ItemStack tD = new ItemStack(Material.BLAZE_ROD);
+        final ItemMeta dm = tD.getItemMeta();
+        final Map<SpellSlot, InstancePlate> dPlates = new EnumMap<>(SpellSlot.class);
+        for (SpellSlot slot : SpellSlot.values()) {
+            dPlates.put(slot, new InstancePlate(1, SpellType.HEAL, 100));
+        }
+        DataTypeMethods.setCustom(dm, Keys.PDC_STAVE_STORAGE, PersistentStaveDataType.TYPE, dPlates);
+        tD.setItemMeta(dm);
+        final InstanceStave dStave = new InstanceStave(tD);
+        final ItemMeta loreOld = tD.getItemMeta();
+        final ItemMeta loreNew = tD.getItemMeta();
+        {
+            // 旧同构 buildLore
+            final String[] lore = new String[]{"可以进行法术绑定的法杖"};
+            final net.md_5.bungee.api.ChatColor passiveColor =
+                io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.PASSIVE.getColor();
+            final List<String> finalLore = new java.util.ArrayList<>();
+            for (String s : lore) {
+                finalLore.add(passiveColor + s);
+            }
+            for (SpellSlot slot : SpellSlot.getCashedValues()) {
+                final InstancePlate instancePlate = dStave.getSpellInstanceMap().get(slot);
+                if (instancePlate != null) {
+                    finalLore.add("");
+                    finalLore.add(io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.RARITY_MYTHICAL.getColor()
+                        + slot.getDescription());
+                    finalLore.add(passiveColor + "法术: "
+                        + io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.NOTICE.getColor()
+                        + io.github.sefiraat.crystamaehistoria.utils.TextUtils.toTitleCase(SpellType.HEAL.get().getId()));
+                    finalLore.add(passiveColor + "充能: "
+                        + io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.NOTICE.getColor()
+                        + String.valueOf(instancePlate.getCrysta()));
+                }
+            }
+            finalLore.add("");
+            finalLore.add(io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.applyThemeToString(
+                io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.CLICK_INFO,
+                io.github.sefiraat.crystamaehistoria.utils.theme.ThemeType.STAVE.getLoreLine()));
+            loreOld.setLore(finalLore);
+        }
+        dStave.buildLore(loreNew);
+        getLogger().info("round15 等价性(D 法杖 lore): "
+            + java.util.Objects.equals(loreOld.getLore(), loreNew.getLore()));
+    }
+
+    /** 物品终态比对：PDC 逐键多类型探测 + lore + 显示名 + 附魔 + 物品标志 */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private boolean round15ItemStateEquals(ItemStack a, ItemStack b) {
+        final ItemMeta ma = a.getItemMeta();
+        final ItemMeta mb = b.getItemMeta();
+        // PDC 键集与逐键值（API 无原始字节导出，按键集 + 多类型探测值比对）
+        final Set<NamespacedKey> keysA = ma.getPersistentDataContainer().getKeys();
+        final Set<NamespacedKey> keysB = mb.getPersistentDataContainer().getKeys();
+        if (!keysA.equals(keysB)) {
+            getLogger().warning("round15 PDC 键集不一致: " + keysA + " vs " + keysB);
+            return false;
+        }
+        final org.bukkit.persistence.PersistentDataType[] probeTypes = {
+            org.bukkit.persistence.PersistentDataType.BYTE_ARRAY,
+            org.bukkit.persistence.PersistentDataType.STRING,
+            org.bukkit.persistence.PersistentDataType.INTEGER,
+            org.bukkit.persistence.PersistentDataType.BOOLEAN,
+            org.bukkit.persistence.PersistentDataType.LONG,
+            org.bukkit.persistence.PersistentDataType.DOUBLE
+        };
+        for (final NamespacedKey key : keysA) {
+            final String va = round15PdcValue(ma.getPersistentDataContainer(), key, probeTypes);
+            final String vb = round15PdcValue(mb.getPersistentDataContainer(), key, probeTypes);
+            if (!va.equals(vb)) {
+                getLogger().warning("round15 PDC 键值不一致(" + key + "): [" + va + "] vs [" + vb + "]");
+                return false;
+            }
+        }
+        return java.util.Objects.equals(ma.getLore(), mb.getLore())
+            && java.util.Objects.equals(ma.getDisplayName(), mb.getDisplayName())
+            && java.util.Objects.equals(ma.getEnchants(), mb.getEnchants())
+            && ma.getItemFlags().equals(mb.getItemFlags());
+    }
+
+    @SuppressWarnings("unchecked")
+    private String round15PdcValue(org.bukkit.persistence.PersistentDataContainer pdc,
+                                   NamespacedKey key,
+                                   org.bukkit.persistence.PersistentDataType[] probeTypes) {
+        for (final org.bukkit.persistence.PersistentDataType t : probeTypes) {
+            try {
+                final Object v = pdc.get(key, t);
+                if (v != null) {
+                    return v instanceof byte[] ? java.util.Arrays.toString((byte[]) v) : String.valueOf(v);
+                }
+            } catch (IllegalArgumentException e) {
+                // 存储类型与探测类型不符，继续下一类型
+            }
+        }
+        return "<none>";
     }
 }
