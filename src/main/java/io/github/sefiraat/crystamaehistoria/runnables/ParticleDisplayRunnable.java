@@ -16,10 +16,12 @@ public class ParticleDisplayRunnable extends BukkitRunnable {
     public void run() {
         for (Player player : Bukkit.getServer().getOnlinePlayers()) {
             final SlimefunItem item = SlimefunItem.getByItem(player.getInventory().getItemInMainHand());
-            final Block block = player.getLocation().getBlock();
             if (!(item instanceof LuminescenceScoop)) {
+                // 非持勺玩家先行筛除：原实现在筛选前对每位玩家取
+                // getLocation().getBlock()（块快照分配，绝大多数玩家为无效工作）
                 continue;
             }
+            final Block block = player.getLocation().getBlock();
             for (int x = -5; x < 6; x++) {
                 for (int y = -5; y < 6; y++) {
                     for (int z = -5; z < 6; z++) {
