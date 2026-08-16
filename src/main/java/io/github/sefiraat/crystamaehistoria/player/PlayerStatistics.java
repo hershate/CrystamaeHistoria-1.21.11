@@ -29,6 +29,19 @@ public class PlayerStatistics {
         statsEpoch++;
     }
 
+    /**
+     * 成员资格纪元：仅 3 个解锁写方法（unlockSpell/unlockUniqueStory/
+     * unlockStoryGilded）递增——计数类写入（addUsage/addChronicle/
+     * addRealisation）只改 TIMES_* 数值，不改变 UNLOCKED/GILDED 成员资格。
+     * 解锁集合缓存以此校验失效，避免施法（addUsage）与翻页交错的玩家
+     * 反复触发集合重建。
+     */
+    private static int membershipEpoch;
+
+    private static void bumpMembershipEpoch() {
+        membershipEpoch++;
+    }
+
     /** 每玩家计数缓存（字段级纪元，主线程单线程访问） */
     private static final class CountCache {
         int spellsEpoch = -1;
@@ -64,6 +77,7 @@ public class PlayerStatistics {
         String path = player + "." + StatType.SPELL + "." + spellType.getId() + ".UNLOCKED";
         CrystamaeHistoria.getConfigManager().getPlayerStats().set(path, true);
         bumpStatsEpoch();
+        bumpMembershipEpoch();
     }
 
     @ParametersAreNonnullByDefault
@@ -138,6 +152,7 @@ public class PlayerStatistics {
         String path = player + "." + StatType.STORY + "." + definition.getMaterial() + ".UNLOCKED";
         CrystamaeHistoria.getConfigManager().getPlayerStats().set(path, true);
         bumpStatsEpoch();
+        bumpMembershipEpoch();
     }
 
     @ParametersAreNonnullByDefault
@@ -178,6 +193,7 @@ public class PlayerStatistics {
         String path = player + "." + StatType.STORY + "." + definition.getMaterial() + ".GILDED";
         CrystamaeHistoria.getConfigManager().getPlayerStats().set(path, true);
         bumpStatsEpoch();
+        bumpMembershipEpoch();
     }
 
     @ParametersAreNonnullByDefault
@@ -227,7 +243,7 @@ public class PlayerStatistics {
                 }
             }
             cache.spellIds = java.util.Set.copyOf(ids);
-            cache.spellsEpoch = statsEpoch;
+            cache.spellsEpoch = membershipEpoch;
         }
         return cache.spellIds;
     }
@@ -253,7 +269,7 @@ public class PlayerStatistics {
                 }
             }
             cache.uniqueStories = java.util.Collections.unmodifiableSet(materials);
-            cache.storiesEpoch = statsEpoch;
+            cache.storiesEpoch = membershipEpoch;
         }
         return cache.uniqueStories;
     }
@@ -279,7 +295,7 @@ public class PlayerStatistics {
                 }
             }
             cache.gilded = java.util.Collections.unmodifiableSet(materials);
-            cache.gildedEpoch = statsEpoch;
+            cache.gildedEpoch = membershipEpoch;
         }
         return cache.gilded;
     }
@@ -374,7 +390,7 @@ public class PlayerStatistics {
             }
         }
         cache.stories = unlocked;
-        cache.storiesEpoch = statsEpoch;
+        cache.storiesEpoch = membershipEpoch;
         return unlocked;
     }
 
@@ -417,7 +433,7 @@ public class PlayerStatistics {
             }
         }
         cache.spells = unlocked;
-        cache.spellsEpoch = statsEpoch;
+        cache.spellsEpoch = membershipEpoch;
         return unlocked;
     }
 
@@ -460,7 +476,7 @@ public class PlayerStatistics {
             }
         }
         cache.gilded = unlocked;
-        cache.gildedEpoch = statsEpoch;
+        cache.gildedEpoch = membershipEpoch;
         return unlocked;
     }
 
