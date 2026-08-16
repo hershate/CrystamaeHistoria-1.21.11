@@ -15,6 +15,9 @@
 
 ## 专项分析
 
+- [代码库全量分析](analysis/2026-08-16/index.md)：项目根完整分析（264 个 Java 文件，v0.2.0）——
+  5 层事件驱动架构、运行原理（施法/故事管线/SpellMemory 状态管理）、工作流、AI 替代方案评分，
+  附 4 份 Skill Blueprint；索引见 [analysis/](analysis/README.md)（2026-08-16）。
 - [法术系统结构化分析](spell-system-analysis.md)：`magic/`、`listeners/`、`runnables/` 包与 `SpellMemory.java` 的核心抽象、注册/触发/执行机制、69 个法术的数量与层级划分、监听器与定时任务职责、法术执行流程调用链（2026-08-15）。
 
 ## 性能优化轮次
