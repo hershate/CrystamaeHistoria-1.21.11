@@ -11,9 +11,35 @@ import org.bukkit.entity.Player;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.text.MessageFormat;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class PlayerStatistics {
+
+    /**
+     * 统计写入纪元：本类全部 6 个写方法（unlock×3 / addUsage / addChronicle /
+     * addRealisation）在写后递增。计数缓存以此校验失效——player_stats.yml
+     * 运行期不存在类外写者（已核验），文件不重载只落盘，故纪元失效完备。
+     */
+    private static int statsEpoch;
+
+    private static void bumpStatsEpoch() {
+        statsEpoch++;
+    }
+
+    /** 每玩家计数缓存（字段级纪元，主线程单线程访问） */
+    private static final class CountCache {
+        int spellsEpoch = -1;
+        int spells;
+        int storiesEpoch = -1;
+        int stories;
+        int gildedEpoch = -1;
+        int gilded;
+    }
+
+    /** 键为查询过计数的玩家（图鉴打开 / 液化池 rank 谓词触发者），条目微小且有界 */
+    private static final Map<UUID, CountCache> COUNT_CACHE = new HashMap<>();
 
     @ParametersAreNonnullByDefault
     public static void unlockSpell(Player player, SpellType spellType) {
@@ -24,6 +50,7 @@ public class PlayerStatistics {
     public static void unlockSpell(UUID player, SpellType spellType) {
         String path = player + "." + StatType.SPELL + "." + spellType.getId() + ".UNLOCKED";
         CrystamaeHistoria.getConfigManager().getPlayerStats().set(path, true);
+        bumpStatsEpoch();
     }
 
     @ParametersAreNonnullByDefault
@@ -74,6 +101,7 @@ public class PlayerStatistics {
         final org.bukkit.configuration.file.FileConfiguration stats =
             CrystamaeHistoria.getConfigManager().getPlayerStats();
         stats.set(path, stats.getInt(path) + 1);
+        bumpStatsEpoch();
     }
 
     @ParametersAreNonnullByDefault
@@ -96,6 +124,7 @@ public class PlayerStatistics {
     public static void unlockUniqueStory(UUID player, BlockDefinition definition) {
         String path = player + "." + StatType.STORY + "." + definition.getMaterial() + ".UNLOCKED";
         CrystamaeHistoria.getConfigManager().getPlayerStats().set(path, true);
+        bumpStatsEpoch();
     }
 
     @ParametersAreNonnullByDefault
@@ -135,6 +164,7 @@ public class PlayerStatistics {
     public static void unlockStoryGilded(UUID player, BlockDefinition definition) {
         String path = player + "." + StatType.STORY + "." + definition.getMaterial() + ".GILDED";
         CrystamaeHistoria.getConfigManager().getPlayerStats().set(path, true);
+        bumpStatsEpoch();
     }
 
     @ParametersAreNonnullByDefault
@@ -174,6 +204,7 @@ public class PlayerStatistics {
         final org.bukkit.configuration.file.FileConfiguration stats =
             CrystamaeHistoria.getConfigManager().getPlayerStats();
         stats.set(path, stats.getInt(path) + 1);
+        bumpStatsEpoch();
     }
 
     @ParametersAreNonnullByDefault
@@ -200,6 +231,7 @@ public class PlayerStatistics {
         final org.bukkit.configuration.file.FileConfiguration stats =
             CrystamaeHistoria.getConfigManager().getPlayerStats();
         stats.set(path, stats.getInt(path) + 1);
+        bumpStatsEpoch();
     }
 
     @ParametersAreNonnullByDefault
@@ -233,17 +265,24 @@ public class PlayerStatistics {
 
     @ParametersAreNonnullByDefault
     public static int getStoriesUnlocked(UUID uuid) {
-        String path = uuid + "." + StatType.STORY;
-        ConfigurationSection section = CrystamaeHistoria.getConfigManager().getPlayerStats().getConfigurationSection(path);
-        if (section == null) {
-            return 0;
+        // 纪元缓存：写方法递增纪元后失效；重复查询（图鉴翻页/液化池 rank 谓词）
+        // 在无写入期间命中缓存，免 O(n) 键扫描
+        final CountCache cache = COUNT_CACHE.computeIfAbsent(uuid, k -> new CountCache());
+        if (cache.storiesEpoch == statsEpoch) {
+            return cache.stories;
         }
+        final ConfigurationSection section = CrystamaeHistoria.getConfigManager().getPlayerStats()
+            .getConfigurationSection(uuid + "." + StatType.STORY);
         int unlocked = 0;
-        // 相对路径读取：原实现逐键重建全路径（uuid.STORY.<key>.UNLOCKED）再从根解析，
-        // O(n) 次全路径行走；子节相对读取只走最后一层，结果等价
-        for (String story : section.getKeys(false)) {
-            if (section.getBoolean(story + ".UNLOCKED")) unlocked++;
+        if (section != null) {
+            // 相对路径读取：原实现逐键重建全路径（uuid.STORY.<key>.UNLOCKED）再从根解析，
+            // O(n) 次全路径行走；子节相对读取只走最后一层，结果等价
+            for (String story : section.getKeys(false)) {
+                if (section.getBoolean(story + ".UNLOCKED")) unlocked++;
+            }
         }
+        cache.stories = unlocked;
+        cache.storiesEpoch = statsEpoch;
         return unlocked;
     }
 
@@ -271,16 +310,22 @@ public class PlayerStatistics {
 
     @ParametersAreNonnullByDefault
     public static int getSpellsUnlocked(UUID uuid) {
-        String path = uuid + "." + StatType.SPELL;
-        ConfigurationSection section = CrystamaeHistoria.getConfigManager().getPlayerStats().getConfigurationSection(path);
-        if (section == null) {
-            return 0;
+        // 纪元缓存（同 getStoriesUnlocked）
+        final CountCache cache = COUNT_CACHE.computeIfAbsent(uuid, k -> new CountCache());
+        if (cache.spellsEpoch == statsEpoch) {
+            return cache.spells;
         }
+        final ConfigurationSection section = CrystamaeHistoria.getConfigManager().getPlayerStats()
+            .getConfigurationSection(uuid + "." + StatType.SPELL);
         int unlocked = 0;
-        // 相对路径读取（同 getStoriesUnlocked，原实现逐键重建全路径从根解析）
-        for (String spell : section.getKeys(false)) {
-            if (section.getBoolean(spell + ".UNLOCKED")) unlocked++;
+        if (section != null) {
+            // 相对路径读取（原实现逐键重建全路径从根解析）
+            for (String spell : section.getKeys(false)) {
+                if (section.getBoolean(spell + ".UNLOCKED")) unlocked++;
+            }
         }
+        cache.spells = unlocked;
+        cache.spellsEpoch = statsEpoch;
         return unlocked;
     }
 
@@ -308,16 +353,22 @@ public class PlayerStatistics {
 
     @ParametersAreNonnullByDefault
     public static int getBlocksGilded(UUID uuid) {
-        String path = uuid + "." + StatType.STORY;
-        ConfigurationSection section = CrystamaeHistoria.getConfigManager().getPlayerStats().getConfigurationSection(path);
-        if (section == null) {
-            return 0;
+        // 纪元缓存（同 getStoriesUnlocked）
+        final CountCache cache = COUNT_CACHE.computeIfAbsent(uuid, k -> new CountCache());
+        if (cache.gildedEpoch == statsEpoch) {
+            return cache.gilded;
         }
+        final ConfigurationSection section = CrystamaeHistoria.getConfigManager().getPlayerStats()
+            .getConfigurationSection(uuid + "." + StatType.STORY);
         int unlocked = 0;
-        // 相对路径读取（同 getStoriesUnlocked）
-        for (String story : section.getKeys(false)) {
-            if (section.getBoolean(story + ".GILDED")) unlocked++;
+        if (section != null) {
+            // 相对路径读取（同 getStoriesUnlocked）
+            for (String story : section.getKeys(false)) {
+                if (section.getBoolean(story + ".GILDED")) unlocked++;
+            }
         }
+        cache.gilded = unlocked;
+        cache.gildedEpoch = statsEpoch;
         return unlocked;
     }
 
