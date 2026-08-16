@@ -130,15 +130,15 @@ public class SpellCollectionFlexGroup extends FlexItemGroup {
         menu.replaceExistingItem(GUIDE_STATS, getStatsStack(player));
         menu.addMenuClickHandler(GUIDE_STATS, (player1, slot, itemStack, clickAction) -> false);
 
-        // 页级单次解析玩家法术统计子节，36 槽相对路径读取（原每槽从根走全路径）
-        final ConfigurationSection spellStatSection = PlayerStatistics.getSpellStatSection(player.getUniqueId());
+        // 页级解锁集合纪元缓存：36 槽集合成员判定（原每槽 YAML 相对读取）
+        final java.util.Set<String> unlockedSpellIds = PlayerStatistics.getUnlockedSpellIdSet(player.getUniqueId());
 
         for (int i = 0; i < 36; i++) {
             final int slot = i + 9;
 
             if (i + 1 <= spellTypeSubList.size()) {
                 final SpellType spellType = spellTypeSubList.get(i);
-                final boolean researched = PlayerStatistics.hasUnlockedSpell(player.getUniqueId(), spellType, spellStatSection);
+                final boolean researched = unlockedSpellIds.contains(spellType.getId());
 
                 if (mode == SlimefunGuideMode.CHEAT_MODE || researched) {
                     menu.replaceExistingItem(slot, spellType.getSpell().getThemedStack().item());

@@ -99,17 +99,15 @@ public class GildedCollectionFlexGroup extends FlexItemGroup {
         menu.replaceExistingItem(GUIDE_STATS, getPlayerInfoStack(player));
         menu.addMenuClickHandler(GUIDE_STATS, (player1, slot, itemStack, clickAction) -> false);
 
-        // 页级单次解析玩家故事统计子节，36 槽相对路径读取（原每槽从根走全路径）
-        final org.bukkit.configuration.ConfigurationSection storyStatSection =
-            PlayerStatistics.getStoryStatSection(player.getUniqueId());
+        // 页级镀金集合纪元缓存：36 槽集合成员判定（原每槽 YAML 相对读取）
+        final java.util.Set<Material> gilded = PlayerStatistics.getGildedSet(player.getUniqueId());
 
         for (int i = 0; i < 36; i++) {
             final int slot = i + 9;
 
             if (i + 1 <= blockDefinitionSubList.size()) {
                 final BlockDefinition definition = blockDefinitionSubList.get(i);
-                final boolean researched = PlayerStatistics.hasUnlockedStoryGilded(
-                    player.getUniqueId(), definition.getMaterial(), storyStatSection);
+                final boolean researched = gilded.contains(definition.getMaterial());
 
                 if (mode == SlimefunGuideMode.CHEAT_MODE || researched) {
                     menu.replaceExistingItem(slot, GuiElements.getBlockGildedIcon(definition.getMaterial()));

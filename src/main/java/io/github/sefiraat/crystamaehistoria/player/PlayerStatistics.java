@@ -8,6 +8,7 @@ import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.text.MessageFormat;
@@ -40,6 +41,18 @@ public class PlayerStatistics {
 
     /** 键为查询过计数的玩家（图鉴打开 / 液化池 rank 谓词触发者），条目微小且有界 */
     private static final Map<UUID, CountCache> COUNT_CACHE = new HashMap<>();
+
+    /** 每玩家解锁集合缓存（字段级纪元）：图鉴页 36 槽判定的批量形态 */
+    private static final class SetCache {
+        int spellsEpoch = -1;
+        java.util.Set<String> spellIds = java.util.Set.of();
+        int storiesEpoch = -1;
+        java.util.Set<Material> uniqueStories = java.util.EnumSet.noneOf(Material.class);
+        int gildedEpoch = -1;
+        java.util.Set<Material> gilded = java.util.EnumSet.noneOf(Material.class);
+    }
+
+    private static final Map<UUID, SetCache> SET_CACHE = new HashMap<>();
 
     @ParametersAreNonnullByDefault
     public static void unlockSpell(Player player, SpellType spellType) {
@@ -190,6 +203,85 @@ public class PlayerStatistics {
             return false;
         }
         return storySection.getBoolean(material + ".GILDED");
+    }
+
+    /**
+     * 已解锁法术 id 集合的纪元缓存快照（不可变视图，调用方禁止变异）：
+     * 图鉴翻页对 36 槽逐个判定的批量形态——集合成员判定替代逐槽
+     * YAML 相对读取；纪元失效协议与计数缓存（{@link #getSpellsUnlocked}）
+     * 相同（全部统计写点递增纪元）。玩家无统计时空集。
+     */
+    @Nonnull
+    @ParametersAreNonnullByDefault
+    public static java.util.Set<String> getUnlockedSpellIdSet(UUID player) {
+        final SetCache cache = SET_CACHE.computeIfAbsent(player, k -> new SetCache());
+        if (cache.spellsEpoch != statsEpoch) {
+            final java.util.Set<String> ids = new java.util.HashSet<>();
+            final ConfigurationSection section = CrystamaeHistoria.getConfigManager().getPlayerStats()
+                .getConfigurationSection(player + "." + StatType.SPELL);
+            if (section != null) {
+                for (String spell : section.getKeys(false)) {
+                    if (section.getBoolean(spell + ".UNLOCKED")) {
+                        ids.add(spell);
+                    }
+                }
+            }
+            cache.spellIds = java.util.Set.copyOf(ids);
+            cache.spellsEpoch = statsEpoch;
+        }
+        return cache.spellIds;
+    }
+
+    /** 已解锁独特故事材质集合的纪元缓存快照（同 {@link #getUnlockedSpellIdSet}） */
+    @Nonnull
+    @ParametersAreNonnullByDefault
+    public static java.util.Set<Material> getUnlockedUniqueStorySet(UUID player) {
+        final SetCache cache = SET_CACHE.computeIfAbsent(player, k -> new SetCache());
+        if (cache.storiesEpoch != statsEpoch) {
+            final java.util.Set<Material> materials = java.util.EnumSet.noneOf(Material.class);
+            final ConfigurationSection section = CrystamaeHistoria.getConfigManager().getPlayerStats()
+                .getConfigurationSection(player + "." + StatType.STORY);
+            if (section != null) {
+                for (String story : section.getKeys(false)) {
+                    if (section.getBoolean(story + ".UNLOCKED")) {
+                        try {
+                            materials.add(Material.valueOf(story));
+                        } catch (IllegalArgumentException e) {
+                            // 键名非材质（crafted/编辑数据）：跳过
+                        }
+                    }
+                }
+            }
+            cache.uniqueStories = java.util.Collections.unmodifiableSet(materials);
+            cache.storiesEpoch = statsEpoch;
+        }
+        return cache.uniqueStories;
+    }
+
+    /** 已镀金材质集合的纪元缓存快照（同 {@link #getUnlockedSpellIdSet}） */
+    @Nonnull
+    @ParametersAreNonnullByDefault
+    public static java.util.Set<Material> getGildedSet(UUID player) {
+        final SetCache cache = SET_CACHE.computeIfAbsent(player, k -> new SetCache());
+        if (cache.gildedEpoch != statsEpoch) {
+            final java.util.Set<Material> materials = java.util.EnumSet.noneOf(Material.class);
+            final ConfigurationSection section = CrystamaeHistoria.getConfigManager().getPlayerStats()
+                .getConfigurationSection(player + "." + StatType.STORY);
+            if (section != null) {
+                for (String story : section.getKeys(false)) {
+                    if (section.getBoolean(story + ".GILDED")) {
+                        try {
+                            materials.add(Material.valueOf(story));
+                        } catch (IllegalArgumentException e) {
+                            // 键名非材质（crafted/编辑数据）：跳过
+                        }
+                    }
+                }
+            }
+            cache.gilded = java.util.Collections.unmodifiableSet(materials);
+            cache.gildedEpoch = statsEpoch;
+        }
+        return cache.gilded;
     }
 
     @ParametersAreNonnullByDefault
