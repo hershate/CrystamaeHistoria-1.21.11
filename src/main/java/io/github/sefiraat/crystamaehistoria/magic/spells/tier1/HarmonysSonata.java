@@ -57,10 +57,17 @@ public class HarmonysSonata extends Spell {
             && GeneralUtils.hasPermission(castInformation.getCaster(), block, Interaction.PLACE_BLOCK)
         ) {
             final Set<Material> set = Tag.FLOWERS.getValues();
-            final Material material = set.stream()
-                .skip(ThreadLocalRandom.current().nextInt(set.size()))
-                .findAny()
-                .orElse(Material.DANDELION);
+            // 直接迭代取第 n 元素：原 stream skip/findAny 的流分配为纯开销，
+            // 不可变集合迭代序确定，与 skip(n).findAny 结果一致
+            final int skip = ThreadLocalRandom.current().nextInt(set.size());
+            Material material = Material.DANDELION;
+            int index = 0;
+            for (Material candidate : set) {
+                if (index++ == skip) {
+                    material = candidate;
+                    break;
+                }
+            }
             if (TALL_FLOWERS.contains(material)) {
                 final Block upper = block.getRelative(BlockFace.UP);
                 if (upper.getType() == Material.AIR) {

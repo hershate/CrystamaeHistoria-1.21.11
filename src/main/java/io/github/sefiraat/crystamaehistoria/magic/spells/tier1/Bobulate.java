@@ -85,9 +85,16 @@ public class Bobulate extends Spell {
     }
 
     @ParametersAreNonnullByDefault
+    /** 标签→材质列表静态备忘：原实现每处理一块重建一次列表（六个常量标签） */
+    private static final java.util.Map<Tag<Material>, List<Material>> TAG_LISTS = new java.util.HashMap<>();
+
+    private static List<Material> tagList(Tag<Material> tag) {
+        return TAG_LISTS.computeIfAbsent(tag, t -> List.copyOf(t.getValues()));
+    }
+
     private void processBlock(UUID caster, Block block, Tag<Material> tag) {
         if (GeneralUtils.hasPermission(caster, block, Interaction.PLACE_BLOCK)) {
-            final List<Material> list = tag.getValues().stream().toList();
+            final List<Material> list = tagList(tag);
             final int randomValue = ThreadLocalRandom.current().nextInt(0, list.size());
             block.setType(list.get(randomValue));
         }

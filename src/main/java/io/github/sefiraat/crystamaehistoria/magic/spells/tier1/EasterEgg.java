@@ -29,11 +29,14 @@ public class EasterEgg extends Spell {
         setSpellCore(spellCoreBuilder.build());
     }
 
+    /** 孵化蛋材质静态缓存：原实现循环内每次重建列表（getValues+stream+toList） */
+    private static final List<Material> SPAWN_EGG_LIST = List.copyOf(CrystaTag.SPAWN_EGGS.getValues());
+
     @ParametersAreNonnullByDefault
     public void cast(CastInformation castInformation) {
         Location location = castInformation.getCastLocation().add(0, 1, 0);
         for (String string : ThemeType.getEggNames()) {
-            final List<Material> list = CrystaTag.SPAWN_EGGS.getValues().stream().toList();
+            final List<Material> list = SPAWN_EGG_LIST;
             final int randomValue = ThreadLocalRandom.current().nextInt(0, list.size());
             DisplayItem displayItem = new DisplayItem(
                 new ItemStack(list.get(randomValue)),
