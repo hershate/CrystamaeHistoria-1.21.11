@@ -78,7 +78,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchStatsPath(w),
                 () -> benchRound10(w),
                 () -> benchRound11(w),
-                () -> benchRound12(w)
+                () -> benchRound12(w),
+                () -> benchRound13(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -796,6 +797,72 @@ public final class CHPerfBench extends JavaPlugin {
         });
         time(w, "startup.storyShardsRead", "new_single_read", 500_000, () -> {
             bh += storySection.getIntegerList("shards").size();
+        });
+    }
+
+    /** 第 13 轮：剩余全局监听器门控（故事方块放置/隐藏器放置/禁刷区生成扫描） */
+    private void benchRound13(PrintWriter w) {
+        // —— 放置事件的故事检查：旧（直接 isStoried=meta 克隆+PDC）vs 新（hasItemMeta 门控）——
+        // 常态物品（无 meta 普通方块）
+        final ItemStack plainStone = new ItemStack(Material.STONE);
+        time(w, "eventPath.storiedPlaceCheck", "old_meta_clone_pdc", 50_000, () -> {
+            if (plainStone.getType() != Material.AIR && StoryUtils.isStoried(plainStone)) {
+                bh++;
+            }
+        });
+        time(w, "eventPath.storiedPlaceCheck", "new_hasItemMeta_gate", 5_000_000, () -> {
+            if (plainStone.getType() != Material.AIR
+                && plainStone.hasItemMeta()
+                && StoryUtils.isStoried(plainStone)) {
+                bh++;
+            }
+        });
+        // 等价性验证：有 meta 但无 PDC 的物品（重命名石头）两法同判 false
+        final ItemStack renamedStone = new ItemStack(Material.STONE);
+        final ItemMeta rm = renamedStone.getItemMeta();
+        rm.setDisplayName("renamed");
+        renamedStone.setItemMeta(rm);
+        boolean eqOld = StoryUtils.isStoried(renamedStone);
+        boolean eqNew = renamedStone.hasItemMeta() && StoryUtils.isStoried(renamedStone);
+        getLogger().info("round13 等价性(重命名石头): old=" + eqOld + " new=" + eqNew + " hasMeta=" + renamedStone.hasItemMeta());
+        // 真实故事物品（有 PDC）两法同判 true
+        final ItemStack storiedStone = new ItemStack(Material.STONE);
+        StoryUtils.makeStoried(storiedStone);
+        boolean eqOld2 = StoryUtils.isStoried(storiedStone);
+        boolean eqNew2 = storiedStone.hasItemMeta() && StoryUtils.isStoried(storiedStone);
+        getLogger().info("round13 等价性(故事石头): old=" + eqOld2 + " new=" + eqNew2 + " hasMeta=" + storiedStone.hasItemMeta());
+
+        // —— 放置事件的隐藏器检查：旧（getByItem）vs 新（PAPER 材质门控）——
+        final ItemStack handStone = new ItemStack(Material.STONE);
+        time(w, "eventPath.placeCoverCheck", "old_getByItem", 100_000, () -> {
+            if (SlimefunItem.getByItem(handStone) instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.tools.covers.BlockVeil) {
+                bh++;
+            }
+        });
+        time(w, "eventPath.placeCoverCheck", "new_material_gate", 5_000_000, () -> {
+            if (handStone.getType() == Material.PAPER
+                && SlimefunItem.getByItem(handStone) instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.tools.covers.BlockVeil) {
+                bh++;
+            }
+        });
+
+        // —— 禁刷区生成扫描：旧（空表 keySet 迭代器）vs 新（isEmpty 早退）——
+        final Map<org.bukkit.util.BoundingBox, Long> emptyAreas = new HashMap<>();
+        time(w, "eventPath.mobCandleSpawnScan", "old_iterator_alloc", 2_000_000, () -> {
+            for (org.bukkit.util.BoundingBox box : emptyAreas.keySet()) {
+                if (box == null) {
+                    bh++;
+                }
+            }
+        });
+        time(w, "eventPath.mobCandleSpawnScan", "new_isEmpty_guard", 5_000_000, () -> {
+            if (!emptyAreas.isEmpty()) {
+                for (org.bukkit.util.BoundingBox box : emptyAreas.keySet()) {
+                    if (box == null) {
+                        bh++;
+                    }
+                }
+            }
         });
     }
 
