@@ -93,7 +93,12 @@ makeStoried 迁移，断言全 true。第 28 轮法杖存储 v2 扁平编码—�
 子容器×2 键（24→5 键操作，同键双读自动迁移）：deserialize4 2.43x /
 serialize4 2.72x / 施法前置单槽读 1.55x；fullRead/singleSlot/migration
 断言全 true。服务器测试拦截一处红线级缺陷（readSlotPlate 裸 PDC 读取
-v1 值抛 IAE，已修）——裸 PDC 调用必须自防御，方法论沉淀。
+v1 值抛 IAE，已修）——裸 PDC 调用必须自防御，方法论沉淀。第 29 轮
+区块晶簇故事状态 v2 扁平编码——单容器五键 + 共享世界 UUID（同区块键下
+位置必然同世界）替代 N 子容器×5 键（5N→5 恒定，同键双读）：
+serialize5 3.17x / deserialize5 2.83x，saveMap 每提取步骤 -1.1µs；
+dualRead/migration 断言全 true。**物品/区块 PDC 编码域收官**（plate/
+satchel 事件级已扁平，不做项论证见报告）。
 
 ## 维护要点（改代码前必读）
 

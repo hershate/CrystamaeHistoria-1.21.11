@@ -91,7 +91,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound24(w),
                 () -> benchRound26(w),
                 () -> benchRound27(w),
-                () -> benchRound28(w)
+                () -> benchRound28(w),
+                () -> benchRound29(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -2570,6 +2571,98 @@ public final class CHPerfBench extends JavaPlugin {
             bh += io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveV2DataType
                 .readSlotPlate(v2Stave.getItemMeta(), slots[0]) != null ? 1 : 0;
         });
+    }
+
+    /** 第 29 轮：区块晶簇故事状态 v2 扁平编码（真实区块 PDC） */
+    private void benchRound29(PrintWriter w) {
+        final World world = Bukkit.getWorlds().get(0);
+        final org.bukkit.Chunk chunk = world.getChunkAt(6000, 6000);
+        chunk.load();
+        final NamespacedKey benchKey = new NamespacedKey(CrystamaeHistoria.getInstance(), "bench_chunk_r29");
+
+        // 构造 5 个晶簇故事（副本 + 方块位置 + 镀金混合，覆盖全字段）
+        final java.util.List<io.github.sefiraat.crystamaehistoria.stories.Story> stories = new java.util.ArrayList<>();
+        final io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity[] rs = {
+            io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity.COMMON,
+            io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity.UNCOMMON,
+            io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity.RARE,
+            io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity.EPIC,
+            io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity.MYTHICAL
+        };
+        int rIdx = 0;
+        for (int i = 0; i < 5; i++) {
+            final java.util.Map<io.github.sefiraat.crystamaehistoria.stories.definition.StoryType,
+                java.util.List<io.github.sefiraat.crystamaehistoria.stories.Story>> byType =
+                CrystamaeHistoria.getStoriesManager().getStoriesByRarityAndType().get(rs[rIdx % rs.length]);
+            rIdx++;
+            final io.github.sefiraat.crystamaehistoria.stories.Story source = byType.values().iterator().next().get(0);
+            final io.github.sefiraat.crystamaehistoria.stories.Story copy = source.copy();
+            copy.setBlockPosition(new io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition(
+                world, 6000 * 32 + 16 + i, 130, 6000 * 32 + 16 + i));
+            copy.setGilded(i % 2 == 0);
+            stories.add(copy);
+        }
+
+        // ———— 等价性断言 ————
+        boolean equivDualRead;
+        boolean equivMigration;
+        {
+            // v1 写入 → 双读应还原全部字段
+            io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods.setCustom(
+                chunk, benchKey, io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoryChunkDataType.TYPE, stories);
+            final java.util.List<io.github.sefiraat.crystamaehistoria.stories.Story> readV1 =
+                io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoryChunkV2DataType.readChunkStories(chunk, benchKey);
+            boolean ok = readV1.size() == stories.size();
+            for (int i = 0; i < stories.size() && ok; i++) {
+                ok &= readV1.get(i).getId().equals(stories.get(i).getId())
+                    && readV1.get(i).getRarity() == stories.get(i).getRarity()
+                    && readV1.get(i).isGilded() == stories.get(i).isGilded()
+                    && readV1.get(i).getBlockPosition() != null
+                    && readV1.get(i).getBlockPosition().getPosition() == stories.get(i).getBlockPosition().getPosition();
+            }
+            equivDualRead = ok;
+            // v2 覆盖同键 → 读数一致且键为容器类型
+            io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoryChunkV2DataType.writeChunkStories(chunk, benchKey, stories);
+            final java.util.List<io.github.sefiraat.crystamaehistoria.stories.Story> readV2 =
+                io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoryChunkV2DataType.readChunkStories(chunk, benchKey);
+            boolean ok2 = readV2.size() == stories.size();
+            for (int i = 0; i < stories.size() && ok2; i++) {
+                ok2 &= readV2.get(i).getId().equals(stories.get(i).getId())
+                    && readV2.get(i).getRarity() == stories.get(i).getRarity()
+                    && readV2.get(i).isGilded() == stories.get(i).isGilded()
+                    && readV2.get(i).getBlockPosition().getPosition() == stories.get(i).getBlockPosition().getPosition();
+            }
+            equivMigration = ok2 && chunk.getPersistentDataContainer().has(benchKey, org.bukkit.persistence.PersistentDataType.TAG_CONTAINER);
+        }
+        getLogger().info("round29 等价性: dualRead=" + equivDualRead + " migration=" + equivMigration);
+        // 清理基准键（不留存）
+        chunk.getPersistentDataContainer().remove(benchKey);
+
+        // ———— 序列化（5 晶簇） ————
+        time(w, "chunkPdc.serialize5", "old_v1", 5_000, () -> {
+            io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods.setCustom(
+                chunk, benchKey, io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoryChunkDataType.TYPE, stories);
+            bh += stories.size();
+        });
+        time(w, "chunkPdc.serialize5", "new_v2", 20_000, () -> {
+            io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoryChunkV2DataType.writeChunkStories(chunk, benchKey, stories);
+            bh += stories.size();
+        });
+
+        // ———— 反序列化（5 晶簇） ————
+        io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods.setCustom(
+            chunk, benchKey, io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoryChunkDataType.TYPE, stories);
+        time(w, "chunkPdc.deserialize5", "old_v1", 5_000, () -> {
+            bh += io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods
+                .getCustom(chunk, benchKey,
+                    io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoryChunkDataType.TYPE).size();
+        });
+        io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoryChunkV2DataType.writeChunkStories(chunk, benchKey, stories);
+        time(w, "chunkPdc.deserialize5", "new_v2", 20_000, () -> {
+            bh += io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoryChunkV2DataType
+                .readChunkStories(chunk, benchKey).size();
+        });
+        chunk.getPersistentDataContainer().remove(benchKey);
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
