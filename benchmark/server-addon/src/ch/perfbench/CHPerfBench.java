@@ -94,7 +94,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound28(w),
                 () -> benchRound29(w),
                 () -> benchRound31(w),
-                () -> benchRound34(w)
+                () -> benchRound34(w),
+                () -> benchRound35(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -2844,6 +2845,48 @@ public final class CHPerfBench extends JavaPlugin {
         cm.saveAll(false);
         time(w, "savePath.periodic", "new_watermark_skip", 100_000, () -> {
             cm.saveAll(false);
+        });
+    }
+
+    /** 第 35 轮：镀金器空载 tick 扫描减半（真实实体扫描） */
+    private void benchRound35(PrintWriter w) {
+        final World world = Bukkit.getWorlds().get(0);
+        // 空域（与其它基准同区高地，远离已生成实体）
+        final Location blockLoc = new Location(world, 6000, 130, 6000);
+        final Location center = blockLoc.clone().add(0.5, 0.5, 0.5);
+
+        // ———— 子集性质与空载等价断言 ————
+        final java.util.Collection<org.bukkit.entity.Entity> wide = world.getNearbyEntities(center, 3, 3, 3, org.bukkit.entity.Item.class::isInstance);
+        final java.util.Collection<org.bukkit.entity.Entity> narrow = world.getNearbyEntities(center, 0.75, 0.75, 0.75, org.bukkit.entity.Item.class::isInstance);
+        boolean subsetIdle = wide.isEmpty() && narrow.isEmpty();
+
+        // 有物场景：3³ 内两物品（0.75 外）→ 首扫非空次扫空，行为等价（只拉取不消费）
+        final java.util.List<org.bukkit.entity.Item> items = new java.util.ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            items.add(world.dropItem(center.clone().add(1.5 + i, 0, 0), new ItemStack(Material.DIAMOND)));
+        }
+        boolean subsetWithItems;
+        {
+            final java.util.Collection<org.bukkit.entity.Entity> wide2 = world.getNearbyEntities(center, 3, 3, 3, org.bukkit.entity.Item.class::isInstance);
+            final java.util.Collection<org.bukkit.entity.Entity> narrow2 = world.getNearbyEntities(center, 0.75, 0.75, 0.75, org.bukkit.entity.Item.class::isInstance);
+            // 新逻辑：首扫非空 → 次扫照跑（与旧一致）；0.75³ 应只见 0 个（物品在 1.5+ 外）
+            subsetWithItems = wide2.size() >= 2 && narrow2.isEmpty();
+        }
+        for (org.bukkit.entity.Item item : items) {
+            item.remove();
+        }
+        getLogger().info("round35 等价性: idleSubset=" + subsetIdle + " withItemsSubset=" + subsetWithItems);
+
+        // ———— 空载 tick：旧（双扫 + 双克隆）vs 新（单扫 + 缓存中心点） ————
+        time(w, "gilderTick.idle", "old_two_scans_two_clones", 20_000, () -> {
+            final Location c1 = blockLoc.clone().add(0.5, 0.5, 0.5);
+            world.getNearbyEntities(c1, 3, 3, 3, org.bukkit.entity.Item.class::isInstance);
+            final Location c2 = blockLoc.clone().add(0.5, 0.5, 0.5);
+            world.getNearbyEntities(c2, 0.75, 0.75, 0.75, org.bukkit.entity.Item.class::isInstance);
+        });
+        time(w, "gilderTick.idle", "new_one_scan_cached_center", 50_000, () -> {
+            world.getNearbyEntities(center, 3, 3, 3, org.bukkit.entity.Item.class::isInstance);
+            // 首扫空 → 跳过次扫
         });
     }
 
