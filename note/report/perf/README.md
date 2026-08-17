@@ -96,6 +96,7 @@
 | 58 | 判定轮（第十一轮收敛 1/2，角度：ItemStack 重量级比较/声音 API/getContents 克隆/玩家查询重复）：isSimilar·equals 零命中、playSound 全菜单打开级、getContents 唯一站点已 r53 门控、getPlayer 多命中均跨方法单次——零发现；1 项 FlexGroup 声音 lambda 捕获疑点转审计域（[round-58](round-58.md)） | ✅ 完成（判定轮，无变更） |
 | 59 | 回调内 NamespacedKey 构造改静态常量（判定轮转卫生清扫，配置链/newKey/物品栏写入角度）：Keys 增补 PDC_PRISM/PDC_ANTIPRISM/PDC_RECALL_LOCATION，Prism/AntiPrism/回忆水晶格 6 处转换——**16.65x**（57.1→3.43ns，事件级边际卫生 + PDC_* 惯例一致性）；边界：启动期/动态位置键/构造器不可常量化；**收敛计数重置**（r58 被打断）（[round-59](round-59.md)） | ✅ 完成（服务器回归通过，0 CH 错误） |
 | 60 | 判定轮（第十一轮收敛 1/2·重置后，角度：遗留集合类型/数据结构选型/掉落 API）：LinkedList·Vector·Stack·Hashtable 零命中、dropItem 系全事件级（实体生成 API 边界）、tick 类集合构造全为注册期字段——零发现（[round-60](round-60.md)） | ✅ 完成（判定轮，无变更） |
+| 61 | 判定轮（**第十一轮收敛 2/2**，角度：装箱键 Map/日志构造守卫/Optional 热路径）：装箱键均为 API 返回或小整数缓存命中、日志全启动期或限流、Optional 均为 Slimefun API 事件级消费——零发现；**r60+r61 连续零发现（角度互异）→ 第十一轮循环收敛**，版本收口 0.12.0（[round-61](round-61.md)） | ✅ 完成（判定轮，无变更，**第十一轮循环收敛**） |
 
 ## 收敛判定（round-32）
 
