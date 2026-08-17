@@ -201,7 +201,9 @@ getByItem miss 路径 ~19ns 廉价短路 vs hit 路径 1.3µs（r39）。第 54 
 （用户再触发）第 57 轮随机云粒子批量化：displayParticleEffect 两变体
 count+offset 单次调用——n5 4.76x / n10 13.36x + N 包→1 包收益。第 58 轮
 判定轮零发现（ItemStack 比较/声音/容器克隆/玩家查询四组探针全空，
-第十一轮收敛计数 1/2）；FlexGroup 声音 lambda 捕获疑点转审计域。
+第十一轮收敛计数 1/2）；FlexGroup 声音 lambda 捕获疑点转审计域。第 59 轮
+回调内 NamespacedKey 构造改静态常量（Prism/AntiPrism/回忆水晶格 6 处）：
+16.65x 事件级边际卫生 + Keys.PDC_* 惯例一致——收敛计数重置。
 
 ## 维护要点（改代码前必读）
 

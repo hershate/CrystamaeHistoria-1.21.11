@@ -111,7 +111,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound50(w),
                 () -> benchRound53(w),
                 () -> benchRound55(w),
-                () -> benchRound57(w)
+                () -> benchRound57(w),
+                () -> benchRound59(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -3683,6 +3684,26 @@ public final class CHPerfBench extends JavaPlugin {
         });
         time(w, "particleCloud.n10", "new_single_batched", 500_000, () -> {
             world.spawnParticle(particle, center, 10, 1, 1, 1);
+        });
+    }
+
+    /** 第 59 轮：回调内 NamespacedKey 构造 vs 静态常量引用（Prism/AntiPrism/回忆水晶格形态） */
+    private void benchRound59(PrintWriter w) {
+        final io.github.sefiraat.crystamaehistoria.CrystamaeHistoria plugin =
+            io.github.sefiraat.crystamaehistoria.CrystamaeHistoria.getInstance();
+
+        // ———— 等价性：常量与原 newKey 构造的 namespace/key 逐位一致 ————
+        final org.bukkit.NamespacedKey viaCtor = new org.bukkit.NamespacedKey(plugin, "PRISM");
+        final org.bukkit.NamespacedKey viaConst = io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_PRISM;
+        final boolean equiv = viaCtor.getNamespace().equals(viaConst.getNamespace()) && viaCtor.getKey().equals(viaConst.getKey());
+        getLogger().info("round59 等价性: " + equiv);
+
+        // ———— 每调用构造 vs 静态引用 ————
+        time(w, "pdcKey.prismFlag", "old_newkey_per_call", 1_000_000, () -> {
+            bh += new org.bukkit.NamespacedKey(plugin, "PRISM").hashCode();
+        });
+        time(w, "pdcKey.prismFlag", "new_static_ref", 10_000_000, () -> {
+            bh += io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_PRISM.hashCode();
         });
     }
 

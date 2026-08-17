@@ -94,6 +94,7 @@
 | 56 | 判定轮（**第十轮收敛 2/2**，角度：循环内重复调用/字段重取）：29 处命中全分类——Nova 系 clone ×2 为语义独立、getter 链/Random.current 为 JIT 内联提升（五证）、FlexGroup/序列化为已缓存事件级——零发现；**r54+r56 连续零发现（角度互异）→ 第十轮循环收敛**，版本收口 0.11.0（[round-56](round-56.md)） | ✅ 完成（判定轮，无变更，**第十轮循环收敛**） |
 | 57 | 随机云粒子批量化（**第十一轮循环开启**，粒子 API 形态角度）：displayParticleEffect 两变体 N 次单发归一为 count+offset 单次调用（散布客户端原生生成，签名不变）——n5 **4.76x**（93.4→19.6ns）/ n10 **13.36x**（166.5→12.5ns），另每调用 N 包→1 包网络收益（无观察者基准不可测）；其余 12 处 spawnParticle 为刻意几何位置不可批量（[round-57](round-57.md)） | ✅ 完成（服务器回归通过，0 CH 错误） |
 | 58 | 判定轮（第十一轮收敛 1/2，角度：ItemStack 重量级比较/声音 API/getContents 克隆/玩家查询重复）：isSimilar·equals 零命中、playSound 全菜单打开级、getContents 唯一站点已 r53 门控、getPlayer 多命中均跨方法单次——零发现；1 项 FlexGroup 声音 lambda 捕获疑点转审计域（[round-58](round-58.md)） | ✅ 完成（判定轮，无变更） |
+| 59 | 回调内 NamespacedKey 构造改静态常量（判定轮转卫生清扫，配置链/newKey/物品栏写入角度）：Keys 增补 PDC_PRISM/PDC_ANTIPRISM/PDC_RECALL_LOCATION，Prism/AntiPrism/回忆水晶格 6 处转换——**16.65x**（57.1→3.43ns，事件级边际卫生 + PDC_* 惯例一致性）；边界：启动期/动态位置键/构造器不可常量化；**收敛计数重置**（r58 被打断）（[round-59](round-59.md)） | ✅ 完成（服务器回归通过，0 CH 错误） |
 
 ## 收敛判定（round-32）
 
