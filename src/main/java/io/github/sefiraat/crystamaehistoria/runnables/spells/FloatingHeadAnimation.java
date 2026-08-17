@@ -7,31 +7,20 @@ import org.bukkit.scheduler.BukkitRunnable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 public class FloatingHeadAnimation extends BukkitRunnable {
-    public static final double Y_DEVIANCY = 0.2;
     public static final long SPEED = 1;
 
     private final ArmorStand armorStand;
-    private final double baseY;
-    private boolean directionUp = true;
 
     @ParametersAreNonnullByDefault
     public FloatingHeadAnimation(ArmorStand armorStand) {
         this.armorStand = armorStand;
-        baseY = armorStand.getLocation().getY();
     }
 
     @Override
     public void run() {
-        if (directionUp) {
-            ArmourStandUtils.panelAnimationStep(armorStand, true);
-            if (armorStand.getLocation().getY() >= (baseY + Y_DEVIANCY)) {
-                directionUp = false;
-            }
-        } else {
-            ArmourStandUtils.panelAnimationStep(armorStand, false);
-            if (armorStand.getLocation().getY() <= (baseY - Y_DEVIANCY)) {
-                directionUp = true;
-            }
-        }
+        // 上游遗留死分支已移除：panelAnimationStep 忽略方向参数（头部持续旋转为
+        // 唯一可见效果），展示架从不垂直位移，Y 越界比较恒 false——原每 tick
+        // getLocation() 分配与分支翻转均为纯开销
+        ArmourStandUtils.panelAnimationStep(armorStand, true);
     }
 }
