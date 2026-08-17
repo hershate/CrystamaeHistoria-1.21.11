@@ -110,7 +110,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound49(w),
                 () -> benchRound50(w),
                 () -> benchRound53(w),
-                () -> benchRound55(w)
+                () -> benchRound55(w),
+                () -> benchRound57(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -3624,6 +3625,65 @@ public final class CHPerfBench extends JavaPlugin {
                 e.remove();
             }
         }
+    }
+
+    /** 第 57 轮：粒子随机云批量化（服务端成本；无观察者时包成本为 0，生产环境另有 N→1 包收益） */
+    private void benchRound57(PrintWriter w) {
+        final World world = Bukkit.getWorlds().get(0);
+        final Location center = new Location(world, 0, 200, 0);
+        center.getChunk().load();
+        final Particle particle = Particle.HEART;
+        final int n = 5;
+
+        // ———— 等价性：两形态均正常完成（散布位置移至客户端生成，服务端不可比点集；
+        // 断言调用无异常 + 总粒子数语义一致：old N 次单发 == new 单发 count=N）————
+        boolean ok = true;
+        try {
+            for (int i = 0; i < 100; i++) {
+                // 旧形态（r19 提交形态：单克隆 + 逐粒子 set）
+                final Location point = center.clone();
+                for (int j = 0; j < n; j++) {
+                    point.setX(center.getX() + ThreadLocalRandom.current().nextDouble(-1, 1.1));
+                    point.setY(center.getY() + ThreadLocalRandom.current().nextDouble(-1, 1.1));
+                    point.setZ(center.getZ() + ThreadLocalRandom.current().nextDouble(-1, 1.1));
+                    world.spawnParticle(particle, point, 1);
+                }
+                // 新形态（单次调用 count=N + 盒偏移）
+                world.spawnParticle(particle, center, n, 1, 1, 1);
+                // DUST 变体
+                world.spawnParticle(Particle.DUST, center, n, 1, 1, 1, new Particle.DustOptions(org.bukkit.Color.RED, 1));
+            }
+        } catch (Exception | Error ex) {
+            ok = false;
+            getLogger().info("round57 异常: " + ex);
+        }
+        getLogger().info("round57 等价性(调用语义): " + ok);
+
+        // ———— 服务端成本对打：N=5 与 N=10 ————
+        time(w, "particleCloud.n5", "old_loop_singles", 100_000, () -> {
+            final Location point = center.clone();
+            for (int j = 0; j < 5; j++) {
+                point.setX(center.getX() + ThreadLocalRandom.current().nextDouble(-1, 1.1));
+                point.setY(center.getY() + ThreadLocalRandom.current().nextDouble(-1, 1.1));
+                point.setZ(center.getZ() + ThreadLocalRandom.current().nextDouble(-1, 1.1));
+                world.spawnParticle(particle, point, 1);
+            }
+        });
+        time(w, "particleCloud.n5", "new_single_batched", 500_000, () -> {
+            world.spawnParticle(particle, center, 5, 1, 1, 1);
+        });
+        time(w, "particleCloud.n10", "old_loop_singles", 50_000, () -> {
+            final Location point = center.clone();
+            for (int j = 0; j < 10; j++) {
+                point.setX(center.getX() + ThreadLocalRandom.current().nextDouble(-1, 1.1));
+                point.setY(center.getY() + ThreadLocalRandom.current().nextDouble(-1, 1.1));
+                point.setZ(center.getZ() + ThreadLocalRandom.current().nextDouble(-1, 1.1));
+                world.spawnParticle(particle, point, 1);
+            }
+        });
+        time(w, "particleCloud.n10", "new_single_batched", 500_000, () -> {
+            world.spawnParticle(particle, center, 10, 1, 1, 1);
+        });
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
