@@ -152,7 +152,11 @@ Stand 三处 tick 路径——177x（1279→7.22ns）。第 41 轮 v0.9.0 全量
 第 45 轮法术 cast 路径 stream 惯用法全库清扫（r44 族扩展，三处：
 EasterEgg 静态缓存 / Bobulate 标签备忘 / HarmonysSonata 直接迭代）：
 列表重建 112.98x（318.6→2.82ns）/ 随机取材 7.05x（258.3→36.6ns），
-等价性全 true——"流式惯用法"族已知调用点闭合。
+等价性全 true——"流式惯用法"族已知调用点闭合。第 46 轮枚举 values()
+克隆与集合双复制（相邻形态）：Bobulate DyeColor 静态数组 7.85x /
+ExaltedFertilityPharo tick 路径 toList() 二次复制改直接迭代
+19.9x-4.5x / BalmySponge 实测持平（纯迭代克隆已被 JIT 逃逸分析消除，
+第三次 EA 实证——values() 克隆仅在数组逃逸时有实际成本）。
 
 ## 维护要点（改代码前必读）
 

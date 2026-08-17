@@ -101,7 +101,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound40(w),
                 () -> benchRound42(w),
                 () -> benchRound44(w),
-                () -> benchRound45(w)
+                () -> benchRound45(w),
+                () -> benchRound46(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -3175,6 +3176,93 @@ public final class CHPerfBench extends JavaPlugin {
                 }
             }
             bh += m.ordinal();
+        });
+    }
+
+    /** 第 46 轮：枚举 values() 克隆与集合双复制（cast 染色/放置遍历/tick 集合消费） */
+    private void benchRound46(PrintWriter w) {
+        // ———— 等价性：静态缓存数组与 values() 逐位一致；直接迭代取第 rnd 元素与 toList().get 一致 ————
+        final org.bukkit.DyeColor[] cachedDye = org.bukkit.DyeColor.values();
+        boolean equivDye = cachedDye.length == org.bukkit.DyeColor.values().length;
+        for (int i = 0; equivDye && i < cachedDye.length; i++) {
+            equivDye &= cachedDye[i] == org.bukkit.DyeColor.values()[i];
+        }
+        final org.bukkit.block.BlockFace[] cachedFaces = org.bukkit.block.BlockFace.values();
+        boolean equivFaces = cachedFaces.length == org.bukkit.block.BlockFace.values().length;
+        for (int i = 0; equivFaces && i < cachedFaces.length; i++) {
+            equivFaces &= cachedFaces[i] == org.bukkit.block.BlockFace.values()[i];
+        }
+        final java.util.List<Material> src = java.util.List.of(Material.DANDELION, Material.POPPY, Material.BLUE_ORCHID);
+        boolean equivPick = true;
+        for (int rnd = 0; rnd < src.size(); rnd++) {
+            final Material viaList = src.stream().toList().get(rnd);
+            Material viaLoop = null;
+            int idx = 0;
+            for (Material m : src) {
+                if (idx++ == rnd) {
+                    viaLoop = m;
+                    break;
+                }
+            }
+            equivPick &= viaList == viaLoop;
+        }
+        getLogger().info("round46 等价性: dye=" + equivDye + " faces=" + equivFaces + " pick=" + equivPick);
+
+        // ———— Bobulate 染色取材：values() 两次克隆 + stream 计数 vs 静态数组 ————
+        time(w, "enumValues.dyePick", "old_values_clone_stream", 200_000, () -> {
+            final int rnd = ThreadLocalRandom.current().nextInt(
+                0,
+                (int) java.util.Arrays.stream(org.bukkit.DyeColor.values()).count()
+            );
+            bh += org.bukkit.DyeColor.values()[rnd].ordinal();
+        });
+        time(w, "enumValues.dyePick", "new_static_array", 2_000_000, () -> {
+            final int rnd = ThreadLocalRandom.current().nextInt(0, cachedDye.length);
+            bh += cachedDye[rnd].ordinal();
+        });
+
+        // ———— BalmySponge 饱和放置遍历：values() 克隆（50+ 元素）vs 静态数组 ————
+        time(w, "enumValues.faceIter", "old_values_clone", 100_000, () -> {
+            int cnt = 0;
+            for (org.bukkit.block.BlockFace f : org.bukkit.block.BlockFace.values()) {
+                cnt++;
+            }
+            bh += cnt;
+        });
+        time(w, "enumValues.faceIter", "new_static_array", 1_000_000, () -> {
+            int cnt = 0;
+            for (org.bukkit.block.BlockFace f : cachedFaces) {
+                cnt++;
+            }
+            bh += cnt;
+        });
+
+        // ———— ExaltedFertilityPharo tick 集合消费（getNearbyEntitiesByType 返回 Collection）————
+        // 空闲常态：空集合
+        final java.util.Collection<Material> empty = new java.util.ArrayList<>();
+        time(w, "pharoConsume.empty", "old_stream_tolist", 500_000, () -> {
+            bh += empty.stream().toList().size();
+        });
+        time(w, "pharoConsume.empty", "new_isempty_gate", 5_000_000, () -> {
+            if (!empty.isEmpty()) {
+                bh += 1;
+            }
+        });
+        // 常见负载：3 元素（getNearbyEntitiesByType 的 ArrayList 形态；元素类型与惯用法成本无关）
+        final java.util.Collection<Material> animals3 = new java.util.ArrayList<>(src);
+        time(w, "pharoConsume.small3", "old_stream_tolist_get", 500_000, () -> {
+            final java.util.List<Material> copy = animals3.stream().toList();
+            bh += copy.get(ThreadLocalRandom.current().nextInt(copy.size())).ordinal();
+        });
+        time(w, "pharoConsume.small3", "new_direct_iter", 1_000_000, () -> {
+            final int rnd = ThreadLocalRandom.current().nextInt(animals3.size());
+            int idx = 0;
+            for (Material m : animals3) {
+                if (idx++ == rnd) {
+                    bh += m.ordinal();
+                    break;
+                }
+            }
         });
     }
 
