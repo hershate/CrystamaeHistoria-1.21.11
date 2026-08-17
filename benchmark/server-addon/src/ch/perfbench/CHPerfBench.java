@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import org.bukkit.util.Vector;
 
 /**
  * 服务器内基准（第 2 轮）：真实世界 raycast 与真实法杖 PDC 反序列化实测。
@@ -108,7 +109,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound47(w),
                 () -> benchRound49(w),
                 () -> benchRound50(w),
-                () -> benchRound53(w)
+                () -> benchRound53(w),
+                () -> benchRound55(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -3526,6 +3528,102 @@ public final class CHPerfBench extends JavaPlugin {
             }
             bh += hits;
         });
+    }
+
+    /** 第 55 轮：实体扫描类型切片化（混合实体场景，真实区块实体索引） */
+    private void benchRound55(PrintWriter w) {
+        final World world = Bukkit.getWorlds().get(0);
+        final Location center = new Location(world, 50, 200, 50);
+        center.getChunk().load();
+        // 混合场景：40 物品 + 15 僵尸 + 5 箭矢 + 3 经验球（农场典型构成）
+        final List<org.bukkit.entity.Entity> spawned = new ArrayList<>();
+        try {
+            for (int i = 0; i < 40; i++) {
+                spawned.add(world.dropItem(center.clone().add(i % 8 - 4, 0.5, i / 8 - 2), new ItemStack(Material.DIAMOND)));
+            }
+            for (int i = 0; i < 15; i++) {
+                spawned.add(world.spawn(center.clone().add(i % 5 - 2, 1, i / 5 - 1), org.bukkit.entity.Zombie.class));
+            }
+            for (int i = 0; i < 5; i++) {
+                spawned.add(world.spawnArrow(center.clone().add(0, 1.5, 0), new Vector(1, 0.1, 0), 0.5f, 0f));
+            }
+            for (int i = 0; i < 3; i++) {
+                spawned.add(world.spawn(center.clone().add(i, 0.5, 3), org.bukkit.entity.ExperienceOrb.class));
+            }
+
+            // ———— 等价性：谓词形态与 ByType 形态同盒同集合（UUID 集） ————
+            boolean equiv = true;
+            for (double r : new double[]{4, 8}) {
+                final java.util.Set<java.util.UUID> livingOld = new java.util.HashSet<>();
+                for (org.bukkit.entity.Entity e : world.getNearbyEntities(center, r, r, r, org.bukkit.entity.LivingEntity.class::isInstance)) {
+                    livingOld.add(e.getUniqueId());
+                }
+                final java.util.Set<java.util.UUID> livingNew = new java.util.HashSet<>();
+                for (org.bukkit.entity.LivingEntity e : world.getNearbyEntitiesByType(org.bukkit.entity.LivingEntity.class, center, r, r, r)) {
+                    livingNew.add(e.getUniqueId());
+                }
+                equiv &= livingOld.equals(livingNew);
+                final java.util.Set<java.util.UUID> itemOld = new java.util.HashSet<>();
+                for (org.bukkit.entity.Entity e : world.getNearbyEntities(center, r, r, r, org.bukkit.entity.Item.class::isInstance)) {
+                    itemOld.add(e.getUniqueId());
+                }
+                final java.util.Set<java.util.UUID> itemNew = new java.util.HashSet<>();
+                for (org.bukkit.entity.Item e : world.getNearbyEntitiesByType(org.bukkit.entity.Item.class, center, r, r, r)) {
+                    itemNew.add(e.getUniqueId());
+                }
+                equiv &= itemOld.equals(itemNew);
+                getLogger().info("round55 r" + r + " 集合: living=" + livingNew.size() + " item=" + itemNew.size());
+            }
+            getLogger().info("round55 等价性: " + equiv);
+
+            // ———— 对打：谓词全扫 vs 类型切片 ————
+            time(w, "entityScan.living", "old_predicate_scan", 20_000, () -> {
+                int n = 0;
+                for (org.bukkit.entity.Entity e : world.getNearbyEntities(center, 6, 6, 6, org.bukkit.entity.LivingEntity.class::isInstance)) {
+                    n++;
+                }
+                bh += n;
+            });
+            time(w, "entityScan.living", "new_bytype_slice", 50_000, () -> {
+                int n = 0;
+                for (org.bukkit.entity.LivingEntity e : world.getNearbyEntitiesByType(org.bukkit.entity.LivingEntity.class, center, 6, 6, 6)) {
+                    n++;
+                }
+                bh += n;
+            });
+            time(w, "entityScan.item", "old_predicate_scan", 20_000, () -> {
+                int n = 0;
+                for (org.bukkit.entity.Entity e : world.getNearbyEntities(center, 3, 3, 3, org.bukkit.entity.Item.class::isInstance)) {
+                    n++;
+                }
+                bh += n;
+            });
+            time(w, "entityScan.item", "new_bytype_slice", 50_000, () -> {
+                int n = 0;
+                for (org.bukkit.entity.Item e : world.getNearbyEntitiesByType(org.bukkit.entity.Item.class, center, 3, 3, 3)) {
+                    n++;
+                }
+                bh += n;
+            });
+            time(w, "entityScan.orb", "old_predicate_scan", 50_000, () -> {
+                int n = 0;
+                for (org.bukkit.entity.Entity e : world.getNearbyEntities(center, 4, 4, 4, org.bukkit.entity.ExperienceOrb.class::isInstance)) {
+                    n++;
+                }
+                bh += n;
+            });
+            time(w, "entityScan.orb", "new_bytype_slice", 100_000, () -> {
+                int n = 0;
+                for (org.bukkit.entity.ExperienceOrb e : world.getNearbyEntitiesByType(org.bukkit.entity.ExperienceOrb.class, center, 4, 4, 4)) {
+                    n++;
+                }
+                bh += n;
+            });
+        } finally {
+            for (org.bukkit.entity.Entity e : spawned) {
+                e.remove();
+            }
+        }
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
