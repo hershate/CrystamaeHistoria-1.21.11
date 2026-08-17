@@ -84,6 +84,7 @@
 | 46 | 枚举 values() 克隆与集合双复制（相邻形态）：Bobulate DyeColor 静态数组（逃逸克隆 + stream 计数 **7.85x**，33.60 → 4.28ns）/ ExaltedFertilityPharo tick 路径 Collection.stream().toList() 改直接迭代（空 **19.92x** / 3 元素 **4.53x**）/ BalmySponge BlockFace 静态缓存（实测持平——**纯迭代克隆已被 JIT 逃逸分析消除**，第三次 EA 实证，卫生性保留）；等价性 dye/faces/pick 全 true（[round-46](round-46.md)） | ✅ 完成（服务器回归通过，0 CH 错误） |
 | 47 | FloatingHeadAnimation 每 tick 死分支移除（r19 族漏网处）：directionUp 分支恒不翻转（panelAnimationStep 忽略方向参数 + 展示架不垂直位移，10 万步断言 branchInert=true）——21.39 → 18.07ns（**1.18x** 噪声级，**第四次 EA 实证**：getLocation 的 Location 分配已被逃逸分析消除）；死字段/常量同除；首跑 pose=false 为基准断言设计缺陷（起点未归零），归零复测通过（[round-47](round-47.md)） | ✅ 完成（服务器回归通过，0 CH 错误） |
 | 48 | **惯用法清扫域穷尽判定**（r44-47 收口）：族矩阵五增补行 + 未探族复核（残余 stream 仅 2 处豁免 / collect 全冷路径 / tick getLocation 已判定或死代码 / map 反模式零 / Random·拼接零命中）——代际递减 113x→7.85x→1.18x→零发现，**EA 四证确立边界规则**（清扫目标收敛为逃逸形态），地板判定维持并强化（[round-48](round-48.md)） | ✅ 完成（判定轮，无变更） |
+| 49 | 球面扫描 O(n²) List.contains 去重消除（**判定轮转清扫轮**，List.contains 探针角度命中 r18 族漏网两成员）：Cascada/PlutosDecent 偏移构造互异 → 去重恒 false 无效工作——r5 **39.2x**（184.3µs→4.7µs）/ r8 **152.8x**（2.99ms→19.5µs，高等级每次命中省 ~3ms，r44 族以来最大单项）；两档产物逐位一致 true；**"连续判定轮零发现"准则重置**，方法论沉淀：判定轮必须轮换探针角度（[round-49](round-49.md)） | ✅ 完成（服务器回归通过，真实插件异常 0） |
 
 ## 收敛判定（round-32）
 

@@ -36,6 +36,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import me.mrCookieSlime.Slimefun.api.BlockStorage;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -104,7 +105,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound44(w),
                 () -> benchRound45(w),
                 () -> benchRound46(w),
-                () -> benchRound47(w)
+                () -> benchRound47(w),
+                () -> benchRound49(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -3310,6 +3312,66 @@ public final class CHPerfBench extends JavaPlugin {
         });
         standA.remove();
         standB.remove();
+    }
+
+    /** 第 49 轮：法术球面扫描 O(n²) List.contains 去重（Cascada/PlutosDecent 形态，真实世界方块） */
+    private void benchRound49(PrintWriter w) {
+        final World world = Bukkit.getWorlds().get(0);
+        world.getBlockAt(0, 200, 0).getChunk().load();
+
+        // ———— 等价性：同基地两形态扫描产物逐位一致（同序同坐标） ————
+        for (int range : new int[]{5, 8}) {
+            final List<Block> oldList = scanDedup(world, 0, 200, 0, range);
+            final List<Block> newList = scanDirect(world, 0, 200, 0, range);
+            boolean equiv = oldList.size() == newList.size();
+            for (int i = 0; equiv && i < oldList.size(); i++) {
+                equiv &= oldList.get(i).getX() == newList.get(i).getX()
+                    && oldList.get(i).getY() == newList.get(i).getY()
+                    && oldList.get(i).getZ() == newList.get(i).getZ();
+            }
+            getLogger().info("round49 等价性 r" + range + ": " + equiv + " (n=" + newList.size() + ")");
+        }
+
+        // ———— r5（下界施法）与 r8（高级法杖放大）两档 ————
+        time(w, "sphereScan.r5", "old_list_contains", 100, () -> bh += scanDedup(world, 0, 200, 0, 5).size());
+        time(w, "sphereScan.r5", "new_direct_add", 2_000, () -> bh += scanDirect(world, 0, 200, 0, 5).size());
+        time(w, "sphereScan.r8", "old_list_contains", 20, () -> bh += scanDedup(world, 0, 200, 0, 8).size());
+        time(w, "sphereScan.r8", "new_direct_add", 1_000, () -> bh += scanDirect(world, 0, 200, 0, 8).size());
+    }
+
+    /** 旧形态：球面扫描 + List.contains 去重（Cascada/PlutosDecent 原实现同构） */
+    private List<Block> scanDedup(World world, int baseX, int baseY, int baseZ, int range) {
+        final List<Block> blocks = new ArrayList<>();
+        for (int y = -range; y < range; y++) {
+            for (int x = -range; x < range; x++) {
+                for (int z = -range; z < range; z++) {
+                    if (Math.sqrt((double) (x * x) + (y * y) + (z * z)) > range) {
+                        continue;
+                    }
+                    final Block block = world.getBlockAt(x + baseX, y + baseY, z + baseZ);
+                    if (!blocks.contains(block)) {
+                        blocks.add(block);
+                    }
+                }
+            }
+        }
+        return blocks;
+    }
+
+    /** 新形态：直接收集（偏移互异 → 坐标必不重复，去重为无效工作） */
+    private List<Block> scanDirect(World world, int baseX, int baseY, int baseZ, int range) {
+        final List<Block> blocks = new ArrayList<>();
+        for (int y = -range; y < range; y++) {
+            for (int x = -range; x < range; x++) {
+                for (int z = -range; z < range; z++) {
+                    if (Math.sqrt((double) (x * x) + (y * y) + (z * z)) > range) {
+                        continue;
+                    }
+                    blocks.add(world.getBlockAt(x + baseX, y + baseY, z + baseZ));
+                }
+            }
+        }
+        return blocks;
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
