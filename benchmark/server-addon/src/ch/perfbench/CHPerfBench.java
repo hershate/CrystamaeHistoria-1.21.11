@@ -100,7 +100,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound39(w),
                 () -> benchRound40(w),
                 () -> benchRound42(w),
-                () -> benchRound44(w)
+                () -> benchRound44(w),
+                () -> benchRound45(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -3124,6 +3125,57 @@ public final class CHPerfBench extends JavaPlugin {
         });
 
         one.remove();
+    }
+
+    /** 第 45 轮：法术 cast 路径 stream 惯用法（真实 Tag 集合） */
+    private void benchRound45(PrintWriter w) {
+        final java.util.Set<Material> flowers = org.bukkit.Tag.FLOWERS.getValues();
+        final java.util.List<Material> cached = java.util.List.copyOf(flowers);
+
+        // ———— 等价性：两随机取法同序一致；缓存列表内容一致 ————
+        boolean equivPick = true;
+        for (int n = 0; n < flowers.size(); n += 7) {
+            final Material viaStream = flowers.stream().skip(n).findAny().orElse(Material.DANDELION);
+            Material viaLoop = Material.DANDELION;
+            int i = 0;
+            for (Material candidate : flowers) {
+                if (i++ == n) {
+                    viaLoop = candidate;
+                    break;
+                }
+            }
+            equivPick &= viaStream == viaLoop;
+        }
+        final boolean equivList = cached.size() == flowers.size() && cached.containsAll(flowers);
+        getLogger().info("round45 等价性: pick=" + equivPick + " list=" + equivList);
+
+        // ———— 列表构建：每次重建 vs 静态缓存引用 ————
+        time(w, "spellCast.tagList", "old_rebuild_per_use", 50_000, () -> {
+            final java.util.List<Material> list = flowers.stream().toList();
+            bh += list.size();
+        });
+        time(w, "spellCast.tagList", "new_cached_ref", 5_000_000, () -> {
+            bh += cached.size();
+        });
+
+        // ———— 随机取材：stream skip/findAny vs 直接迭代 ————
+        time(w, "spellCast.randomPick", "old_stream_skip", 200_000, () -> {
+            bh += flowers.stream()
+                .skip(ThreadLocalRandom.current().nextInt(flowers.size()))
+                .findAny().orElse(Material.DANDELION).ordinal();
+        });
+        time(w, "spellCast.randomPick", "new_loop_pick", 500_000, () -> {
+            final int skip = ThreadLocalRandom.current().nextInt(flowers.size());
+            Material m = Material.DANDELION;
+            int i = 0;
+            for (Material candidate : flowers) {
+                if (i++ == skip) {
+                    m = candidate;
+                    break;
+                }
+            }
+            bh += m.ordinal();
+        });
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
