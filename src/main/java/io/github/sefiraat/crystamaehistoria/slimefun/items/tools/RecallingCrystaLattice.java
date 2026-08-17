@@ -69,7 +69,7 @@ public class RecallingCrystaLattice extends SlimefunItem {
                 final ItemMeta itemMeta = itemStack.getItemMeta();
                 final PersistentDataContainer container = itemMeta.getPersistentDataContainer();
 
-                container.set(Keys.newKey("location"), DataType.LOCATION, location);
+                container.set(Keys.PDC_RECALL_LOCATION, DataType.LOCATION, location);
                 itemStack.setItemMeta(itemMeta);
                 player.sendMessage(
                     MessageFormat.format("{0}请在聊天栏内输入该路标的名称.", ChatColor.LIGHT_PURPLE)
@@ -89,8 +89,8 @@ public class RecallingCrystaLattice extends SlimefunItem {
         // 世界无法解析（序列化的世界名不存在）一律按"路标不可用"失败关闭
         final Location location;
         try {
-            location = container.has(Keys.newKey("location"), DataType.LOCATION)
-                ? container.get(Keys.newKey("location"), DataType.LOCATION)
+            location = container.has(Keys.PDC_RECALL_LOCATION, DataType.LOCATION)
+                ? container.get(Keys.PDC_RECALL_LOCATION, DataType.LOCATION)
                 : null;
         } catch (RuntimeException e) {
             event.getPlayer().sendActionBar(

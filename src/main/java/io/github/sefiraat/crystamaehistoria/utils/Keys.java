@@ -49,6 +49,12 @@ public final class Keys {
     public static final NamespacedKey PDC_STORIES_V2 = newKey("s_list2");
     public static final NamespacedKey PDC_PLATE_STORAGE = newKey("plt");
     public static final NamespacedKey PDC_STAVE_STORAGE = newKey("stv");
+
+    // 法术对抗标记（Prism/AntiPrism）与回忆水晶格位置——回调内静态引用，
+    // 替代原每调用 newKey 构造（惯例与 PDC_* 族一致）
+    public static final NamespacedKey PDC_PRISM = newKey("PRISM");
+    public static final NamespacedKey PDC_ANTIPRISM = newKey("ANTIPRISM");
+    public static final NamespacedKey PDC_RECALL_LOCATION = newKey("location");
     public static final NamespacedKey PDC_SATCHEL_STORAGE = newKey("satchel");
     public static final NamespacedKey PDC_ON_COOLDOWN = newKey("cooldown");
     public static final NamespacedKey PDC_PAINT_TYPE = newKey("paint_type");

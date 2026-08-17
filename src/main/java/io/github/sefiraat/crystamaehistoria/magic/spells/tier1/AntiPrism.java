@@ -72,10 +72,10 @@ public class AntiPrism extends Spell {
             final Interaction interaction = entity instanceof Player ? Interaction.ATTACK_PLAYER : Interaction.ATTACK_ENTITY;
             // 弹射物命中可能晚于施法者下线：用 UUID 重载校验权限，避免 getCasterAsPlayer() 空引用
             if (GeneralUtils.hasPermission(castInformation.getCaster(), entity.getLocation(), interaction)) {
-                if (PersistentDataAPI.getBoolean(entity, Keys.newKey("PRISM"))) {
+                if (PersistentDataAPI.getBoolean(entity, Keys.PDC_PRISM)) {
                     entity.damage(200);
                 }
-                PersistentDataAPI.setBoolean(entity, Keys.newKey("ANTIPRISM"), true);
+                PersistentDataAPI.setBoolean(entity, Keys.PDC_ANTIPRISM, true);
                 applyNegativeEffects(entity, castInformation);
                 ParticleUtils.displayParticleEffect(entity, Particle.CRIMSON_SPORE, range, 20);
             }

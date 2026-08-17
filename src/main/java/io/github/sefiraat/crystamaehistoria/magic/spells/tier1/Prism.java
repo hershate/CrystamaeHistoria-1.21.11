@@ -44,10 +44,10 @@ public class Prism extends Spell {
     @ParametersAreNonnullByDefault
     public void cast(CastInformation castInformation) {
         Player player = castInformation.getCasterAsPlayer();
-        if (PersistentDataAPI.getBoolean(player, Keys.newKey("ANTIPRISM"))) {
+        if (PersistentDataAPI.getBoolean(player, Keys.PDC_ANTIPRISM)) {
             player.damage(200);
         }
-        PersistentDataAPI.setBoolean(player, Keys.newKey("PRISM"), true);
+        PersistentDataAPI.setBoolean(player, Keys.PDC_PRISM, true);
         applyPositiveEffects(player, castInformation);
         ParticleUtils.displayParticleEffect(player, Particle.EFFECT, 2, 20);
     }
