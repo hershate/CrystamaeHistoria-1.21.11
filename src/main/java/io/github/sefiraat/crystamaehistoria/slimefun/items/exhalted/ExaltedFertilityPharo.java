@@ -7,7 +7,7 @@ import org.bukkit.Location;
 import org.bukkit.entity.Animals;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class ExaltedFertilityPharo extends ExaltedItem {
@@ -21,10 +21,19 @@ public class ExaltedFertilityPharo extends ExaltedItem {
 
     @Override
     public void onExalt(ExaltedItem slimefunItem, Location location) {
-        final List<Animals> animals = location.getNearbyEntitiesByType(Animals.class, this.range, this.range).stream().toList();
+        // getNearbyEntitiesByType 返回 Collection：原 stream().toList() 为
+        // 每 tick 二次复制 + List 转型；直接迭代取第 rnd 个元素零复制
+        // （该路径由展示架 afterTick 周期驱动），均匀随机语义不变
+        final Collection<Animals> animals = location.getNearbyEntitiesByType(Animals.class, this.range, this.range);
         if (!animals.isEmpty()) {
-            final int rnd = ThreadLocalRandom.current().nextInt(0, animals.size());
-            animals.get(rnd).setLoveModeTicks(100);
+            final int rnd = ThreadLocalRandom.current().nextInt(animals.size());
+            int index = 0;
+            for (Animals animal : animals) {
+                if (index++ == rnd) {
+                    animal.setLoveModeTicks(100);
+                    break;
+                }
+            }
         }
     }
 }

@@ -36,6 +36,9 @@ public class BalmySponge extends SlimefunItem {
 
     private static final NamespacedKey KEY = Keys.newKey("is_saturated");
     private static final String DISPLAY_NAME_SUFFIX = " (Saturated)";
+    // BlockFace 数组静态缓存：values() 每次调用克隆新数组（50+ 元素），
+    // 原实现每次饱和放置克隆一次
+    private static final BlockFace[] FACES = BlockFace.values();
 
     private final int range;
 
@@ -67,7 +70,7 @@ public class BalmySponge extends SlimefunItem {
                     // Is saturated, check for water and clean if possible
                     boolean isCleaned = false;
 
-                    for (BlockFace face : BlockFace.values()) {
+                    for (BlockFace face : FACES) {
                         final Block checkBlock = block.getRelative(face);
                         if (checkBlock.getType() == Material.WATER && GeneralUtils.hasPermission(player, checkBlock, Interaction.BREAK_BLOCK)) {
                             final BlockData blockData = checkBlock.getBlockData();

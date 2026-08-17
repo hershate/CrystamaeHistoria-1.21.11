@@ -22,7 +22,6 @@ import org.bukkit.material.Colorable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -88,6 +87,8 @@ public class Bobulate extends Spell {
     /** 标签→材质列表静态备忘：原实现每处理一块重建一次列表（六个常量标签） */
     private static final java.util.Map<Tag<Material>, List<Material>> TAG_LISTS = new java.util.HashMap<>();
 
+    private static final DyeColor[] DYE_COLORS = DyeColor.values();
+
     private static List<Material> tagList(Tag<Material> tag) {
         return TAG_LISTS.computeIfAbsent(tag, t -> List.copyOf(t.getValues()));
     }
@@ -113,11 +114,10 @@ public class Bobulate extends Spell {
             if (entity instanceof Colorable
                 && GeneralUtils.hasPermission(caster, entity.getLocation(), Interaction.INTERACT_ENTITY)
             ) {
-                final int randomValue = ThreadLocalRandom.current().nextInt(
-                    0,
-                    (int) Arrays.stream(DyeColor.values()).count()
-                );
-                ((Colorable) entity).setColor(DyeColor.values()[randomValue]);
+                // DyeColor 数组静态缓存：values() 每次调用克隆新数组，
+                // 原实现每实体两次克隆 + stream 计数为纯开销
+                final int randomValue = ThreadLocalRandom.current().nextInt(0, DYE_COLORS.length);
+                ((Colorable) entity).setColor(DYE_COLORS[randomValue]);
             }
         }
     }
