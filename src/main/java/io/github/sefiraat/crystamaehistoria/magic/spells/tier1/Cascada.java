@@ -11,6 +11,7 @@ import io.github.sefiraat.crystamaehistoria.utils.SpellUtils;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
@@ -48,7 +49,10 @@ public class Cascada extends Spell {
         final Location location = castInformation.getProjectileLocation();
         final int range = (int) getProjectileAoe(castInformation) + castInformation.getStaveLevel();
         final List<Block> blocks = new ArrayList<>();
+        final World world = location.getWorld();
 
+        // 三重循环的 (x,y,z) 偏移组合构造上互异，getBlockAt 结果必不重复：
+        // 原 List.contains 去重（O(n²)）为无效工作（r18 TunnelBore 同族）
         for (int y = -range; y < range; y++) {
             for (int x = -range; x < range; x++) {
                 for (int z = -range; z < range; z++) {
@@ -56,12 +60,12 @@ public class Cascada extends Spell {
                         continue;
                     }
 
-                    final Block block = location.getWorld().getBlockAt(
+                    final Block block = world.getBlockAt(
                         x + location.getBlockX(),
                         y + location.getBlockY(),
                         z + location.getBlockZ()
                     );
-                    if (!blocks.contains(block) && GeneralUtils.hasPermission(caster, block, Interaction.BREAK_BLOCK)) {
+                    if (GeneralUtils.hasPermission(caster, block, Interaction.BREAK_BLOCK)) {
                         blocks.add(block);
                     }
                 }

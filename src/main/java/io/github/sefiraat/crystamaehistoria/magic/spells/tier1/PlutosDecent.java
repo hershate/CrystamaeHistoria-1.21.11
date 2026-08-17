@@ -47,18 +47,20 @@ public class PlutosDecent extends Spell {
             final Location target = targetBlock.getLocation().add(0.5, 0.5, 0.5);
             final List<Block> blocks = new ArrayList<>();
             final int radius = getRadius(castInformation);
+            final org.bukkit.World world = target.getWorld();
 
+            // 三重循环的 (x,y,z) 偏移组合构造上互异，getBlockAt 结果必不重复：
+            // 原 List.contains 去重（O(n²)）为无效工作（r18 TunnelBore 同族）
             for (int y = -radius; y < radius; y++) {
                 for (int x = -radius; x < radius; x++) {
                     for (int z = -radius; z < radius; z++) {
                         if (Math.sqrt((double) (x * x) + (y * y) + (z * z)) <= range) {
-                            final Block block = target.getWorld().getBlockAt(
+                            final Block block = world.getBlockAt(
                                 x + target.getBlockX(),
                                 y + target.getBlockY(),
                                 z + target.getBlockZ()
                             );
-                            if (!blocks.contains(block)
-                                && GeneralUtils.hasPermission(player, block, Interaction.PLACE_BLOCK)
+                            if (GeneralUtils.hasPermission(player, block, Interaction.PLACE_BLOCK)
                             ) {
                                 blocks.add(block);
                             }
