@@ -63,7 +63,12 @@ public class MiscListener implements Listener {
     @EventHandler
     public void onShootPaintbrush(EntityShootBowEvent e) {
         ItemStack itemStack = e.getConsumable();
-        if (SlimefunItem.getByItem(itemStack) instanceof MagicPaintbrush) {
+        // 材质门控：全部画笔（Basic/Infinite）均以 TIPPED_ARROW 注册，
+        // 普通弓弩射击（农场常态）免 getByItem 的元数据克隆 + PDC 读
+        if (itemStack != null
+            && itemStack.getType() == Material.TIPPED_ARROW
+            && SlimefunItem.getByItem(itemStack) instanceof MagicPaintbrush
+        ) {
             e.setCancelled(true);
             final Entity entity = e.getEntity();
             if (entity instanceof Player) {

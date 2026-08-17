@@ -15,6 +15,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.Material;
 
 public class ThaumaturgicSaltsListener implements Listener {
 
@@ -26,6 +27,10 @@ public class ThaumaturgicSaltsListener implements Listener {
         }
         final Player player = e.getPlayer();
         final ItemStack heldStack = player.getInventory().getItemInMainHand();
+        // 材质门控：奇术盐以 REDSTONE 注册，其余材质免 getByItem 元数据查询
+        if (heldStack.getType() != Material.REDSTONE) {
+            return;
+        }
         final SlimefunItem slimefunItem = SlimefunItem.getByItem(heldStack);
         final Block block = e.getClickedBlock();
         if (block != null

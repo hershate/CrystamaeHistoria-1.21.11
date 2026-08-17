@@ -14,9 +14,18 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 public class SatchelListener implements Listener {
+
+    // 材质门控集合：六阶收纳袋（SATCHEL_1-6）的注册材质
+    private static final Set<Material> SATCHEL_MATERIALS = EnumSet.of(
+        Material.WHITE_CONCRETE, Material.GRAY_CONCRETE, Material.LIME_CONCRETE,
+        Material.YELLOW_CONCRETE, Material.PURPLE_CONCRETE, Material.RED_CONCRETE);
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onInteract(EntityPickupItemEvent e) {
@@ -28,12 +37,22 @@ public class SatchelListener implements Listener {
         final Player player = (Player) entity;
         final Item item = e.getItem();
         final ItemStack itemStack = item.getItemStack();
+        // 材质门控：全部水晶均以 PLAYER_HEAD 注册，其余物品的拾取
+        // （常态）免 getByItem 元数据查询
+        if (itemStack.getType() != Material.PLAYER_HEAD) {
+            return;
+        }
         final SlimefunItem slimefunItem = SlimefunItem.getByItem(itemStack);
 
         if (slimefunItem instanceof Crystal) {
             final Crystal crystal = (Crystal) slimefunItem;
 
             for (ItemStack possibleSatchel : player.getInventory().getContents()) {
+                // 材质门控：非收纳袋材质的槽位免 getByItem 元数据查询
+                // （原实现每槽一次，36 槽背包常态全为 miss）
+                if (possibleSatchel == null || !SATCHEL_MATERIALS.contains(possibleSatchel.getType())) {
+                    continue;
+                }
                 final SlimefunItem satchelSfItem = SlimefunItem.getByItem(possibleSatchel);
 
                 // Try to pick up the item into a dank first

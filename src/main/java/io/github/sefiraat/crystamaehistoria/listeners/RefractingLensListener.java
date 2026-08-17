@@ -43,7 +43,12 @@ public class RefractingLensListener implements Listener {
             return;
         }
         final Player player = e.getPlayer();
-        final SlimefunItem slimefunItem = SlimefunItem.getByItem(player.getInventory().getItemInMainHand());
+        final ItemStack mainHand = player.getInventory().getItemInMainHand();
+        // 材质门控：折射透镜以 SPYGLASS 注册，其余材质免 getByItem 元数据查询
+        if (mainHand.getType() != Material.SPYGLASS) {
+            return;
+        }
+        final SlimefunItem slimefunItem = SlimefunItem.getByItem(mainHand);
         final Block block = e.getClickedBlock();
         if (block != null
             && e.getAction() == Action.RIGHT_CLICK_BLOCK

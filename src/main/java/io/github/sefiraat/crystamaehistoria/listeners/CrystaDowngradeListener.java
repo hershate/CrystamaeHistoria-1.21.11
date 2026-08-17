@@ -14,6 +14,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import java.util.concurrent.ThreadLocalRandom;
+import org.bukkit.Material;
 
 public class CrystaDowngradeListener implements Listener {
 
@@ -26,6 +27,11 @@ public class CrystaDowngradeListener implements Listener {
 
         final Item item = (Item) entity;
         final ItemStack itemStack = item.getItemStack();
+        // 材质门控：全部水晶（稀有度×类型）均以 PLAYER_HEAD 注册，
+        // 其余材质的燃烧免 getByItem 元数据查询
+        if (itemStack.getType() != Material.PLAYER_HEAD) {
+            return;
+        }
         final SlimefunItem slimefunItem = SlimefunItem.getByItem(itemStack);
 
         if (slimefunItem instanceof Crystal) {

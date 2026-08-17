@@ -20,6 +20,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.Material;
 
 public class SpellCastListener implements Listener {
 
@@ -32,6 +33,11 @@ public class SpellCastListener implements Listener {
         }
         final Player player = e.getPlayer();
         final ItemStack stack = player.getInventory().getItemInMainHand();
+        // 材质门控：三阶法杖（Basic/Advanced/Arcane）均以 STICK 注册，
+        // 其余材质的交互（常态）免 getByItem 的元数据克隆 + PDC 读
+        if (stack.getType() != Material.STICK) {
+            return;
+        }
         final SlimefunItem slimefunItem = SlimefunItem.getByItem(stack);
         if (slimefunItem instanceof Stave) {
             Stave stave = (Stave) slimefunItem;

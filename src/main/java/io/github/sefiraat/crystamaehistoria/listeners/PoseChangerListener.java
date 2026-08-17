@@ -30,6 +30,7 @@ import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.text.MessageFormat;
 import java.util.List;
+import org.bukkit.Material;
 
 public class PoseChangerListener implements Listener {
 
@@ -44,6 +45,11 @@ public class PoseChangerListener implements Listener {
     public void onInteract(PlayerInteractEvent e) {
         final Player player = e.getPlayer();
         final ItemStack heldItem = player.getInventory().getItemInMainHand();
+        // 材质门控：姿态调节器 BAMBOO / 姿态克隆器 SEA_PICKLE，
+        // 其余材质免 getByItem 元数据查询
+        if (heldItem.getType() != Material.BAMBOO) {
+            return;
+        }
         final SlimefunItem slimefunItem = SlimefunItem.getByItem(heldItem);
 
         if (slimefunItem instanceof PoseChanger && e.getAction().isLeftClick()) {
@@ -56,6 +62,10 @@ public class PoseChangerListener implements Listener {
     public void onPoseChange(PlayerInteractAtEntityEvent e) {
         final Player player = e.getPlayer();
         final ItemStack heldItem = player.getInventory().getItemInMainHand();
+        // 材质门控：同 onInteract（BAMBOO）
+        if (heldItem.getType() != Material.BAMBOO) {
+            return;
+        }
         final SlimefunItem slimefunItem = SlimefunItem.getByItem(heldItem);
 
         if (slimefunItem instanceof PoseChanger) {
@@ -84,6 +94,10 @@ public class PoseChangerListener implements Listener {
     public void onPoseClone(PlayerInteractAtEntityEvent e) {
         final Player player = e.getPlayer();
         final ItemStack heldItem = player.getInventory().getItemInMainHand();
+        // 材质门控：姿态克隆器以 SEA_PICKLE 注册
+        if (heldItem.getType() != Material.SEA_PICKLE) {
+            return;
+        }
         final SlimefunItem slimefunItem = SlimefunItem.getByItem(heldItem);
 
         if (slimefunItem instanceof PoseCloner) {
