@@ -99,6 +99,7 @@
 | 61 | 判定轮（**第十一轮收敛 2/2**，角度：装箱键 Map/日志构造守卫/Optional 热路径）：装箱键均为 API 返回或小整数缓存命中、日志全启动期或限流、Optional 均为 Slimefun API 事件级消费——零发现；**r60+r61 连续零发现（角度互异）→ 第十一轮循环收敛**，版本收口 0.12.0（[round-61](round-61.md)） | ✅ 完成（判定轮，无变更，**第十一轮循环收敛**） |
 | 62 | 实体生成预配置 consumer 化（**第十二轮循环开启**，生成 API 形态角度）：弹射物（shooter/bounce/fireball 标志）/召唤物（PDC+蛋名，AI 目标保守留生成后）/展示物（七项配置）三路径入 spawn·dropItem consumer——配置随生成包广播；**1.93x**（2584→1340ns，每次弹射物施法省 ~1.24µs）/ **1.54x**（展示物），终态等价 true，另有元数据包 N→1 收益（无观察者基准不可测）（[round-62](round-62.md)） | ✅ 完成（服务器回归通过，0 CH 错误） |
 | 63 | FallingBlock 的 BlockData 静态复用（BlockData 创建形态角度，判定转卫生清扫）：summonMagicFallingBlock 新增 BlockData 重载 + PlutosDecent 四黑石材质静态缓存（不可变配置跨生成复用）——**16.56x**（65.1→3.9ns，高等级陨石 ~2100 方块/施法省 ~0.13ms），跨多次生成复用断言 true；Cascada 真实方块数据为必需语义不动（[round-63](round-63.md)） | ✅ 完成（服务器回归通过，0 CH 错误） |
+| 64 | 判定轮（第十二轮收敛 1/2，角度：getBlockState 快照/区块操作/重量级特效）：getBlockState 全库零命中（全程 getType 轻量判定）、getChunk 仅 4 处事件级且已加载近免费、特效为玩法必需语义——零发现（[round-64](round-64.md)） | ✅ 完成（判定轮，无变更） |
 
 ## 收敛判定（round-32）
 
