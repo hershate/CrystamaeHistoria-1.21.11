@@ -106,7 +106,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound45(w),
                 () -> benchRound46(w),
                 () -> benchRound47(w),
-                () -> benchRound49(w)
+                () -> benchRound49(w),
+                () -> benchRound50(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -3365,6 +3366,48 @@ public final class CHPerfBench extends JavaPlugin {
             for (int x = -range; x < range; x++) {
                 for (int z = -range; z < range; z++) {
                     if (Math.sqrt((double) (x * x) + (y * y) + (z * z)) > range) {
+                        continue;
+                    }
+                    blocks.add(world.getBlockAt(x + baseX, y + baseY, z + baseZ));
+                }
+            }
+        }
+        return blocks;
+    }
+
+    /** 第 50 轮：球内判定 sqrt+double 转换 vs 整数平方比较（r49 后形态的进一步消除） */
+    private void benchRound50(PrintWriter w) {
+        final World world = Bukkit.getWorlds().get(0);
+        world.getBlockAt(0, 200, 0).getChunk().load();
+
+        // ———— 等价性：sqrt 形态（r49 提交形态）与平方形态产物逐位一致 ————
+        for (int range : new int[]{5, 8}) {
+            final List<Block> sqrtList = scanDirect(world, 0, 200, 0, range);
+            final List<Block> sqList = scanSquared(world, 0, 200, 0, range);
+            boolean equiv = sqrtList.size() == sqList.size();
+            for (int i = 0; equiv && i < sqrtList.size(); i++) {
+                equiv &= sqrtList.get(i).getX() == sqList.get(i).getX()
+                    && sqrtList.get(i).getY() == sqList.get(i).getY()
+                    && sqrtList.get(i).getZ() == sqList.get(i).getZ();
+            }
+            getLogger().info("round50 等价性 r" + range + ": " + equiv + " (n=" + sqList.size() + ")");
+        }
+
+        // ———— 全扫描对打：sqrt+double vs int 平方（均为直接收集形态） ————
+        time(w, "sphereCheck.r5", "old_sqrt_double", 2_000, () -> bh += scanDirect(world, 0, 200, 0, 5).size());
+        time(w, "sphereCheck.r5", "new_int_squared", 5_000, () -> bh += scanSquared(world, 0, 200, 0, 5).size());
+        time(w, "sphereCheck.r8", "old_sqrt_double", 1_000, () -> bh += scanDirect(world, 0, 200, 0, 8).size());
+        time(w, "sphereCheck.r8", "new_int_squared", 2_000, () -> bh += scanSquared(world, 0, 200, 0, 8).size());
+    }
+
+    /** 平方形态：整数平方比较 + 直接收集（非负数下与 sqrt 比较精确等价） */
+    private List<Block> scanSquared(World world, int baseX, int baseY, int baseZ, int range) {
+        final List<Block> blocks = new ArrayList<>();
+        final int rangeSq = range * range;
+        for (int y = -range; y < range; y++) {
+            for (int x = -range; x < range; x++) {
+                for (int z = -range; z < range; z++) {
+                    if (x * x + y * y + z * z > rangeSq) {
                         continue;
                     }
                     blocks.add(world.getBlockAt(x + baseX, y + baseY, z + baseZ));
