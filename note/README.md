@@ -185,7 +185,9 @@ r5 39.2x / r8 152.8x（2.99ms→19.5µs，高等级每次命中省 ~3ms，r44 �
 [report/perf/round-52](report/perf/round-52.md)。第十轮循环（用户再触发，
 2026-08-17 起）第 53 轮事件级 getByItem 材质门控（8 处高频处理器）：
 miss 2.91-3.00x / 36 槽扫描 2.81x，等价性全 true；方法论修正——
-getByItem miss 路径 ~19ns 廉价短路 vs hit 路径 1.3µs（r39）。
+getByItem miss 路径 ~19ns 廉价短路 vs hit 路径 1.3µs（r39）。第 54 轮
+判定轮零发现（BlockStorage 读取/菜单逐槽/字符串拼接三角度，第十轮
+收敛计数 1/2）。
 
 ## 维护要点（改代码前必读）
 
