@@ -107,7 +107,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound46(w),
                 () -> benchRound47(w),
                 () -> benchRound49(w),
-                () -> benchRound50(w)
+                () -> benchRound50(w),
+                () -> benchRound53(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -3415,6 +3416,116 @@ public final class CHPerfBench extends JavaPlugin {
             }
         }
         return blocks;
+    }
+
+    /** 第 53 轮：事件级 getByItem 材质门控（7 监听器，真实 Slimefun 注册表） */
+    private void benchRound53(PrintWriter w) {
+        final ItemStack vanilla = new ItemStack(Material.DIAMOND_SWORD);
+
+        // ———— 等价性：各族真实注册物品（门+getByItem 判定 == 旧 getByItem 判定），
+        // 且门控材质与注册材质一致；原版物品两路径一致不命中 ————
+        // 与 SatchelListener.SATCHEL_MATERIALS 同集（监听器字段私有，此处同构副本断言）
+        final java.util.Set<Material> satchelMats = java.util.EnumSet.of(
+            Material.WHITE_CONCRETE, Material.GRAY_CONCRETE, Material.LIME_CONCRETE,
+            Material.YELLOW_CONCRETE, Material.PURPLE_CONCRETE, Material.RED_CONCRETE);
+        boolean equiv = true;
+        // 法杖 ×3（STICK）
+        for (io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack sf :
+            new io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack[]{
+                io.github.sefiraat.crystamaehistoria.slimefun.CrystaStacks.STAVE_BASIC,
+                io.github.sefiraat.crystamaehistoria.slimefun.CrystaStacks.STAVE_ADVANCED,
+                io.github.sefiraat.crystamaehistoria.slimefun.CrystaStacks.STAVE_ARCANE}) {
+            final ItemStack st = sf.item();
+            equiv &= st.getType() == Material.STICK;
+            equiv &= SlimefunItem.getByItem(st) instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.Stave;
+        }
+        // 水晶（PLAYER_HEAD）：真实注册水晶取样 3 阶
+        int crystals = 0;
+        for (java.util.Map.Entry<io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity,
+            java.util.Map<io.github.sefiraat.crystamaehistoria.stories.definition.StoryType, SlimefunItem>> e
+            : io.github.sefiraat.crystamaehistoria.slimefun.Materials.getCrystalMap().entrySet()) {
+            for (SlimefunItem si : e.getValue().values()) {
+                if (crystals < 3) {
+                    equiv &= si.getItem().getType() == Material.PLAYER_HEAD;
+                    equiv &= si instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.materials.Crystal;
+                    crystals++;
+                }
+            }
+        }
+        // 收纳袋（六色混凝土）
+        for (io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack sf :
+            new io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack[]{
+                io.github.sefiraat.crystamaehistoria.slimefun.CrystaStacks.SATCHEL_1,
+                io.github.sefiraat.crystamaehistoria.slimefun.CrystaStacks.SATCHEL_6}) {
+            equiv &= satchelMats.contains(sf.item().getType());
+            equiv &= SlimefunItem.getByItem(sf.item()) instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.tools.satchel.CrystamageSatchel;
+        }
+        // 盐 / 透镜 / 姿态工具 / 画笔
+        equiv &= io.github.sefiraat.crystamaehistoria.slimefun.CrystaStacks.THAUMATURGIC_SALTS.item().getType() == Material.REDSTONE;
+        equiv &= SlimefunItem.getByItem(io.github.sefiraat.crystamaehistoria.slimefun.CrystaStacks.THAUMATURGIC_SALTS.item()) != null;
+        equiv &= io.github.sefiraat.crystamaehistoria.slimefun.CrystaStacks.REFRACTING_LENS.item().getType() == Material.SPYGLASS;
+        equiv &= SlimefunItem.getByItem(io.github.sefiraat.crystamaehistoria.slimefun.CrystaStacks.REFRACTING_LENS.item()) != null;
+        // 原版物品（含各门材质本体）：旧/新判定一致不命中
+        for (Material m : new Material[]{Material.DIAMOND_SWORD, Material.STONE, Material.STICK,
+            Material.PLAYER_HEAD, Material.REDSTONE, Material.SPYGLASS, Material.BAMBOO,
+            Material.SEA_PICKLE, Material.TIPPED_ARROW, Material.WHITE_CONCRETE}) {
+            final ItemStack st = new ItemStack(m);
+            equiv &= !(SlimefunItem.getByItem(st) instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.Stave
+                || SlimefunItem.getByItem(st) instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.materials.Crystal
+                || SlimefunItem.getByItem(st) instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.tools.satchel.CrystamageSatchel);
+        }
+        getLogger().info("round53 等价性: " + equiv + " (crystals=" + crystals + ")");
+
+        // ———— 门控对打：原版物品的 getByItem miss（常态路径）vs 材质判定 ————
+        time(w, "eventGate.getByItem", "old_getbyitem_miss", 50_000, () -> {
+            bh += SlimefunItem.getByItem(vanilla) == null ? 1 : 0;
+        });
+        time(w, "eventGate.getByItem", "new_material_gate", 5_000_000, () -> {
+            bh += vanilla.getType() == Material.STICK ? 1 : 0;
+        });
+
+        // ———— 已注册材质的原版物品 miss（法杖=STICK/水晶=PLAYER_HEAD 常态）：
+        // Slimefun 材质索引命中后才走 meta+PDC 全路径 ————
+        final ItemStack plainStick = new ItemStack(Material.STICK);
+        final ItemStack plainHead = new ItemStack(Material.PLAYER_HEAD);
+        time(w, "eventGate.getByItemRegistered", "old_stick_getbyitem", 100_000, () -> {
+            bh += SlimefunItem.getByItem(plainStick) == null ? 1 : 0;
+        });
+        time(w, "eventGate.getByItemRegistered", "new_stick_gate", 5_000_000, () -> {
+            bh += plainStick.getType() == Material.STICK ? 1 : 0;
+        });
+        time(w, "eventGate.getByItemRegistered", "old_head_getbyitem", 100_000, () -> {
+            bh += SlimefunItem.getByItem(plainHead) == null ? 1 : 0;
+        });
+        time(w, "eventGate.getByItemRegistered", "new_head_gate", 5_000_000, () -> {
+            bh += plainHead.getType() == Material.PLAYER_HEAD ? 1 : 0;
+        });
+
+        // ———— 收纳袋 36 槽扫描：逐槽 getByItem vs 空判+EnumSet ————
+        final ItemStack[] contents = new ItemStack[36];
+        for (int i = 0; i < 36; i++) {
+            contents[i] = new ItemStack(Material.DIAMOND_SWORD);
+        }
+        time(w, "eventGate.satchelScan", "old_36x_getbyitem", 200, () -> {
+            int hits = 0;
+            for (ItemStack st : contents) {
+                if (SlimefunItem.getByItem(st) instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.tools.satchel.CrystamageSatchel) {
+                    hits++;
+                }
+            }
+            bh += hits;
+        });
+        time(w, "eventGate.satchelScan", "new_36x_material_gate", 200_000, () -> {
+            int hits = 0;
+            for (ItemStack st : contents) {
+                if (st != null && satchelMats.contains(st.getType())) {
+                    if (SlimefunItem.getByItem(st) instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.tools.satchel.CrystamageSatchel) {
+                        hits++;
+                    }
+                }
+            }
+            bh += hits;
+        });
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
