@@ -255,7 +255,18 @@ public class SpellUtils {
         Material material,
         long duration
     ) {
-        final FallingBlock fallingBlock = location.getWorld().spawnFallingBlock(location, material.createBlockData());
+        return summonMagicFallingBlock(castInformation, location, material.createBlockData(), duration);
+    }
+
+    /** BlockData 重载：调用方缓存 BlockData 实例（Material.createBlockData 每次新建 ~百 ns），可跨多次生成复用（不可变配置） */
+    @ParametersAreNonnullByDefault
+    public static MagicFallingBlock summonMagicFallingBlock(
+        CastInformation castInformation,
+        Location location,
+        org.bukkit.block.data.BlockData blockData,
+        long duration
+    ) {
+        final FallingBlock fallingBlock = location.getWorld().spawnFallingBlock(location, blockData);
         final MagicFallingBlock magicFallingBlock = new MagicFallingBlock(fallingBlock);
 
         CrystamaeHistoria.getSpellMemory().registerFallingBlock(

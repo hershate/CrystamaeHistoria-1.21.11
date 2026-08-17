@@ -23,6 +23,15 @@ public class PlutosDecent extends Spell {
 
     protected static final List<Material> MATERIALS = new ArrayList<>();
 
+    // 四材质 BlockData 静态缓存（不可变配置可跨生成复用）：
+    // 原每方块 createBlockData 新建，高等级球体（~2000 方块/施法）累计 ~0.4ms
+    private static final org.bukkit.block.data.BlockData[] MATERIAL_DATA = new org.bukkit.block.data.BlockData[]{
+        Material.BLACKSTONE_SLAB.createBlockData(),
+        Material.BLACKSTONE_STAIRS.createBlockData(),
+        Material.BLACKSTONE_WALL.createBlockData(),
+        Material.CRACKED_POLISHED_BLACKSTONE_BRICKS.createBlockData()
+    };
+
     static {
         MATERIALS.add(Material.BLACKSTONE_SLAB);
         MATERIALS.add(Material.BLACKSTONE_STAIRS);
@@ -118,8 +127,8 @@ public class PlutosDecent extends Spell {
             MagicFallingBlock magicFallingBlock = SpellUtils.summonMagicFallingBlock(
                 castInformation,
                 block.getLocation().add(0, 40, 0),
-                MATERIALS.get(ThreadLocalRandom.current().nextInt(MATERIALS.size())),
-                5
+                MATERIAL_DATA[ThreadLocalRandom.current().nextInt(MATERIAL_DATA.length)],
+                5000L
             );
             magicFallingBlock.setVelocity(block.getLocation(), 2);
         }
