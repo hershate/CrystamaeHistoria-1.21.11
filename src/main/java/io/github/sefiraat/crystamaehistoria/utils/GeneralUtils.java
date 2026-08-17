@@ -266,17 +266,17 @@ public final class GeneralUtils {
 
     @ParametersAreNonnullByDefault
     public static Item spawnDisplayItem(ItemStack stack, Location location, String name) {
-        final Item item = location.getWorld().dropItem(
-            location,
-            stack
-        );
-        PersistentDataAPI.setBoolean(item, Keys.PDC_IS_DISPLAY_ITEM, true);
-        item.setCustomName(name);
-        item.setCustomNameVisible(true);
-        item.setGravity(false);
-        item.setVelocity(new Vector(0, 0, 0));
-        item.setCanPlayerPickup(false);
-        item.setPickupDelay(Integer.MAX_VALUE);
+        // 生成前预配置（consumer 重载）：七项配置随生成包一次性广播，
+        // 原 dropItem 后逐个 setter 各发一次实体元数据同步包
+        final Item item = location.getWorld().dropItem(location, stack, spawned -> {
+            PersistentDataAPI.setBoolean(spawned, Keys.PDC_IS_DISPLAY_ITEM, true);
+            spawned.setCustomName(name);
+            spawned.setCustomNameVisible(true);
+            spawned.setGravity(false);
+            spawned.setVelocity(new Vector(0, 0, 0));
+            spawned.setCanPlayerPickup(false);
+            spawned.setPickupDelay(Integer.MAX_VALUE);
+        });
         return item;
     }
 

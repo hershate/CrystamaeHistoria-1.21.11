@@ -87,7 +87,20 @@ public class SpellUtils {
         long duration,
         @Nullable Consumer<MagicSummon> tickConsumer
     ) {
-        final T mob = (T) location.getWorld().spawnEntity(location, entityType);
+        // 生成前预配置（consumer 重载）：PDC 标记与名称随生成包广播；
+        // AI 目标（goal API）保守留在生成后
+        final Class<? extends org.bukkit.entity.Entity> mobClass = entityType.getEntityClass();
+        final T mob;
+        if (mobClass != null) {
+            mob = (T) location.getWorld().spawn(location, mobClass, spawned -> {
+                DataTypeMethods.setCustom(spawned, Keys.PDC_IS_SPAWN_OWNER, PersistentUUIDDataType.TYPE, caster);
+                spawned.setCustomName(ThemeType.getRandomEggName());
+            });
+        } else {
+            mob = (T) location.getWorld().spawnEntity(location, entityType);
+            DataTypeMethods.setCustom(mob, Keys.PDC_IS_SPAWN_OWNER, PersistentUUIDDataType.TYPE, caster);
+            mob.setCustomName(ThemeType.getRandomEggName());
+        }
         final MagicSummon magicSummon = new MagicSummon(mob.getUniqueId(), caster);
         final MobGoals mobGoals = Bukkit.getMobGoals();
         // 运行期自动登记类型，保证未来新增召唤类型无需手动维护门控白名单
@@ -98,8 +111,6 @@ public class SpellUtils {
         }
 
         CrystamaeHistoria.getSummonedEntityMap().put(magicSummon, System.currentTimeMillis() + duration);
-        DataTypeMethods.setCustom(mob, Keys.PDC_IS_SPAWN_OWNER, PersistentUUIDDataType.TYPE, caster);
-        mob.setCustomName(ThemeType.getRandomEggName());
 
         if (goal == null) {
             mobGoals.removeAllGoals(mob);
@@ -161,16 +172,33 @@ public class SpellUtils {
         long duration,
         @Nullable Consumer<MagicProjectile> tickConsumer
     ) {
-        final Projectile projectile = (Projectile) location.getWorld().spawnEntity(location, entityType);
-        final MagicProjectile magicProjectile = new MagicProjectile(projectile);
-
-        projectile.setShooter(Bukkit.getPlayer(castInformation.getCaster()));
-        projectile.setBounce(false);
-        if (projectile instanceof Fireball) {
-            Fireball fireball = (Fireball) projectile;
-            fireball.setIsIncendiary(false);
-            fireball.setYield(0f);
+        // 生成前预配置（consumer 重载）：配置随生成包一次性广播，原
+        // spawn 后逐个 setter 会各发一次实体元数据同步包
+        final Class<? extends org.bukkit.entity.Entity> entityClass = entityType.getEntityClass();
+        final Projectile projectile;
+        if (entityClass != null) {
+            projectile = (Projectile) location.getWorld().spawn(location, entityClass, spawned -> {
+                final Projectile proj = (Projectile) spawned;
+                proj.setShooter(Bukkit.getPlayer(castInformation.getCaster()));
+                proj.setBounce(false);
+                if (proj instanceof Fireball) {
+                    Fireball fireball = (Fireball) proj;
+                    fireball.setIsIncendiary(false);
+                    fireball.setYield(0f);
+                }
+            });
+        } else {
+            // 未知实体类（无 Class 映射的类型）回退原路径
+            projectile = (Projectile) location.getWorld().spawnEntity(location, entityType);
+            projectile.setShooter(Bukkit.getPlayer(castInformation.getCaster()));
+            projectile.setBounce(false);
+            if (projectile instanceof Fireball) {
+                Fireball fireball = (Fireball) projectile;
+                fireball.setIsIncendiary(false);
+                fireball.setYield(0f);
+            }
         }
+        final MagicProjectile magicProjectile = new MagicProjectile(projectile);
 
         if (tickConsumer != null) {
             magicProjectile.setConsumer(tickConsumer);
