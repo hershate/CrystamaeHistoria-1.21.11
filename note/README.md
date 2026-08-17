@@ -225,7 +225,8 @@ count+offset 单次调用——n5 4.76x / n10 13.36x + N 包→1 包收益。第
 （getBlockState 快照/区块操作/特效三角度，第十二轮收敛计数 1/2）。第 65 轮
 判定轮零发现（射线/眼部形态角度）——r64+r65 连续零发现（角度互异），
 **第十二轮循环收敛宣告**，版本收口 0.13.0；总账见
-[report/perf/round-65](report/perf/round-65.md)。
+[report/perf/round-65](report/perf/round-65.md)。第十三轮循环（用户再
+触发）第 66 轮判定轮零发现（玩家视图克隆/teleport 形态，收敛 1/2）。
 
 ## 维护要点（改代码前必读）
 

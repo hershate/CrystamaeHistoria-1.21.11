@@ -101,6 +101,7 @@
 | 63 | FallingBlock 的 BlockData 静态复用（BlockData 创建形态角度，判定转卫生清扫）：summonMagicFallingBlock 新增 BlockData 重载 + PlutosDecent 四黑石材质静态缓存（不可变配置跨生成复用）——**16.56x**（65.1→3.9ns，高等级陨石 ~2100 方块/施法省 ~0.13ms），跨多次生成复用断言 true；Cascada 真实方块数据为必需语义不动（[round-63](round-63.md)） | ✅ 完成（服务器回归通过，0 CH 错误） |
 | 64 | 判定轮（第十二轮收敛 1/2，角度：getBlockState 快照/区块操作/重量级特效）：getBlockState 全库零命中（全程 getType 轻量判定）、getChunk 仅 4 处事件级且已加载近免费、特效为玩法必需语义——零发现（[round-64](round-64.md)） | ✅ 完成（判定轮，无变更） |
 | 65 | 判定轮（**第十二轮收敛 2/2**，角度：视线/射线查询/眼部位置形态）：5 处法术自备射线为各自 range 语义（复用冻结射线需距离判定且收益 ~百 ns 噪声级，判定拒绝）、getEyeLocation 均单次逃逸进 API——零发现；**r64+r65 连续零发现（角度互异）→ 第十二轮循环收敛**，版本收口 0.13.0（[round-65](round-65.md)） | ✅ 完成（判定轮，无变更，**第十二轮循环收敛**） |
+| 66 | 判定轮（**第十三轮循环开启**，收敛 1/2，角度：玩家视图克隆/teleport 形态）：world.getPlayers()（每调用克隆）全库零命中（唯一迭代为 Bukkit 不可变视图/每 4 秒）、teleport 6 处均同世界主线程施法级（teleportAsync 反引入时序语义变化）——零发现（[round-66](round-66.md)） | ✅ 完成（判定轮，无变更） |
 
 ## 收敛判定（round-32）
 
