@@ -156,7 +156,12 @@ EasterEgg 静态缓存 / Bobulate 标签备忘 / HarmonysSonata 直接迭代）�
 克隆与集合双复制（相邻形态）：Bobulate DyeColor 静态数组 7.85x /
 ExaltedFertilityPharo tick 路径 toList() 二次复制改直接迭代
 19.9x-4.5x / BalmySponge 实测持平（纯迭代克隆已被 JIT 逃逸分析消除，
-第三次 EA 实证——values() 克隆仅在数组逃逸时有实际成本）。
+第三次 EA 实证——values() 克隆仅在数组逃逸时有实际成本）。第 47 轮
+FloatingHeadAnimation 每 tick 死分支移除（r19 族漏网处，
+branchInert 断言实证 directionUp 恒不翻转）：1.18x 噪声级 +
+死字段清除——第四次 EA 实证（getLocation 分配已被逃逸分析消除），
+EA 四证构成边界结论：清扫目标应锁定逃逸形态（流包装/二次传递/
+跨调用保留），不逃逸的短命分配在 C2 下近免费。
 
 ## 维护要点（改代码前必读）
 

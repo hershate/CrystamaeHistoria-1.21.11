@@ -82,6 +82,7 @@
 | 44 | T5 吸取 stream().findFirst() 改直接迭代（**r43 地板判定首轮复核即修订**）：预过滤集合取首元素的流包装为纯开销——**8.97x**（24.7 → 2.75ns）；同实体断言 true；族矩阵增补'流式惯用法'行；复查最终形态 = 单行惯用法清扫与判定轮交替（[round-44](round-44.md)） | ✅ 完成（服务器回归通过，0 SEVERE） |
 | 45 | 法术 cast 路径 stream 惯用法全库清扫（r44 族扩展）：EasterEgg SPAWN_EGGS 静态缓存并移出名字循环 / Bobulate 六常量标签静态列表备忘 / HarmonysSonata Tag.FLOWERS 随机取材直接迭代——列表重建 **112.98x**（318.60 → 2.82ns）/ 随机取材 **7.05x**（258.34 → 36.62ns）；等价性 pick/list 均 true，"流式惯用法"族闭合（[round-45](round-45.md)） | ✅ 完成（服务器回归通过，0 CH 错误） |
 | 46 | 枚举 values() 克隆与集合双复制（相邻形态）：Bobulate DyeColor 静态数组（逃逸克隆 + stream 计数 **7.85x**，33.60 → 4.28ns）/ ExaltedFertilityPharo tick 路径 Collection.stream().toList() 改直接迭代（空 **19.92x** / 3 元素 **4.53x**）/ BalmySponge BlockFace 静态缓存（实测持平——**纯迭代克隆已被 JIT 逃逸分析消除**，第三次 EA 实证，卫生性保留）；等价性 dye/faces/pick 全 true（[round-46](round-46.md)） | ✅ 完成（服务器回归通过，0 CH 错误） |
+| 47 | FloatingHeadAnimation 每 tick 死分支移除（r19 族漏网处）：directionUp 分支恒不翻转（panelAnimationStep 忽略方向参数 + 展示架不垂直位移，10 万步断言 branchInert=true）——21.39 → 18.07ns（**1.18x** 噪声级，**第四次 EA 实证**：getLocation 的 Location 分配已被逃逸分析消除）；死字段/常量同除；首跑 pose=false 为基准断言设计缺陷（起点未归零），归零复测通过（[round-47](round-47.md)） | ✅ 完成（服务器回归通过，0 CH 错误） |
 
 ## 收敛判定（round-32）
 

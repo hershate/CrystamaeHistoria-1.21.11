@@ -26,6 +26,7 @@ import org.bukkit.Particle;
 import org.bukkit.entity.Projectile;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -102,7 +103,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound42(w),
                 () -> benchRound44(w),
                 () -> benchRound45(w),
-                () -> benchRound46(w)
+                () -> benchRound46(w),
+                () -> benchRound47(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -3264,6 +3266,50 @@ public final class CHPerfBench extends JavaPlugin {
                 }
             }
         });
+    }
+
+    /** 第 47 轮：FloatingHeadAnimation 每 tick 死分支（getLocation 分配 + 恒 false 比较） */
+    private void benchRound47(PrintWriter w) {
+        final World world = Bukkit.getWorlds().get(0);
+        final ArmorStand standA = world.spawn(new Location(world, 0, 200, 0), ArmorStand.class);
+        final ArmorStand standB = world.spawn(new Location(world, 10, 200, 0), ArmorStand.class);
+        final double baseYA = standA.getLocation().getY();
+
+        // ———— 等价性 1：静止架上死分支恒不翻转（directionUp 永真，Y 比较恒 false） ————
+        boolean flipped = false;
+        for (int i = 0; i < 100_000; i++) {
+            io.github.sefiraat.crystamaehistoria.utils.ArmourStandUtils.panelAnimationStep(standA, true);
+            if (standA.getLocation().getY() >= baseYA + 0.2
+                || standA.getLocation().getY() <= baseYA - 0.2) {
+                flipped = true;
+                break;
+            }
+        }
+        // ———— 等价性 2：双架归零后同步步进（首跑 pose=false 为断言设计缺陷——A 累计
+        // 10 万步后起点未归零；归零后 A=旧分支形态 / B=新仅步进 姿态必须完全一致） ————
+        standA.setHeadPose(new org.bukkit.util.EulerAngle(0, 0, 0));
+        standB.setHeadPose(new org.bukkit.util.EulerAngle(0, 0, 0));
+        for (int i = 0; i < 1000; i++) {
+            io.github.sefiraat.crystamaehistoria.utils.ArmourStandUtils.panelAnimationStep(standA, true);
+            io.github.sefiraat.crystamaehistoria.utils.ArmourStandUtils.panelAnimationStep(standB, true);
+        }
+        final boolean equivPose = standA.getHeadPose().getX() == standB.getHeadPose().getX()
+            && standA.getHeadPose().getY() == standB.getHeadPose().getY()
+            && standA.getHeadPose().getZ() == standB.getHeadPose().getZ();
+        getLogger().info("round47 等价性: branchInert=" + !flipped + " pose=" + equivPose);
+
+        // ———— 每 tick 步进成本：旧（步进 + getLocation 比较）vs 新（仅步进） ————
+        time(w, "headAnim.step", "old_branch_getLocation", 100_000, () -> {
+            io.github.sefiraat.crystamaehistoria.utils.ArmourStandUtils.panelAnimationStep(standA, true);
+            if (standA.getLocation().getY() >= baseYA + 0.2) {
+                bh += 1;
+            }
+        });
+        time(w, "headAnim.step", "new_step_only", 200_000, () -> {
+            io.github.sefiraat.crystamaehistoria.utils.ArmourStandUtils.panelAnimationStep(standB, true);
+        });
+        standA.remove();
+        standB.remove();
     }
 
     /** 同构副本：0.3.0 的 Story.getDisplayName（每次重建组件 + toLegacyText） */
