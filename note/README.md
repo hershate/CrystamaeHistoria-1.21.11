@@ -199,7 +199,9 @@ getByItem miss 路径 ~19ns 廉价短路 vs hit 路径 1.3µs（r39）。第 54 
 ——r54+r56 连续零发现，**第十轮循环收敛宣告**，版本收口 0.11.0；
 总账见 [report/perf/round-56](report/perf/round-56.md)。第十一轮循环
 （用户再触发）第 57 轮随机云粒子批量化：displayParticleEffect 两变体
-count+offset 单次调用——n5 4.76x / n10 13.36x + N 包→1 包收益。
+count+offset 单次调用——n5 4.76x / n10 13.36x + N 包→1 包收益。第 58 轮
+判定轮零发现（ItemStack 比较/声音/容器克隆/玩家查询四组探针全空，
+第十一轮收敛计数 1/2）；FlexGroup 声音 lambda 捕获疑点转审计域。
 
 ## 维护要点（改代码前必读）
 
