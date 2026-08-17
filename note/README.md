@@ -215,6 +215,8 @@ count+offset 单次调用——n5 4.76x / n10 13.36x + N 包→1 包收益。第
 版本收口 0.12.0；总账见 [report/perf/round-61](report/perf/round-61.md)。
 第十二轮循环（用户再触发）第 62 轮实体生成预配置 consumer 化：弹射物/
 召唤物/展示物三路径配置随生成包广播——1.93x/1.54x + 元数据包 N→1 收益。
+第 63 轮 FallingBlock 的 BlockData 静态复用（PlutosDecent 四材质缓存）：
+16.56x 卫生级（高等级陨石每施法省 ~0.13ms）。
 
 ## 维护要点（改代码前必读）
 

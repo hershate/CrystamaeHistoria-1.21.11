@@ -113,7 +113,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound55(w),
                 () -> benchRound57(w),
                 () -> benchRound59(w),
-                () -> benchRound62(w)
+                () -> benchRound62(w),
+                () -> benchRound63(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -3793,6 +3794,36 @@ public final class CHPerfBench extends JavaPlugin {
                 spawned.setPickupDelay(Integer.MAX_VALUE);
             });
             it.remove();
+        });
+    }
+
+    /** 第 63 轮：FallingBlock 的 BlockData 静态复用（createBlockData 每次新建 vs 缓存引用） */
+    private void benchRound63(PrintWriter w) {
+        final World world = Bukkit.getWorlds().get(0);
+        final Location center = new Location(world, 50, 200, 50);
+        center.getChunk().load();
+        final org.bukkit.block.data.BlockData cached = Material.BLACKSTONE_SLAB.createBlockData();
+
+        // ———— 等价性：缓存实例与新建实例状态一致；同缓存实例可跨多次生成复用 ————
+        boolean equiv = cached.getAsString().equals(Material.BLACKSTONE_SLAB.createBlockData().getAsString());
+        equiv &= cached.getMaterial() == Material.BLACKSTONE_SLAB;
+        final java.util.List<org.bukkit.entity.FallingBlock> fbs = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            final org.bukkit.entity.FallingBlock fb = world.spawnFallingBlock(center.clone().add(i, 5, 0), cached);
+            equiv &= fb.getBlockData().getMaterial() == Material.BLACKSTONE_SLAB;
+            fbs.add(fb);
+        }
+        for (org.bukkit.entity.FallingBlock fb : fbs) {
+            fb.remove();
+        }
+        getLogger().info("round63 等价性: " + equiv);
+
+        // ———— createBlockData 新建 vs 缓存引用 ————
+        time(w, "fallingBlock.dataCreate", "old_per_spawn_create", 500_000, () -> {
+            bh += Material.BLACKSTONE_SLAB.createBlockData().hashCode();
+        });
+        time(w, "fallingBlock.dataCreate", "new_cached_ref", 5_000_000, () -> {
+            bh += cached.hashCode();
         });
     }
 
