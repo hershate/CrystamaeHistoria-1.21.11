@@ -97,6 +97,7 @@
 | 59 | 回调内 NamespacedKey 构造改静态常量（判定轮转卫生清扫，配置链/newKey/物品栏写入角度）：Keys 增补 PDC_PRISM/PDC_ANTIPRISM/PDC_RECALL_LOCATION，Prism/AntiPrism/回忆水晶格 6 处转换——**16.65x**（57.1→3.43ns，事件级边际卫生 + PDC_* 惯例一致性）；边界：启动期/动态位置键/构造器不可常量化；**收敛计数重置**（r58 被打断）（[round-59](round-59.md)） | ✅ 完成（服务器回归通过，0 CH 错误） |
 | 60 | 判定轮（第十一轮收敛 1/2·重置后，角度：遗留集合类型/数据结构选型/掉落 API）：LinkedList·Vector·Stack·Hashtable 零命中、dropItem 系全事件级（实体生成 API 边界）、tick 类集合构造全为注册期字段——零发现（[round-60](round-60.md)） | ✅ 完成（判定轮，无变更） |
 | 61 | 判定轮（**第十一轮收敛 2/2**，角度：装箱键 Map/日志构造守卫/Optional 热路径）：装箱键均为 API 返回或小整数缓存命中、日志全启动期或限流、Optional 均为 Slimefun API 事件级消费——零发现；**r60+r61 连续零发现（角度互异）→ 第十一轮循环收敛**，版本收口 0.12.0（[round-61](round-61.md)） | ✅ 完成（判定轮，无变更，**第十一轮循环收敛**） |
+| 62 | 实体生成预配置 consumer 化（**第十二轮循环开启**，生成 API 形态角度）：弹射物（shooter/bounce/fireball 标志）/召唤物（PDC+蛋名，AI 目标保守留生成后）/展示物（七项配置）三路径入 spawn·dropItem consumer——配置随生成包广播；**1.93x**（2584→1340ns，每次弹射物施法省 ~1.24µs）/ **1.54x**（展示物），终态等价 true，另有元数据包 N→1 收益（无观察者基准不可测）（[round-62](round-62.md)） | ✅ 完成（服务器回归通过，0 CH 错误） |
 
 ## 收敛判定（round-32）
 

@@ -112,7 +112,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound53(w),
                 () -> benchRound55(w),
                 () -> benchRound57(w),
-                () -> benchRound59(w)
+                () -> benchRound59(w),
+                () -> benchRound62(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -3704,6 +3705,94 @@ public final class CHPerfBench extends JavaPlugin {
         });
         time(w, "pdcKey.prismFlag", "new_static_ref", 10_000_000, () -> {
             bh += io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_PRISM.hashCode();
+        });
+    }
+
+    /** 第 62 轮：实体生成预配置（consumer 重载）——服务端成本（无观察者包成本为 0，生产另有元数据包 N→1 收益） */
+    private void benchRound62(PrintWriter w) {
+        final World world = Bukkit.getWorlds().get(0);
+        final Location center = new Location(world, 0, 200, 0);
+        center.getChunk().load();
+
+        // ———— 等价性：两形态生成物终态逐项一致（弹射物/展示物各字段 + PDC） ————
+        boolean equiv = true;
+        final org.bukkit.entity.Snowball viaOld;
+        final org.bukkit.entity.Snowball viaNew;
+        viaOld = (org.bukkit.entity.Snowball) world.spawnEntity(center, org.bukkit.entity.EntityType.SNOWBALL);
+        viaOld.setShooter(null);
+        viaOld.setBounce(false);
+        viaNew = world.spawn(center, org.bukkit.entity.Snowball.class, spawned -> {
+            spawned.setShooter(null);
+            spawned.setBounce(false);
+        });
+        equiv &= viaOld.doesBounce() == viaNew.doesBounce();
+        equiv &= (viaOld.getShooter() == null) == (viaNew.getShooter() == null);
+        viaOld.remove();
+        viaNew.remove();
+        // 展示物：7 项配置终态
+        final org.bukkit.entity.Item itemOld = world.dropItem(center, new ItemStack(Material.DIAMOND));
+        PersistentDataAPI.setBoolean(itemOld, Keys.PDC_IS_DISPLAY_ITEM, true);
+        itemOld.setCustomName("x");
+        itemOld.setCustomNameVisible(true);
+        itemOld.setGravity(false);
+        itemOld.setVelocity(new Vector(0, 0, 0));
+        itemOld.setCanPlayerPickup(false);
+        itemOld.setPickupDelay(Integer.MAX_VALUE);
+        final org.bukkit.entity.Item itemNew = world.dropItem(center, new ItemStack(Material.DIAMOND), spawned -> {
+            PersistentDataAPI.setBoolean(spawned, Keys.PDC_IS_DISPLAY_ITEM, true);
+            spawned.setCustomName("x");
+            spawned.setCustomNameVisible(true);
+            spawned.setGravity(false);
+            spawned.setVelocity(new Vector(0, 0, 0));
+            spawned.setCanPlayerPickup(false);
+            spawned.setPickupDelay(Integer.MAX_VALUE);
+        });
+        equiv &= itemOld.isCustomNameVisible() == itemNew.isCustomNameVisible();
+        equiv &= itemOld.hasGravity() == itemNew.hasGravity();
+        equiv &= itemOld.getPickupDelay() == itemNew.getPickupDelay();
+        equiv &= itemOld.canPlayerPickup() == itemNew.canPlayerPickup();
+        equiv &= PersistentDataAPI.hasBoolean(itemNew, Keys.PDC_IS_DISPLAY_ITEM);
+        itemOld.remove();
+        itemNew.remove();
+        getLogger().info("round62 等价性: " + equiv);
+
+        // ———— 复合对打（含同侧 remove 抵消）：spawn 后配置 vs consumer 预配置 ————
+        time(w, "entitySpawn.projectile", "old_spawn_then_set", 20_000, () -> {
+            final org.bukkit.entity.Snowball sb =
+                (org.bukkit.entity.Snowball) world.spawnEntity(center, org.bukkit.entity.EntityType.SNOWBALL);
+            sb.setShooter(null);
+            sb.setBounce(false);
+            sb.remove();
+        });
+        time(w, "entitySpawn.projectile", "new_spawn_consumer", 20_000, () -> {
+            final org.bukkit.entity.Snowball sb = world.spawn(center, org.bukkit.entity.Snowball.class, spawned -> {
+                spawned.setShooter(null);
+                spawned.setBounce(false);
+            });
+            sb.remove();
+        });
+        time(w, "entitySpawn.displayItem", "old_drop_then_set", 20_000, () -> {
+            final org.bukkit.entity.Item it = world.dropItem(center, new ItemStack(Material.DIAMOND));
+            PersistentDataAPI.setBoolean(it, Keys.PDC_IS_DISPLAY_ITEM, true);
+            it.setCustomName("x");
+            it.setCustomNameVisible(true);
+            it.setGravity(false);
+            it.setVelocity(new Vector(0, 0, 0));
+            it.setCanPlayerPickup(false);
+            it.setPickupDelay(Integer.MAX_VALUE);
+            it.remove();
+        });
+        time(w, "entitySpawn.displayItem", "new_drop_consumer", 20_000, () -> {
+            final org.bukkit.entity.Item it = world.dropItem(center, new ItemStack(Material.DIAMOND), spawned -> {
+                PersistentDataAPI.setBoolean(spawned, Keys.PDC_IS_DISPLAY_ITEM, true);
+                spawned.setCustomName("x");
+                spawned.setCustomNameVisible(true);
+                spawned.setGravity(false);
+                spawned.setVelocity(new Vector(0, 0, 0));
+                spawned.setCanPlayerPickup(false);
+                spawned.setPickupDelay(Integer.MAX_VALUE);
+            });
+            it.remove();
         });
     }
 
