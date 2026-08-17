@@ -23,20 +23,10 @@ public class ParticleUtils {
 
     @ParametersAreNonnullByDefault
     public static void displayParticleEffect(Location location, Particle particle, double rangeRadius, int numberOfParticles) {
-        // 单次克隆的可复用坐标（spawnParticle 同步读取，无逃逸）：
-        // 原实现每粒子一次 clone().add，N 粒子 N 次分配。每粒子以基准坐标 +
-        // 独立随机偏移 set 坐标（与原 clone().add 语义一致，不累积）
-        final Location point = location.clone();
-        final World world = location.getWorld();
-        final double baseX = location.getX();
-        final double baseY = location.getY();
-        final double baseZ = location.getZ();
-        for (int i = 0; i < numberOfParticles; i++) {
-            point.setX(baseX + ThreadLocalRandom.current().nextDouble(-rangeRadius, rangeRadius + 0.1));
-            point.setY(baseY + ThreadLocalRandom.current().nextDouble(-rangeRadius, rangeRadius + 0.1));
-            point.setZ(baseZ + ThreadLocalRandom.current().nextDouble(-rangeRadius, rangeRadius + 0.1));
-            world.spawnParticle(particle, point, 1);
-        }
+        // 客户端原生散布：count+offset 重载由客户端按盒偏移生成随机云——
+        // 原 N 次单发调用（N 个粒子包 + 服务端 N×3 随机数与坐标 set）
+        // 归一为单次调用（单包）；散布形态同为逐轴均匀云
+        location.getWorld().spawnParticle(particle, location, numberOfParticles, rangeRadius, rangeRadius, rangeRadius);
     }
 
     @ParametersAreNonnullByDefault
@@ -57,18 +47,8 @@ public class ParticleUtils {
 
     @ParametersAreNonnullByDefault
     public static void displayParticleEffect(Location location, double rangeRadius, int numberOfParticles, Particle.DustOptions dustOptions) {
-        // 单次克隆的可复用坐标（同上，每粒子以基准 + 独立偏移 set，不累积）
-        final Location point = location.clone();
-        final World world = location.getWorld();
-        final double baseX = location.getX();
-        final double baseY = location.getY();
-        final double baseZ = location.getZ();
-        for (int i = 0; i < numberOfParticles; i++) {
-            point.setX(baseX + ThreadLocalRandom.current().nextDouble(-rangeRadius, rangeRadius + 0.1));
-            point.setY(baseY + ThreadLocalRandom.current().nextDouble(-rangeRadius, rangeRadius + 0.1));
-            point.setZ(baseZ + ThreadLocalRandom.current().nextDouble(-rangeRadius, rangeRadius + 0.1));
-            world.spawnParticle(Particle.DUST, point, 1, dustOptions);
-        }
+        // 客户端原生散布（同上，DUST 数据变体）：单次调用单包
+        location.getWorld().spawnParticle(Particle.DUST, location, numberOfParticles, rangeRadius, rangeRadius, rangeRadius, dustOptions);
     }
 
     @ParametersAreNonnullByDefault
