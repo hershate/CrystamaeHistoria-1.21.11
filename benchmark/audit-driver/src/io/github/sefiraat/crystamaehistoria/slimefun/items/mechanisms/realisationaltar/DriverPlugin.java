@@ -136,7 +136,7 @@ public class DriverPlugin extends JavaPlugin {
         try {
             final java.lang.reflect.Method process = RealisationAltarCache.class.getDeclaredMethod("process");
             process.setAccessible(true);
-            for (int i = 0; i < 5000; i++) {
+            for (int i = 0; i < 2000; i++) {
                 try {
                     process.invoke(cache);
                 } catch (ReflectiveOperationException e) {
@@ -291,7 +291,10 @@ public class DriverPlugin extends JavaPlugin {
             reply(sender, "gild=skipped_no_player");
             return;
         }
-        while (cache.getFillAmount() < 1) {
+        // 补足填充（有界！原无界 while 在吸收未生效时会无限 dropItem——
+        // 实体注册 O(N) 扫描叠加曾把主线程拖死至 OOM（第 42 轮教训））
+        int fillGuard = 0;
+        while (cache.getFillAmount() < 1 && fillGuard++ < 8) {
             world.dropItem(center, Materials.getPrismaticCrystal().getItem());
             cache.consumeItems();
         }
