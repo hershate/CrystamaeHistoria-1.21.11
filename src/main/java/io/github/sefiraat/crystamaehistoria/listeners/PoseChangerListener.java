@@ -90,7 +90,7 @@ public class PoseChangerListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.LOW)
+    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPoseClone(PlayerInteractAtEntityEvent e) {
         final Player player = e.getPlayer();
         final ItemStack heldItem = player.getInventory().getItemInMainHand();
