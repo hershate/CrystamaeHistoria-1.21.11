@@ -80,6 +80,7 @@
 | 67 | 0.18.1 发布收口（[round-67](round-67.md)） | ✅ 完成（按 AGENTS.md 常设指令执行：pom 0.18.1 + release/0.18.1.md + 索引 + 产物构建 + world_r67 冒烟（v0.18.1 启用/995 故事/零异常/优雅停服）；真人清单保留可选参考） |
 | 68 | SleepingBag+临时合成台驱动验证（[round-68](round-68.md)） | ✅ 完成（睡袋 ItemUseHandler 方法级直调零异常——假玩家 sleep 失败→回滚路径实证（无床残留/未登记，r1 修复在位）；openWorkbench 打开 PASS） |
 | 69 | Runes/Uniques 交互链审查（[round-69](round-69.md)） | ✅ 完成（Runes 8 项纯材料无运行时面；Trophy 双防御 handler（禁放/禁食）+ TrophyDisplay 取放兜底复核在位，展示架 tick 已由 r43 覆盖——零新发现，纯代码轮） |
+| 70 | 跨维度边界判定轮（[round-70](round-70.md)） | ✅ **循环收敛休眠**（全新探针角度：全库 6 处 distance callsite 逐一审查——跨世界守卫全在位（r7/r12 修复），构造同世界 3 处安全——零发现，连续 2/2 角度互异，按 r44 准则休眠待触发） |
 
 ## 已修复问题汇总
 
