@@ -57,6 +57,7 @@
 | 44 | 法术施放链驱动验证（[round-44](round-44.md)） | ✅ 完成（10 法术全原型生产路径施放 0 异常：即时/弹射物/tick/混合/闪电/召唤/飞行；SpellMemory 十表生命周期实证——弹射物 5s 清零/滴答耗尽自注销/召唤物逐步过期，TemporaryEffectsRunnable 回收正常；驱动新增 spells cast|stat 子命令） |
 | 45 | 旧存档兼容性复验（[round-45](round-45.md)） | ✅ 完成（当前构建上 v1 编码双读三组全 PASS：故事列表 3/3 逐项一致/法杖槽·法术·晶能一致/区块晶簇数量·id·位置一致——r26-29 迁移的兼容承诺经 11 轮修复后复验成立；驱动新增 legacy 子命令） |
 | 46 | 图鉴 GUI 打开/统计路径验证（[round-46](round-46.md)） | ✅ 完成（三 FlexGroup 生产路径打开全成功零异常 + rank 统计正常；harness 限制如实归档：指南类 GUI 按钮名对 mineflayer 不可见，翻页点击不可自动驱动——翻页数据层已由 perf r21-23/31 覆盖，交互层建议真人复核；驱动新增 compendium 子命令） |
+| 47 | 统计写入链驱动验证（[round-47](round-47.md)） | ✅ 完成（六写点零异常→纪元缓存读回全真→force 落盘→player_stats.yml 磁盘核验——写入/失效/读回/落盘全链实证；player_stats.yml 快照还原；驱动新增 stats 子命令） |
 
 ## 已修复问题汇总
 

@@ -41,6 +41,14 @@ public class DriverPlugin extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length >= 1 && args[0].equals("stats")) {
+            try {
+                driveStats(sender);
+            } catch (Exception e) {
+                reply(sender, "error=" + e);
+            }
+            return true;
+        }
         if (args.length >= 2 && args[0].equals("compendium")) {
             try {
                 driveCompendium(sender, args[1]);
@@ -292,6 +300,52 @@ public class DriverPlugin extends JavaPlugin {
             cx++;
         }
         reply(sender, "gadgets_done placed=" + placed + " cancelled=" + cancelled + " missing=" + missing + " range=x" + x + "..x" + (cx - 1));
+    }
+
+    /** 第 47 轮：统计写入链驱动验证（六写点→纪元失效→落盘） */
+    private void driveStats(CommandSender sender) {
+        final Player player = Bukkit.getOnlinePlayers().isEmpty() ? null : Bukkit.getOnlinePlayers().iterator().next();
+        if (player == null) {
+            reply(sender, "error=no_player");
+            return;
+        }
+        final java.util.UUID uuid = player.getUniqueId();
+        final io.github.sefiraat.crystamaehistoria.stories.BlockDefinition def =
+            io.github.sefiraat.crystamaehistoria.CrystamaeHistoria.getStoriesManager().getBlockDefinitionMap().get(Material.DIORITE);
+        if (def == null) {
+            reply(sender, "error=no_definition");
+            return;
+        }
+        final io.github.sefiraat.crystamaehistoria.magic.SpellType push = io.github.sefiraat.crystamaehistoria.magic.SpellType.PUSH;
+        try {
+            // 六写点
+            io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.addUsage(uuid, push);
+            io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.unlockSpell(uuid, push);
+            io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.unlockUniqueStory(uuid, def);
+            io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.addChronicle(uuid, def);
+            io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.addRealisation(player, def);
+            io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.unlockStoryGilded(uuid, def);
+        } catch (Throwable t) {
+            reply(sender, "write_error=" + t);
+            return;
+        }
+        // 读回断言（纪元缓存消费方）
+        boolean okUsage = io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.getUsages(uuid, push) >= 1;
+        boolean okSpell = io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.hasUnlockedSpell(uuid, push);
+        boolean okUnique = io.github.sefiraat.crystamaehistoria.player.PlayerStatistics.hasUnlockedUniqueStory(uuid, def);
+        reply(sender, "readback usage=" + okUsage + " spell=" + okSpell + " unique=" + okUnique);
+        // 落盘（force 路径，与关服一致）
+        io.github.sefiraat.crystamaehistoria.CrystamaeHistoria.getConfigManager().saveAll(true);
+        // 文件断言
+        final java.io.File f = new java.io.File(getDataFolder().getParentFile(), "CrystamaeHistoria/player_stats.yml");
+        boolean fileOk = false;
+        try {
+            final String content = new String(java.nio.file.Files.readAllBytes(f.toPath()), java.nio.charset.StandardCharsets.UTF_8);
+            fileOk = content.contains(uuid.toString());
+        } catch (Throwable t) {
+            reply(sender, "file_read_error=" + t);
+        }
+        reply(sender, "stats_done filePersisted=" + fileOk + " pass=" + (okUsage && okSpell && okUnique && fileOk));
     }
 
     /** 第 46 轮：图鉴 GUI 生产路径打开（三个 FlexGroup） */
