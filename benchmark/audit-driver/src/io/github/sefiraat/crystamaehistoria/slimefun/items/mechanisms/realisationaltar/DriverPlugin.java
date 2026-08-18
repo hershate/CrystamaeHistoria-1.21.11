@@ -41,6 +41,14 @@ public class DriverPlugin extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length >= 2 && args[0].equals("compendium")) {
+            try {
+                driveCompendium(sender, args[1]);
+            } catch (Exception e) {
+                reply(sender, "error=" + e);
+            }
+            return true;
+        }
         if (args.length >= 1 && args[0].equals("legacy")) {
             try {
                 driveLegacy(sender);
@@ -284,6 +292,36 @@ public class DriverPlugin extends JavaPlugin {
             cx++;
         }
         reply(sender, "gadgets_done placed=" + placed + " cancelled=" + cancelled + " missing=" + missing + " range=x" + x + "..x" + (cx - 1));
+    }
+
+    /** 第 46 轮：图鉴 GUI 生产路径打开（三个 FlexGroup） */
+    private void driveCompendium(CommandSender sender, String which) {
+        final Player player = Bukkit.getOnlinePlayers().isEmpty() ? null : Bukkit.getOnlinePlayers().iterator().next();
+        if (player == null) {
+            reply(sender, "error=no_player");
+            return;
+        }
+        final org.bukkit.OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(player.getUniqueId());
+        final java.util.Optional<io.github.thebusybiscuit.slimefun4.api.player.PlayerProfile> profileOpt =
+            io.github.thebusybiscuit.slimefun4.api.player.PlayerProfile.find(offlinePlayer);
+        if (profileOpt.isEmpty()) {
+            reply(sender, "error=no_profile");
+            return;
+        }
+        final io.github.thebusybiscuit.slimefun4.api.player.PlayerProfile profile = profileOpt.get();
+        switch (which) {
+            case "spells" -> io.github.sefiraat.crystamaehistoria.slimefun.ItemGroups.SPELL_COLLECTION
+                .open(player, profile, io.github.thebusybiscuit.slimefun4.core.guide.SlimefunGuideMode.SURVIVAL_MODE);
+            case "stories" -> io.github.sefiraat.crystamaehistoria.slimefun.ItemGroups.STORY_COLLECTION
+                .open(player, profile, io.github.thebusybiscuit.slimefun4.core.guide.SlimefunGuideMode.SURVIVAL_MODE);
+            case "gilded" -> io.github.sefiraat.crystamaehistoria.slimefun.ItemGroups.GILDING_COLLECTION
+                .open(player, profile, io.github.thebusybiscuit.slimefun4.core.guide.SlimefunGuideMode.SURVIVAL_MODE);
+            default -> {
+                reply(sender, "usage=compendium spells|stories|gilded");
+                return;
+            }
+        }
+        reply(sender, "compendium_opened=" + which);
     }
 
     /** 第 45 轮：旧存档兼容复验——v1 写入 → v2 双读断言（故事列表/法杖/区块晶簇） */
