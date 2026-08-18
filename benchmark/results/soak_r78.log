@@ -1,0 +1,162 @@
+Starting org.bukkit.craftbukkit.Main
+2026-08-18T07:39:53.732211400Z ServerMain WARN Advanced terminal features are not available in this environment
+[15:39:53 INFO]: [bootstrap] Running Java 21 (Java HotSpot(TM) 64-Bit Server VM 21.0.10+8-LTS-217; Oracle Corporation null) on Windows 11 10.0 (amd64)
+[15:39:53 INFO]: [bootstrap] Loading Paper 1.21.11-132-ver/1.21.11@c5eb079 (2026-05-11T11:43:09Z) for Minecraft 1.21.11
+[15:39:54 WARN]: [oshi.driver.windows.perfmon.PerfmonDisabled] Invalid registry value type detected for PerfOS counters. Should be REG_DWORD. Ignoring: HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\PerfOS\Performance\Disable Performance Counters.
+[15:39:54 INFO]: [PluginInitializerManager] Initializing plugins...
+[15:39:55 INFO]: [PluginInitializerManager] Initialized 6 plugins
+[15:39:55 INFO]: [PluginInitializerManager] Bukkit plugins (6):
+ - Balatro (0.4.62), CrystamaeHistoria (0.18.0), Essentials (2.22.0), LuckPerms (5.5.71), Slimefun (5.0.0), Vault (1.7.3-b131)
+[15:40:00 INFO]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, profilesHost=https://api.mojang.com, name=PROD]
+[15:40:01 INFO]: Loaded 1470 recipes
+[15:40:02 INFO]: Loaded 1584 advancements
+[15:40:02 INFO]: [ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry] Initialising converters for DataConverter...
+[15:40:02 INFO]: [ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry] Finished initialising converters for DataConverter in 458.3ms
+[15:40:02 INFO]: Starting minecraft server version 1.21.11
+[15:40:02 INFO]: Loading properties
+[15:40:02 INFO]: This server is running Paper version 1.21.11-132-ver/1.21.11@c5eb079 (2026-05-11T11:43:09Z) (Implementing API version 1.21.11-R0.1-SNAPSHOT)
+[15:40:02 INFO]: [spark] This server bundles the spark profiler. For more information please visit https://docs.papermc.io/paper/profiling
+[15:40:02 INFO]: Server Ping Player Sample Count: 12
+[15:40:02 INFO]: Using 4 threads for Netty based IO
+[15:40:03 INFO]: [MoonriseCommon] Paper is using 8 worker threads, 1 I/O threads
+[15:40:03 INFO]: Default game type: SURVIVAL
+[15:40:03 INFO]: Generating keypair
+[15:40:03 INFO]: Starting Minecraft server on *:25565
+[15:40:03 INFO]: Paper: Using Java compression from Velocity.
+[15:40:03 INFO]: Paper: Using Java cipher from Velocity.
+[15:40:04 INFO]: [LuckPerms] Loading server plugin LuckPerms v5.5.71
+[15:40:04 INFO]: [LuckPerms] Loading configuration...
+[15:40:04 INFO]: [Vault] Loading server plugin Vault v1.7.3-b131
+[15:40:04 INFO]: [Slimefun] Loading server plugin Slimefun v5.0.0
+[15:40:04 INFO]: [Essentials] Loading server plugin Essentials v2.22.0
+[15:40:04 INFO]: [CrystamaeHistoria] Loading server plugin CrystamaeHistoria v0.18.0
+[15:40:04 INFO]: [Balatro] Loading server plugin Balatro v0.4.62
+[15:40:04 INFO]: Server permissions file permissions.yml is empty, ignoring it
+[15:40:04 INFO]: [LuckPerms] Enabling LuckPerms v5.5.71
+[15:40:04 INFO]: [38;5;14m       [38;5;6m __    [0m
+[15:40:04 INFO]: [38;5;14m  |    [38;5;6m|__)   [38;5;2mLuckPerms[0m [38;5;14mv5.5.71[0m
+[15:40:04 INFO]: [38;5;14m  |___ [38;5;6m|      [38;5;8mRunning on Bukkit - Paper[0m
+[15:40:04 INFO]: 
+[15:40:04 INFO]: [LuckPerms] Loading storage provider... [H2]
+[15:40:05 INFO]: [LuckPerms] Loading internal permission managers...
+[15:40:05 INFO]: [LuckPerms] Performing initial data load...
+[15:40:05 INFO]: [LuckPerms] Successfully enabled. (took 910ms)
+[15:40:05 INFO]: [Vault] Enabling Vault v1.7.3-b131
+[15:40:05 INFO]: [Vault] [Economy] Essentials Economy found: Waiting
+[15:40:05 INFO]: [Vault] [Permission] SuperPermissions loaded as backup permission system.
+[15:40:05 INFO]: [Vault] Enabled Version 1.7.3-b131
+[15:40:05 INFO]: [LuckPerms] Registered Vault permission & chat hook.
+[15:40:05 WARN]: **** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!
+[15:40:05 WARN]: The server will make no attempt to authenticate usernames. Beware.
+[15:40:05 WARN]: While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.
+[15:40:05 WARN]: To change this, set "online-mode" to "true" in the server.properties file.
+[15:40:05 INFO]: Preparing level "world"
+[15:40:06 INFO]: Loading 0 persistent chunks for world 'minecraft:overworld'...
+[15:40:06 INFO]: Preparing spawn area: 100%
+[15:40:06 INFO]: Prepared spawn area in 1 ms
+[15:40:06 INFO]: Loading 0 persistent chunks for world 'minecraft:the_nether'...
+[15:40:06 INFO]: Prepared spawn area in 0 ms
+[15:40:06 INFO]: Loading 0 persistent chunks for world 'minecraft:the_end'...
+[15:40:06 INFO]: Prepared spawn area in 1 ms
+[15:40:06 INFO]: Done preparing level "world" (0.638s)
+[15:40:06 INFO]: [Slimefun] Enabling Slimefun v5.0.0
+[15:40:06 INFO]: [Slimefun] Paper was detected! Performance optimizations have been applied.
+[15:40:06 INFO]: [Slimefun] Creating directories...
+[15:40:06 INFO]: [Slimefun] Loading language files...
+[15:40:06 INFO]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, profilesHost=https://api.mojang.com, name=PROD]
+[15:40:06 INFO]: [Slimefun] Loaded language "en"
+[15:40:06 INFO]: [Slimefun] Available languages: en, de, fr, it, es, ru, pl, uk, sv, nl, da, cs, ro, bg, pt, pt-BR, hu, lv, sk, vi, id, zh-CN, zh-TW, ja, ko, he, ar, tr, fa, th, tl
+[15:40:06 INFO]: [Slimefun] Using legacy storage for player data
+[15:40:06 INFO]: [Slimefun] Loading GEO-Resources...
+[15:40:07 INFO]: [Slimefun] Loading Tags...
+[15:40:07 INFO]: [Slimefun] Loading items...
+[15:40:07 INFO]: [Slimefun] Loading researches...
+[15:40:07 INFO]: [Slimefun] Loading Wiki pages...
+[15:40:07 INFO]: [Slimefun] Registering listeners...
+[15:40:08 INFO]: [Slimefun] Loading Third-Party plugin integrations...
+[15:40:08 INFO]: [Slimefun] Slimefun has finished loading in 1.63s
+[15:40:08 INFO]: [Essentials] Enabling Essentials v2.22.0
+[15:40:08 INFO]: [Essentials] Attempting to convert old kits in config.yml to new kits.yml
+[15:40:08 INFO]: [Essentials] No kits found to migrate.
+[15:40:08 INFO]: [Essentials] Selected Paper 1.13+ Tile Entity Provider as the provider for TileEntityProvider
+[15:40:08 INFO]: [Essentials] Selected Legacy Biome Name Provider as the provider for BiomeNameProvider
+[15:40:08 INFO]: [Essentials] Selected 1.12.2+ Player Locale Provider as the provider for PlayerLocaleProvider
+[15:40:08 INFO]: [Essentials] Selected 1.13+ Spawn Egg Provider as the provider for SpawnEggProvider
+[15:40:08 INFO]: [Essentials] Selected 1.20.5+ Banner Data Provider as the provider for BannerDataProvider
+[15:40:08 INFO]: [Essentials] Selected Reflection Online Mode Provider as the provider for OnlineModeProvider
+[15:40:08 INFO]: [Essentials] Selected Paper Serialization Provider as the provider for SerializationProvider
+[15:40:08 INFO]: [Essentials] Selected Paper Container Provider as the provider for ContainerProvider
+[15:40:08 INFO]: [Essentials] Selected 1.20.4+ Damage Event Provider as the provider for DamageEventProvider
+[15:40:08 INFO]: [Essentials] Selected 1.12+ Spawner Block Provider as the provider for SpawnerBlockProvider
+[15:40:08 INFO]: [Essentials] Selected Paper Material Tag Provider as the provider for MaterialTagProvider
+[15:40:08 INFO]: [Essentials] Selected Paper Known Commands Provider as the provider for KnownCommandsProvider
+[15:40:08 INFO]: [Essentials] Selected 1.17.1+ World Info Provider as the provider for WorldInfoProvider
+[15:40:08 INFO]: [Essentials] Selected 1.14.4+ Persistent Data Container Provider as the provider for PersistentDataProvider
+[15:40:08 INFO]: [Essentials] Selected 1.14+ Sign Data Provider as the provider for SignDataProvider
+[15:40:08 INFO]: [Essentials] Selected 1.20.6+ Potion Meta Provider as the provider for PotionMetaProvider
+[15:40:08 INFO]: [Essentials] Selected Paper Server State Provider as the provider for ServerStateProvider
+[15:40:08 INFO]: [Essentials] Selected 1.8.3+ Spawner Item Provider as the provider for SpawnerItemProvider
+[15:40:08 INFO]: [Essentials] Selected Paper Tick Count Provider as the provider for TickCountProvider
+[15:40:08 INFO]: [Essentials] Selected Reflection Formatted Command Alias Provider as the provider for FormattedCommandAliasProvider
+[15:40:08 INFO]: [Essentials] Selected Paper Biome Key Provider as the provider for BiomeKeyProvider
+[15:40:08 INFO]: [Essentials] Selected 1.21.4+ Sync Commands Provider as the provider for SyncCommandsProvider
+[15:40:08 INFO]: [Essentials] Selected 1.11+ Item Unbreakable Provider as the provider for ItemUnbreakableProvider
+[15:40:08 INFO]: [Essentials] Selected 1.21+ InventoryView Interface ABI Provider as the provider for InventoryViewProvider
+[15:40:08 INFO]: [Essentials] Loaded 46312 items from items.json.
+[15:40:08 INFO]: [Essentials] Using locale zh_CN
+[15:40:08 INFO]: [Essentials] ServerListPingEvent: Spigot iterator API
+[15:40:08 INFO]: [Essentials] Starting Metrics. Opt-out using the global bStats config.
+[15:40:09 INFO]: [Vault] [Economy] Essentials Economy hooked.
+[15:40:09 INFO]: [Essentials] Using Vault based permissions (LuckPerms)
+[15:40:09 INFO]: [CrystamaeHistoria] Enabling CrystamaeHistoria v0.18.0
+[15:40:09 INFO]: [CrystamaeHistoria] ########################################
+[15:40:09 INFO]: [CrystamaeHistoria]      CrystamaeHistoria  Ä§·¨Ë®¾§±àÄêÊ·    
+[15:40:09 INFO]: [CrystamaeHistoria] ########################################
+[15:40:09 INFO]: [CrystamaeHistoria] ÒÑ¼ÓÔØ: 995 ¸ö¶ÀÌØµÄ·½¿é¹ÊÊÂ.
+[15:40:09 INFO]: [CrystamaeHistoria] Æô¶¯½×¶ÎºÄÊ±: ÅäÖÃ¼ÓÔØ 110.9ms | ¹ÊÊÂÓò¹¹½¨ 28.9ms | ¹ÜÀíÆ÷ 124.9ms | ·¨ÊõÅäÖÃ 90.2ms | ÎïÆ·×¢²á 215.0ms | ÃüÁî 0.87ms | ºÏ¼Æ 570.8ms
+[15:40:09 INFO]: [Balatro] Enabling Balatro v0.4.62
+[15:40:09 INFO]: [Balatro] ÒÑ½ÓÈë Vault ¾­¼Ã¡£
+[15:40:09 INFO]: [Balatro] Balatro v0.4.62 enabled.
+[15:40:09 INFO]: [spark] Starting background profiler...
+[15:40:09 INFO]: [spark] The async-profiler engine is not supported for your os/arch (windows11/amd64), so the built-in Java engine will be used instead.
+[15:40:09 INFO]: Running delayed init tasks
+[15:40:09 INFO]: [Essentials] [38;5;3mÕýÔÚ»ñÈ¡°æ±¾ÐÅÏ¢...[0m
+[15:40:09 INFO]: [Slimefun] Collecting Snapshots of all Recipes...
+[15:40:10 INFO]: [Slimefun] Found 1,470 Recipes!
+[15:40:10 INFO]: 
+[15:40:10 INFO]: [38;5;10m######################### - Slimefun v5.0.0 - #########################[0m
+[15:40:10 INFO]: 
+[15:40:10 INFO]: [38;5;10mSuccessfully loaded 829 Items and 258 Researches[0m
+[15:40:10 INFO]: [38;5;10m( 555 Items from Slimefun, 274 Items from 1 Addons )[0m
+[15:40:10 INFO]: 
+[15:40:10 INFO]: [38;5;10mSlimefun is an Open-Source project that is kept alive by a large community.[0m
+[15:40:10 INFO]: [38;5;10mConsider helping us maintain this project by contributing on GitHub![0m
+[15:40:10 INFO]: [38;5;10m - UNOFFICIALLY MODIFIED BUILD - NO OFFICIAL SUPPORT GIVEN[0m
+[15:40:10 INFO]: 
+[15:40:10 INFO]: [Slimefun] Loading Blocks for World "world"
+[15:40:10 INFO]: [Slimefun] This may take a long time...
+[15:40:10 INFO]: [Slimefun] Loading Blocks... 100% (FINISHED - 0ms)
+[15:40:10 INFO]: [Slimefun] Loaded a total of 0 Blocks for World "world"
+[15:40:10 INFO]: [Slimefun] Loading Blocks for World "world_nether"
+[15:40:10 INFO]: [Slimefun] This may take a long time...
+[15:40:10 INFO]: [Slimefun] Loading Blocks... 100% (FINISHED - 0ms)
+[15:40:10 INFO]: [Slimefun] Loaded a total of 0 Blocks for World "world_nether"
+[15:40:10 INFO]: [Slimefun] Loading Blocks for World "world_the_end"
+[15:40:10 INFO]: [Slimefun] This may take a long time...
+[15:40:10 INFO]: [Slimefun] Loading Blocks... 100% (FINISHED - 0ms)
+[15:40:10 INFO]: [Slimefun] Loaded a total of 0 Blocks for World "world_the_end"
+[15:40:10 INFO]: [dough: protection] Loading Protection Modules...
+[15:40:10 INFO]: [dough: protection] This may happen more than once.
+[15:40:10 INFO]: [Essentials] Essentials found a compatible payment resolution method: Vault Compatibility Layer (v1.7.3-b131)!
+[15:40:10 INFO]: [CrystamaeHistoria] ÕýÔÚ±£´æÄ§·¨Ë®¾§±àÄêÊ·µÄÊý¾Ý
+[15:40:10 INFO]: Done (17.197s)! For help, type "help"
+[15:40:10 INFO]: [Vault] Checking for Updates ... 
+[15:40:11 WARN]: *************************************************************************************
+[15:40:11 WARN]: You are running the latest build for your Minecraft version (1.21.11)
+[15:40:11 WARN]: However, you are 4 release(s) behind the latest stable release (26.2)!
+[15:40:11 WARN]: It is recommended that you update as soon as possible
+[15:40:11 WARN]: https://papermc.io/downloads/paper
+[15:40:11 WARN]: *************************************************************************************
+[15:40:12 WARN]: [Essentials] [38;5;3mÎÞ·¨¼ì²éÄãµ±Ç°µÄ°æ±¾£¡×Ô¼º¹¹½¨µÄ£¿¹¹½¨ÐÅÏ¢£º[38;5;9mid:'2.22.0' branch:'2.x' isDev:false[38;5;3m¡£[0m
+[15:40:18 INFO]: [Vault] There was an issue attempting to check for the latest version.
+[15:40:18 INFO]: [Vault] No new version available
