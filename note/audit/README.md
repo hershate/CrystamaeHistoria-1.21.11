@@ -75,6 +75,7 @@
 | 62 | 配置器 ADD 处理器方法级直调（[round-62](round-62.md)） | ✅ 完成（**r48 ◐ 正式闭环**：填充后直调 BlockMenu 注册的 ADD_PLATES 生产处理器 → assert PASS（plate=PUSH/50 + 板槽清空——组装完整语义方法级实证）；**harness 教训**：Paper .paper-remapped 同名 jar 缓存不随内容失效，更新驱动须清缓存（规程入档）） |
 | 63 | HEAD 产物一致性验证（[round-63](round-63.md)） | ✅ 完成（mvn clean package 干净构建 vs 29 轮实测产物：六个修复承载类逐一类体一致 + 修复符号在位抽查 + 清缓存干净部署冒烟（995 故事/零异常）——仓库 HEAD 产物与实测同源，发布物可信度闭合） |
 | 64 | 全驱动回归套件（[round-64](round-64.md)） | ✅ 完成（单会话 24 项顺序执行全过：19 自动判绿 + 5 已知语义判读——跨子系统密集交叉运行零异常；结果存 note/report/audit-suite64-results.json，后续改动可一键回归） |
+| 65 | 根 README/plugin.yml 表述一致性终审（[round-65](round-65.md)） | ✅ 完成（七处玩家可见表述与实现一致（含 80+ 组合空间核算成立维持上游原文）；7 项修复零表述漂移——纯文档轮） |
 
 ## 已修复问题汇总
 
