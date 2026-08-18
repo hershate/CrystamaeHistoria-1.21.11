@@ -41,6 +41,14 @@ public class DriverPlugin extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length >= 1 && args[0].equals("brush")) {
+            try {
+                driveBrush(sender);
+            } catch (Exception e) {
+                reply(sender, "error=" + e);
+            }
+            return true;
+        }
         if (args.length >= 1 && args[0].equals("exalted")) {
             try {
                 driveExalted(sender, args.length >= 2 ? args[1] : "");
@@ -348,6 +356,71 @@ public class DriverPlugin extends JavaPlugin {
             cx++;
         }
         reply(sender, "gadgets_done placed=" + placed + " cancelled=" + cancelled + " missing=" + missing + " range=x" + x + "..x" + (cx - 1));
+    }
+
+    /** 第 53 轮：画笔消耗链（tryPaint 生产路径 + LimitedUseItem PDC 衰减 + 耗尽损坏） */
+    private void driveBrush(CommandSender sender) {
+        final Player player = Bukkit.getOnlinePlayers().isEmpty() ? null : Bukkit.getOnlinePlayers().iterator().next();
+        if (player == null) {
+            reply(sender, "error=no_player");
+            return;
+        }
+        final SlimefunItem sfi = SlimefunItem.getById("CRY_BRUSH_BLACK_100");
+        if (!(sfi instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.artistic.MagicPaintbrush)) {
+            reply(sender, "error=no_brush found=" + (sfi != null));
+            return;
+        }
+        final io.github.sefiraat.crystamaehistoria.slimefun.items.artistic.MagicPaintbrush brush =
+            (io.github.sefiraat.crystamaehistoria.slimefun.items.artistic.MagicPaintbrush) sfi;
+        final io.github.sefiraat.crystamaehistoria.slimefun.items.artistic.PaintProfile profile =
+            io.github.sefiraat.crystamaehistoria.slimefun.items.artistic.PaintProfile.BLACK;
+        final ItemStack stack = sfi.getItem().clone();
+        final org.bukkit.NamespacedKey usesKey = io.github.sefiraat.crystamaehistoria.utils.Keys.newKey("uses");
+        final int maxUses = ((io.github.thebusybiscuit.slimefun4.implementation.items.LimitedUseItem) sfi).getMaxUseCount();
+
+        // 画一块石头 100 次（黑色染色羊毛目标保证每次都实际涂色）
+        final Block target = player.getLocation().getBlock().getRelative(org.bukkit.block.BlockFace.DOWN);
+        target.setType(Material.WHITE_WOOL);
+        final io.github.sefiraat.crystamaehistoria.slimefun.items.artistic.BasicPaintbrush bp =
+            (io.github.sefiraat.crystamaehistoria.slimefun.items.artistic.BasicPaintbrush) sfi;
+        int painted = 0, unchanged = 0;
+        Integer lastUses = null;
+        for (int i = 0; i < maxUses + 5; i++) {
+            final boolean paintedNow;
+            try {
+                paintedNow = brush.tryPaintBlock(profile, target);
+            } catch (Throwable t) {
+                reply(sender, "paint_error iter" + i + "=" + t);
+                return;
+            }
+            if (paintedNow) {
+                painted++;
+                try {
+                    final java.lang.reflect.Method damage = io.github.thebusybiscuit.slimefun4.implementation.items.LimitedUseItem.class
+                        .getDeclaredMethod("damageItem", org.bukkit.entity.Player.class, ItemStack.class);
+                    damage.setAccessible(true);
+                    damage.invoke(sfi, player, stack);
+                } catch (ReflectiveOperationException ex) {
+                    reply(sender, "damage_reflect_error=" + ex);
+                    return;
+                }
+                if (stack.getType() == Material.AIR || stack.getAmount() <= 0 || !stack.hasItemMeta()) {
+                    reply(sender, "brush_depleted_at=" + painted + " (堆已空——LimitedUseItem 耗尽语义)");
+                    return;
+                }
+                lastUses = stack.getItemMeta().getPersistentDataContainer().getOrDefault(usesKey, org.bukkit.persistence.PersistentDataType.INTEGER, -1);
+                // 重置方块材质使下一次仍可涂（循环白→黑）
+                target.setType(Material.WHITE_WOOL);
+            } else {
+                unchanged++;
+            }
+        }
+        final boolean depleted = stack.getType() == Material.AIR || stack.getAmount() == 0
+            || !stack.hasItemMeta() || stack.getItemMeta().getPersistentDataContainer().has(usesKey, org.bukkit.persistence.PersistentDataType.INTEGER) == false
+            || lastUses != null && lastUses <= 0;
+        reply(sender, "brush maxUses=" + maxUses + " painted=" + painted + " unchanged=" + unchanged
+            + " lastUses=" + lastUses + " stackNow=" + stack.getType() + "x" + stack.getAmount()
+            + " depleted=" + depleted);
     }
 
     /** 第 52 轮：Exalted 物品效果链（onExalt 生产方法 + SpellMemory 冻结表登记/过期回收） */
