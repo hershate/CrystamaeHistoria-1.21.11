@@ -1,7 +1,15 @@
 package io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.realisationaltar;
 
+import io.github.sefiraat.crystamaehistoria.slimefun.Materials;
+import io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.liquefactionbasin.LiquefactionBasin;
+import io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.liquefactionbasin.LiquefactionBasinCache;
+import io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.prismaticgilder.PrismaticGilder;
+import io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.prismaticgilder.PrismaticGilderCache;
 import io.github.sefiraat.crystamaehistoria.stories.Story;
+import io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity;
+import io.github.sefiraat.crystamaehistoria.stories.definition.StoryType;
 import io.github.sefiraat.crystamaehistoria.utils.StoryUtils;
+import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition;
 import me.mrCookieSlime.Slimefun.api.BlockStorage;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
@@ -16,6 +24,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -32,6 +41,30 @@ public class DriverPlugin extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length >= 1 && args[0].equals("place") && args.length >= 6) {
+            try {
+                drivePlace(sender, args[1], args[2], Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]));
+            } catch (Exception e) {
+                reply(sender, "error=" + e);
+            }
+            return true;
+        }
+        if (args.length >= 1 && args[0].equals("gilder") && args.length >= 5) {
+            try {
+                driveGilder(sender, args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
+            } catch (Exception e) {
+                reply(sender, "error=" + e);
+            }
+            return true;
+        }
+        if (args.length >= 1 && args[0].equals("basin") && args.length >= 5) {
+            try {
+                driveBasin(sender, args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
+            } catch (Exception e) {
+                reply(sender, "error=" + e);
+            }
+            return true;
+        }
         if (args.length >= 1 && args[0].equals("altar")) {
             if (args.length < 5) {
                 reply(sender, "usage=altar <world> <x> <y> <z>");
@@ -187,5 +220,165 @@ public class DriverPlugin extends JavaPlugin {
 
     private void reply(CommandSender sender, String msg) {
         sender.sendMessage("AUDIT37|" + msg);
+    }
+
+    /** 第 38 轮：以真实 BlockPlaceEvent 放置并注册机械（与玩家放置同路径） */
+    private void drivePlace(CommandSender sender, String sfId, String worldName, int x, int y, int z) {
+        final World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            reply(sender, "error=world_not_found");
+            return;
+        }
+        final SlimefunItem sfi = SlimefunItem.getById(sfId);
+        if (sfi == null) {
+            reply(sender, "error=unknown_sf_id:" + sfId);
+            return;
+        }
+        final Player player = Bukkit.getOnlinePlayers().isEmpty() ? null : Bukkit.getOnlinePlayers().iterator().next();
+        if (player == null) {
+            reply(sender, "error=no_player");
+            return;
+        }
+        final Block block = world.getBlockAt(x, y, z);
+        final org.bukkit.block.BlockState replacedState = block.getState();
+        block.setType(sfi.getItem().getType());
+        final BlockPlaceEvent event = new BlockPlaceEvent(
+            block, replacedState, block.getRelative(org.bukkit.block.BlockFace.DOWN),
+            sfi.getItem().clone(), player, true, org.bukkit.inventory.EquipmentSlot.HAND);
+        Bukkit.getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
+            block.setType(Material.AIR);
+            reply(sender, "placed=false cancelled=true");
+            return;
+        }
+        reply(sender, "placed=true block=" + block.getType());
+    }
+
+    /** 第 38 轮：镀金器吸取 + 镀金路径（FLASH 修复第二受影响面） */
+    private void driveGilder(CommandSender sender, String worldName, int x, int y, int z) {
+        final World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            reply(sender, "error=world_not_found");
+            return;
+        }
+        final SlimefunItem sfi = SlimefunItem.getById("CRY_PRISMATIC_GILDER");
+        if (!(sfi instanceof PrismaticGilder)) {
+            reply(sender, "error=gilder_item_not_found");
+            return;
+        }
+        final PrismaticGilderCache cache = ((PrismaticGilder) sfi).getCacheMap().get(new Location(world, x, y, z));
+        if (cache == null) {
+            reply(sender, "error=no_gilder_cache known=" + ((PrismaticGilder) sfi).getCacheMap().keySet());
+            return;
+        }
+        reply(sender, "cache_found=true fill0=" + cache.getFillAmount());
+
+        // 1. 吸取：棱镜水晶掉落在镀金器中心 → consumeItems（public）→ addCrystamae（FLASH 路径）
+        final Location center = new Location(world, x + 0.5, y + 0.5, z + 0.5);
+        final ItemStack crystal = Materials.getPrismaticCrystal().getItem();
+        world.dropItem(center, crystal);
+        cache.consumeItems();
+        cache.consumeItems();
+        final int fillAfterAbsorb = cache.getFillAmount();
+        final boolean absorbed = fillAfterAbsorb >= 1;
+        reply(sender, "absorb fillAfter=" + fillAfterAbsorb + " pass=" + absorbed);
+
+        // 2. 镀金：满故事闪长岩 + 在线玩家（DisplayItem/DUST 路径）
+        final Player player = Bukkit.getOnlinePlayers().isEmpty() ? null : Bukkit.getOnlinePlayers().iterator().next();
+        if (player == null) {
+            reply(sender, "gild=skipped_no_player");
+            return;
+        }
+        while (cache.getFillAmount() < 1) {
+            world.dropItem(center, Materials.getPrismaticCrystal().getItem());
+            cache.consumeItems();
+        }
+        final ItemStack storied = new ItemStack(Material.DIORITE);
+        StoryUtils.makeStoried(storied);
+        final int limit = StoryUtils.getMaxStoryAmount(storied.getItemMeta());
+        int guard = 0;
+        while (StoryUtils.getStoryAmount(storied.getItemMeta()) < limit && guard++ < 20) {
+            StoryUtils.commitStory(storied, StoryUtils.pickStory(storied), null);
+        }
+        final int fillBeforeGild = cache.getFillAmount();
+        final Block block = world.getBlockAt(x, y, z);
+        cache.gildItem(block, storied, player);
+        final int fillAfterGild = cache.getFillAmount();
+        final boolean heldConsumed = storied.getAmount() == 0;
+        reply(sender, "gild fillBefore=" + fillBeforeGild + " fillAfter=" + fillAfterGild
+            + " heldConsumed=" + heldConsumed + " pass=" + (fillAfterGild == fillBeforeGild - 1 && heldConsumed));
+        reply(sender, "result=" + (absorbed && fillAfterGild == fillBeforeGild - 1 && heldConsumed ? "PASS" : "FAIL"));
+    }
+
+    /** 第 38 轮：液化池吸取 + 空白板催化合成链 */
+    private void driveBasin(CommandSender sender, String worldName, int x, int y, int z) {
+        final World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            reply(sender, "error=world_not_found");
+            return;
+        }
+        final SlimefunItem sfi = SlimefunItem.getById("CRY_LIQUEFACTION_BASIN_1");
+        if (!(sfi instanceof LiquefactionBasin)) {
+            reply(sender, "error=basin_item_not_found");
+            return;
+        }
+        final LiquefactionBasinCache cache = ((LiquefactionBasin) sfi).getCacheMap().get(new Location(world, x, y, z));
+        if (cache == null) {
+            reply(sender, "error=no_basin_cache known=" + ((LiquefactionBasin) sfi).getCacheMap().keySet());
+            return;
+        }
+        reply(sender, "cache_found=true fill0=" + cache.getFillLevel());
+
+        // 1. 找一个有效的 3 类型配方组合（tier 1）
+        final StoryType[] types = StoryType.values();
+        java.util.Set<StoryType> recipe = null;
+        outer:
+        for (int a = 0; a < types.length; a++) {
+            for (int b = a + 1; b < types.length; b++) {
+                for (int c = b + 1; c < types.length; c++) {
+                    final java.util.Set<StoryType> set = java.util.EnumSet.of(types[a], types[b], types[c]);
+                    if (LiquefactionBasinCache.lookupSpellRecipe(set, 1) != null) {
+                        recipe = set;
+                        break outer;
+                    }
+                }
+            }
+        }
+        if (recipe == null) {
+            reply(sender, "error=no_recipe_combo");
+            return;
+        }
+        reply(sender, "recipe_found=" + recipe);
+
+        // 2. 依次投入 3 种 COMMON 水晶（各 1 体积）——吸取路径（addCrystamae/updateDisplay）
+        final Location center = new Location(world, x + 0.5, y + 0.5, z + 0.5);
+        for (StoryType t : recipe) {
+            world.dropItem(center, Materials.getCrystalMap().get(StoryRarity.COMMON).get(t).getItem());
+            cache.consumeItems();
+        }
+        final int fillAfter = cache.getFillLevel();
+        reply(sender, "absorbed fill=" + fillAfter + " pass=" + (fillAfter >= 3));
+
+        // 3. 投入空白法术板 → processBlankPlate → ChargedPlate 掉落 + 清池
+        final SlimefunItem blank = SlimefunItem.getById("CRY_SPELL_PLATE_1");
+        if (blank == null) {
+            reply(sender, "error=no_inert_plate");
+            return;
+        }
+        final int itemsBefore = countItems(center);
+        world.dropItem(center, blank.getItem());
+        cache.consumeItems();
+        cache.consumeItems();
+        final int fillAfterCatalyst = cache.getFillLevel();
+        final int itemsAfter = countItems(center);
+        reply(sender, "catalyst fillAfter=" + fillAfterCatalyst + " itemsBefore=" + itemsBefore + " itemsAfter=" + itemsAfter);
+        for (Entity en : world.getNearbyEntities(center, 3, 3, 3)) {
+            if (en instanceof Item) {
+                final ItemStack is = ((Item) en).getItemStack();
+                reply(sender, "drop=" + is.getType() + "x" + is.getAmount());
+            }
+        }
+        final boolean pass = fillAfter >= 3 && fillAfterCatalyst == 0 && itemsAfter > itemsBefore;
+        reply(sender, "result=" + (pass ? "PASS" : "FAIL"));
     }
 }
