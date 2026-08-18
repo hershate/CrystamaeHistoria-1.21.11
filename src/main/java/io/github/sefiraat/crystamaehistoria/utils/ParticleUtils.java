@@ -1,6 +1,7 @@
 package io.github.sefiraat.crystamaehistoria.utils;
 
 import lombok.experimental.UtilityClass;
+import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.World;
@@ -26,6 +27,13 @@ public class ParticleUtils {
         // 客户端原生散布：count+offset 重载由客户端按盒偏移生成随机云——
         // 原 N 次单发调用（N 个粒子包 + 服务端 N×3 随机数与坐标 set）
         // 归一为单次调用（单包）；散布形态同为逐轴均匀云
+        if (particle.getDataType() == Color.class) {
+            // Paper 1.21.x 起 FLASH/ENTITY_EFFECT 等 Color 数据粒子在无数据重载下直接抛
+            // IllegalArgumentException（迁移遗留：祭坛提取/镀金器吸取曾每次触发）——
+            // 补白色 Color 满足 API 契约，视觉效果不变
+            location.getWorld().spawnParticle(particle, location, numberOfParticles, rangeRadius, rangeRadius, rangeRadius, Color.WHITE);
+            return;
+        }
         location.getWorld().spawnParticle(particle, location, numberOfParticles, rangeRadius, rangeRadius, rangeRadius);
     }
 
