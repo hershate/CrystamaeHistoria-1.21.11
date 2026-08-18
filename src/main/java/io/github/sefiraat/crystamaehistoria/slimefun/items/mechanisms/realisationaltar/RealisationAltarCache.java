@@ -48,6 +48,9 @@ public class RealisationAltarCache extends AbstractCache {
 
     @Getter
     private final Map<BlockPosition, RealisedCrystalState> crystalStoryMap = new HashMap<>();
+    /** 镀金晶簇粒子参数（不可变值对象，跨调用共享——r59 族） */
+    private static final Particle.DustOptions GILDED_DUST = new Particle.DustOptions(Color.YELLOW, 2);
+
     private final int tier;
     /**
      * 实体拾取扫描中心（机械上方 1 格）。机械位置放置后固定，懒初始化缓存——
@@ -133,32 +136,43 @@ public class RealisationAltarCache extends AbstractCache {
     }
 
     private void tryGrow() {
+        if (crystalStoryMap.isEmpty()) {
+            return;
+        }
         final Iterator<Map.Entry<BlockPosition, RealisedCrystalState>> iterator = crystalStoryMap.entrySet().iterator();
 
         while (iterator.hasNext()) {
             final Map.Entry<BlockPosition, RealisedCrystalState> entry = iterator.next();
-            final Block block = entry.getKey().getBlock();
+            final RealisedCrystalState state = entry.getValue();
+            // 驻留条目解析缓存：晶簇位置构造即定恒不变，每 tick 的 getBlock() 块解析
+            // 与粒子中心 Location 两次分配为纯浪费（成熟晶簇存活至破坏——常驻每 tick 路径）
+            Block block = state.cachedBlock;
+            if (block == null) {
+                block = entry.getKey().getBlock();
+                state.cachedBlock = block;
+                state.particleLocation = block.getLocation().add(0.5, 0.2, 0.5);
+            }
             final Material material = block.getType();
 
-            if (entry.getValue().isGilded()) {
-                summonGildedParticles(block);
+            if (state.isGilded()) {
+                summonGildedParticles(state.particleLocation);
             }
 
             switch (material) {
                 case SMALL_AMETHYST_BUD:
                     if (GeneralUtils.testChance(1, 10)) {
                         block.setType(Material.MEDIUM_AMETHYST_BUD);
-                        summonGrowParticles(block);
+                        summonGrowParticles(state.particleLocation);
                     }
                     break;
                 case MEDIUM_AMETHYST_BUD:
                     if (GeneralUtils.testChance(1, 20)) {
                         block.setType(Material.LARGE_AMETHYST_BUD);
-                        summonGrowParticles(block);
+                        summonGrowParticles(state.particleLocation);
                     }
                     break;
                 case LARGE_AMETHYST_BUD:
-                    summonFullyGrownParticles(block);
+                    summonFullyGrownParticles(state.particleLocation);
                     break;
                 default:
                     iterator.remove();
@@ -246,19 +260,21 @@ public class RealisationAltarCache extends AbstractCache {
             chunk, Keys.newKey(String.valueOf(position.getPosition())), stories);
     }
 
-    private void summonGrowParticles(@Nonnull Block block) {
-        final Location location = block.getLocation().add(0.5, 0.2, 0.5);
+    private void summonGrowParticles(@Nonnull Location location) {
         ParticleUtils.displayParticleEffect(location, Particle.CRIMSON_SPORE, 0.4, 3);
     }
 
-    private void summonFullyGrownParticles(@Nonnull Block block) {
-        final Location location = block.getLocation().add(0.5, 0.2, 0.5);
+    private void summonFullyGrownParticles(@Nonnull Location location) {
         ParticleUtils.displayParticleEffect(location, Particle.WAX_OFF, 0.4, 3);
     }
 
-    private void summonGildedParticles(@Nonnull Block block) {
-        final Location location = block.getLocation().add(0.5, 0.2, 0.5);
-        ParticleUtils.displayParticleEffect(location, 0.4, 3, new Particle.DustOptions(Color.YELLOW, 2));
+    private void summonGildedParticles(@Nonnull Location location) {
+        ParticleUtils.displayParticleEffect(location, 0.4, 3, GILDED_DUST);
+    }
+
+    private void summonGrowParticles(@Nonnull Block block) {
+        // 生成事件级一次性调用（无驻留语义），保留 Block 便捷重载
+        ParticleUtils.displayParticleEffect(block.getLocation().add(0.5, 0.2, 0.5), Particle.CRIMSON_SPORE, 0.4, 3);
     }
 
     private void summonConsumeParticles(@Nonnull Block block) {
@@ -332,6 +348,11 @@ public class RealisationAltarCache extends AbstractCache {
         private final StoryRarity storyRarity;
         private final String storyId;
         private final boolean gilded;
+        // 位置恒定（构造即定）的驻留解析缓存：tryGrow 每 tick 消费
+        @Nullable
+        private Block cachedBlock;
+        @Nullable
+        private Location particleLocation;
 
         private RealisedCrystalState(StoryRarity storyRarity, String storyId, boolean gilded) {
             this.storyRarity = storyRarity;
