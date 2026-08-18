@@ -156,7 +156,7 @@ public class CrystamageSatchel extends UnplaceableBlock {
         };
 
         @Nonnull
-        private final SatchelInstance instance;
+        private SatchelInstance instance;
         @Nonnull
         private final ItemStack itemStack;
         @Nonnull
@@ -220,6 +220,9 @@ public class CrystamageSatchel extends UnplaceableBlock {
         }
 
         private void tryWithdraw(@Nonnull Player player, @Nonnull StoryRarity rarity, @Nonnull StoryType type, boolean stack) {
+            // GUI 打开期间收纳袋 PDC 可能已被自动吸取路径（SatchelListener）
+            // 更新：以最新 PDC 为准做读-改-写，避免陈旧实例整体回写覆盖丢失
+            syncFromItem();
             int firstEmpty = player.getInventory().firstEmpty();
             if (firstEmpty != -1) {
                 final int stored = this.instance.getAmount(rarity, type);
@@ -241,9 +244,30 @@ public class CrystamageSatchel extends UnplaceableBlock {
 
         @Override
         public void open(Player... players) {
+            syncFromItem();
             this.instance.setLastUser(players[0].getDisplayName());
             saveInstance();
             super.open(players);
+        }
+
+        /**
+         * 从物品 PDC 重新读取最新收纳袋实例并替换当前实例。
+         * 读取失败（键缺失/数据损坏）时保留当前实例兜底——本次操作
+         * 仍以 GUI 内数据为准，不会因坏数据打断交互。
+         */
+        private void syncFromItem() {
+            final ItemMeta meta = this.itemStack.getItemMeta();
+            if (meta == null) {
+                return;
+            }
+            final SatchelInstance fresh = DataTypeMethods.getCustom(
+                meta,
+                Keys.PDC_SATCHEL_STORAGE,
+                PersistentSatchelInstanceType.TYPE
+            );
+            if (fresh != null) {
+                this.instance = fresh;
+            }
         }
 
         private void saveInstance() {
