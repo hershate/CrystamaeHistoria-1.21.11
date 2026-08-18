@@ -257,7 +257,10 @@ r68+r69 连续零发现（角度互异），**第十四轮循环收敛宣告**�
 60 步序列等价 true + 观察者实证归档；详见
 [report/perf/round-70](report/perf/round-70.md)。第 71 轮判定——
 重复状态应用/世界时间查询两角度零发现（光环重应用节拍即玩法语义，
-收敛 1/2），见 [report/perf/round-71](report/perf/round-71.md)。
+收敛 1/2），见 [report/perf/round-71](report/perf/round-71.md)。第 72 轮判定
+——集合快照分配（全库零命中）/instanceof 分派/消息格式化三角度零发现，
+r71+r72 连续判定收敛，**第十五轮循环收口 0.16.0**；总账见
+[report/perf/round-72](report/perf/round-72.md)。
 
 ## 维护要点（改代码前必读）
 
