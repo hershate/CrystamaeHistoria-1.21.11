@@ -248,6 +248,14 @@ r68+r69 连续零发现（角度互异），**第十四轮循环收敛宣告**�
 0.15.0（判定收敛版）；连续两轮纯判定收敛循环指示复查节奏边际产出
 稳定为零，循环进入休眠（触发条件：Paper/Slimefun 演进、玩法变更、
 集成画像）；总账见 [report/perf/round-69](report/perf/round-69.md)。
+第十五轮循环（用户再触发，2026-08-18 起）第 70 轮方块写入标志域
+（CraftBlock 字节码实证单参 setBlockData 默认 physics=true）：面板
+光源呼吸动画免 physics——1954.43 → ~285ns（**~6.9x**，每 tick 每
+工作面板，全库唯一每 tick 方块写入热站点）+ HarmonysSonata 花朵
+写入族一致性；作物催熟/晶簇生长/AIR 移除判定保留 physics（**语义
+红线口径沉淀**：内部装饰效果非契约，玩法可构建依赖语义保留），
+60 步序列等价 true + 观察者实证归档；详见
+[report/perf/round-70](report/perf/round-70.md)。
 
 ## 维护要点（改代码前必读）
 

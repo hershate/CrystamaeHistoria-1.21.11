@@ -106,6 +106,12 @@
 | 68 | 判定轮（**第十四轮循环开启**，收敛 1/2，角度：枚举键容器选型/不可变集合构造）：枚举键 Map 全库一致 EnumMap（16 文件，无 HashMap 站点）、EnumSet·List.of 构造全为催化剂交互事件级（r11 索引后查找 O(1)）——零发现（[round-68](round-68.md)） | ✅ 完成（判定轮，无变更） |
 | 69 | 判定轮（**第十四轮收敛 2/2**，角度：Objects.hash varargs/自定义 hashCode/Map 键哈希）：Objects.hash 零命中、唯一自定义 hashCode 为 String 委托（最优）、BlockPosition 为 dough 库值类事件级小表（边界）——零发现；**r68+r69 连续零发现（角度互异）→ 第十四轮循环收敛**，版本收口 0.15.0（判定收敛版）；连续两轮纯判定收敛循环指示复查节奏边际产出稳定为零，循环进入休眠（触发条件沉淀在案）（[round-69](round-69.md)） | ✅ 完成（判定轮，无变更，**第十四轮循环收敛**） |
 
+## 第十五轮循环（用户再触发，2026-08-18 起）
+
+| 轮次 | 优化点 | 状态 |
+|------|--------|------|
+| 70 | 方块写入标志与逐 tick BlockData 克隆域（**第十五轮循环开启**，physics 标志角度）：CraftBlock 字节码实证单参 setBlockData/setType 默认 physics=true（NMS flag 3：邻居通知+观察者可见）vs false（flag 530：客户端更新+观察者不可见）——animateLight 光源呼吸动画（**每 tick 每工作面板**唯一热站点）改免 physics：全序列 1954.43 → ~285ns（**~6.9x**，保留每 tick 新读以保发光勺外部调节语义）+ HarmonysSonata 花朵写入 4 处族一致性补 false；GreenHouseGlass 作物催熟/晶簇生长/AIR 移除/用户工具写入判定保留 physics（**语义红线口径沉淀**：内部装饰效果非契约 vs 玩法可构建依赖语义）；60 步序列逐位等价 true + 观察者实证归档（[round-70](round-70.md)） | ✅ 完成（服务器回归通过，boot_r70 0 错误 0 watchdog） |
+
 ## 收敛判定（round-32）
 
 第六轮循环为统计读取域收官专项（路径缩短 → 计数缓存 → 集合缓存），
