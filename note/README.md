@@ -265,7 +265,12 @@ r68+r69 连续零发现（角度互异），**第十四轮循环收敛宣告**�
 收敛 1/2），见 [report/perf/round-71](report/perf/round-71.md)。第 72 轮判定
 ——集合快照分配（全库零命中）/instanceof 分派/消息格式化三角度零发现，
 r71+r72 连续判定收敛，**第十五轮循环收口 0.16.0**；总账见
-[report/perf/round-72](report/perf/round-72.md)。
+[report/perf/round-72](report/perf/round-72.md)。第十六轮循环（用户再
+触发，2026-08-18 起）第 73 轮每 tick 派发任务折叠域：FloatingHeadAnimation
+（每工作面板一个 period=1 长期任务，r52 施法级判定漏计的形态）折叠进
+process() 同节拍驱动——~2.5x 噪声级 + **全库唯一长期每 tick 任务类
+消除**（含卸载区块空转）；任务/直接驱动头姿 10 步逐位等价 true；详见
+[report/perf/round-73](report/perf/round-73.md)。
 
 ## 维护要点（改代码前必读）
 
