@@ -329,11 +329,19 @@ public class StoriesManager {
 
     @ParametersAreNonnullByDefault
     private static void setName(ItemStack itemStack, ItemMeta im) {
-        TextComponent name = new TextComponent("有故事的" + NameUtils.getItemStackName(im, itemStack.getType()));
+        // 幂等化：基础名取自当前显示名，若不剥离已有前缀，每次重建（每个故事提交/
+        // 祭坛提取）都会再前置一次"有故事的"造成叠加（上游遗留缺陷，也会自愈已污染物品）
+        String base = org.bukkit.ChatColor.stripColor(NameUtils.getItemStackName(im, itemStack.getType()));
+        while (base.startsWith(STORIED_PREFIX)) {
+            base = base.substring(STORIED_PREFIX.length());
+        }
+        TextComponent name = new TextComponent(STORIED_PREFIX + base);
         name.setColor(ThemeType.MAIN.getColor());
         name.setBold(true);
         im.setDisplayName(name.toLegacyText());
     }
+
+    private static final String STORIED_PREFIX = "有故事的";
 
     @ParametersAreNonnullByDefault
     public Story getStory(String id, StoryRarity storyRarity) {
