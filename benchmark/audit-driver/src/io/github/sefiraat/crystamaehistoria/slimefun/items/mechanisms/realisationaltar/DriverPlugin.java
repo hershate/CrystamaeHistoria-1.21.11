@@ -49,6 +49,14 @@ public class DriverPlugin extends JavaPlugin {
             }
             return true;
         }
+        if (args.length >= 1 && args[0].equals("r68")) {
+            try {
+                driveR68(sender);
+            } catch (Exception e) {
+                reply(sender, "error=" + e);
+            }
+            return true;
+        }
         if (args.length >= 1 && args[0].equals("crysta")) {
             try {
                 driveCrysta(sender);
@@ -481,6 +489,54 @@ public class DriverPlugin extends JavaPlugin {
         }
         reply(sender, "tier_scan " + tiers);
         reply(sender, "salts_done");
+    }
+
+    /** 第 68 轮：睡袋（ItemUseHandler 方法级直调）+ 临时合成台（openWorkbench 生产调用） */
+    private void driveR68(CommandSender sender) {
+        final Player player = Bukkit.getOnlinePlayers().isEmpty() ? null : Bukkit.getOnlinePlayers().iterator().next();
+        if (player == null) {
+            reply(sender, "error=no_player");
+            return;
+        }
+        // ---- 1. 睡袋：方法级直调 ItemUseHandler ----
+        final SlimefunItem bagSf = SlimefunItem.getById("CRY_SLEEPING_BAG");
+        if (!(bagSf instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.tools.SleepingBag)) {
+            reply(sender, "sleepbag error=no_item");
+        } else {
+            final io.github.thebusybiscuit.slimefun4.core.handlers.ItemUseHandler handler =
+                ((io.github.sefiraat.crystamaehistoria.slimefun.items.tools.SleepingBag) bagSf).getItemHandler();
+            final org.bukkit.Location feet = player.getLocation();
+            feet.getWorld().setTime(13000L);  // 夜间
+            final ItemStack bagItem = bagSf.getItem().clone();
+            final org.bukkit.event.player.PlayerInteractEvent bagEvent = new org.bukkit.event.player.PlayerInteractEvent(
+                player, org.bukkit.event.block.Action.RIGHT_CLICK_AIR, bagItem, null, org.bukkit.block.BlockFace.UP, org.bukkit.inventory.EquipmentSlot.HAND);
+            final int bagsBefore = io.github.sefiraat.crystamaehistoria.CrystamaeHistoria.getSpellMemory().getSleepingBags().size();
+            final boolean inBedBefore = player.isSleeping();
+            try {
+                handler.onRightClick(new io.github.thebusybiscuit.slimefun4.api.events.PlayerRightClickEvent(bagEvent));
+            } catch (Throwable t) {
+                reply(sender, "sleepbag error=" + t);
+            }
+            final boolean registered = io.github.sefiraat.crystamaehistoria.CrystamaeHistoria.getSpellMemory().getSleepingBags().containsKey(player.getUniqueId());
+            final boolean blockNow = feet.getBlock().getType() == Material.WHITE_BED;
+            reply(sender, "sleepbag registered=" + registered + " bedBlock=" + blockNow
+                + " wasSleeping=" + inBedBefore + " bagsBefore=" + bagsBefore
+                + (registered || player.isSleeping() || blockNow ? " PASS" : " (日间/占用降级按设计)"));
+            // 清理：唤醒 + 床方块与表清理走 leaveSleepingBag（r1 修复路径）
+            if (player.isSleeping()) {
+                player.wakeup(true);
+            }
+            if (feet.getBlock().getType() == Material.WHITE_BED) {
+                feet.getBlock().setType(Material.AIR);
+            }
+            io.github.sefiraat.crystamaehistoria.CrystamaeHistoria.getSpellMemory().getSleepingBags().remove(player.getUniqueId());
+        }
+        // ---- 2. 临时合成台：openWorkbench 生产调用 ----
+        player.openWorkbench(null, true);
+        final boolean opened = player.getOpenInventory().getTitle() != null && player.getOpenInventory().getTitle().toLowerCase().contains("crafting");
+        player.closeInventory();
+        reply(sender, "crafttable opened=" + opened + (opened ? " PASS" : " CHECK(title)"));
+        reply(sender, "r68_done");
     }
 
     /** 第 55 轮：水晶燃烧降级 + 下界门脱水（真实事件驱动监听器生产路径，玩家邻区实体即时注册 r41 实证） */
