@@ -75,15 +75,16 @@ public class HarmonysSonata extends Spell {
                     upper.setType(material, false);
                     final Bisected bisectedTop = (Bisected) upper.getBlockData();
                     bisectedTop.setHalf(Bisected.Half.TOP);
-                    upper.setBlockData(bisectedTop);
+                    // 花朵为法术自身产物：半位写回不带 physics（与上两行放置惯例一致，r70）
+                    upper.setBlockData(bisectedTop, false);
                     final Bisected bisectedBottom = (Bisected) block.getBlockData();
                     bisectedBottom.setHalf(Bisected.Half.BOTTOM);
-                    block.setBlockData(bisectedBottom);
+                    block.setBlockData(bisectedBottom, false);
                 } else {
-                    block.setType(Material.DANDELION);
+                    block.setType(Material.DANDELION, false);
                 }
             } else {
-                block.setType(material);
+                block.setType(material, false);
             }
             block.getRelative(BlockFace.DOWN).setType(Material.GRASS_BLOCK);
             ParticleUtils.displayParticleEffect(block.getLocation(), Particle.FIREWORK, 0.5, 3);
