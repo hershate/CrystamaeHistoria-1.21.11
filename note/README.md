@@ -255,7 +255,9 @@ r68+r69 连续零发现（角度互异），**第十四轮循环收敛宣告**�
 写入族一致性；作物催熟/晶簇生长/AIR 移除判定保留 physics（**语义
 红线口径沉淀**：内部装饰效果非契约，玩法可构建依赖语义保留），
 60 步序列等价 true + 观察者实证归档；详见
-[report/perf/round-70](report/perf/round-70.md)。
+[report/perf/round-70](report/perf/round-70.md)。第 71 轮判定——
+重复状态应用/世界时间查询两角度零发现（光环重应用节拍即玩法语义，
+收敛 1/2），见 [report/perf/round-71](report/perf/round-71.md)。
 
 ## 维护要点（改代码前必读）
 
