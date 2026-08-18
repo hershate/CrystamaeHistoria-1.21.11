@@ -116,7 +116,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound62(w),
                 () -> benchRound63(w),
                 () -> benchRound70(w),
-                () -> benchRound73(w)
+                () -> benchRound73(w),
+                () -> benchRound76(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -4116,5 +4117,64 @@ public final class CHPerfBench extends JavaPlugin {
             standDirect.remove();
             standTask.remove();
         }, 16L);
+    }
+
+    // ==================== 第 76 轮：驻留条目每 tick 重复解析域（成熟晶簇） ====================
+
+    private void benchRound76(PrintWriter w) {
+        final World world = Bukkit.getWorlds().get(0);
+        final Block crystalBlock = world.getBlockAt(70, 220, 50);
+        crystalBlock.getChunk().load();
+        crystalBlock.setType(Material.LARGE_AMETHYST_BUD);
+
+        final io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition position =
+            new io.github.thebusybiscuit.slimefun4.libraries.dough.blocks.BlockPosition(crystalBlock.getLocation());
+        final Block cachedBlock = position.getBlock();
+        final Location cachedLoc = cachedBlock.getLocation().add(0.5, 0.2, 0.5);
+        final Particle.DustOptions staticDust = new Particle.DustOptions(org.bukkit.Color.YELLOW, 2);
+        final Location[] locHolder = new Location[1];
+
+        // —— 等价性：缓存解析与新鲜解析逐位一致 ——
+        boolean equiv = position.getBlock().getLocation().add(0.5, 0.2, 0.5).equals(cachedLoc);
+        equiv &= position.getBlock().getType() == cachedBlock.getType();
+        equiv &= staticDust.getColor().equals(org.bukkit.Color.YELLOW) && staticDust.getSize() == 2.0f;
+        equiv &= position.getBlock().equals(cachedBlock);
+        getLogger().info("round76 等价性(块解析/位置/材质/DustOptions 与新鲜构造一致): " + equiv);
+
+        // —— 隔离项 ——
+        time(w, "crystalResidency", "old_blockPosGetBlock", 100_000, () -> {
+            bh += position.getBlock().hashCode();
+        });
+        time(w, "crystalResidency", "cached_blockRef", 100_000, () -> {
+            bh += cachedBlock.hashCode();
+        });
+        time(w, "crystalResidency", "old_particleLoc", 100_000, () -> {
+            locHolder[0] = cachedBlock.getLocation().add(0.5, 0.2, 0.5);
+            bh += locHolder[0].hashCode();
+        });
+        time(w, "crystalResidency", "cached_particleLoc", 100_000, () -> {
+            bh += cachedLoc.hashCode();
+        });
+        time(w, "crystalResidency", "dust_new", 100_000, () -> {
+            bh += new Particle.DustOptions(org.bukkit.Color.YELLOW, 2).hashCode();
+        });
+        time(w, "crystalResidency", "dust_static", 100_000, () -> {
+            bh += staticDust.hashCode();
+        });
+
+        // —— 全序列：成熟晶簇单条目每 tick 体（含粒子调用，两形态相同粒子） ——
+        time(w, "crystalResidency", "old_fullTickBody", 20_000, () -> {
+            final Block b = position.getBlock();
+            bh += b.getType().ordinal();
+            final Location l = b.getLocation().add(0.5, 0.2, 0.5);
+            io.github.sefiraat.crystamaehistoria.utils.ParticleUtils.displayParticleEffect(l, Particle.WAX_OFF, 0.4, 3);
+        });
+        time(w, "crystalResidency", "new_fullTickBody", 20_000, () -> {
+            bh += cachedBlock.getType().ordinal();
+            io.github.sefiraat.crystamaehistoria.utils.ParticleUtils.displayParticleEffect(cachedLoc, Particle.WAX_OFF, 0.4, 3);
+        });
+
+        // 清理
+        Bukkit.getScheduler().runTaskLater(this, () -> crystalBlock.setType(Material.AIR), 2L);
     }
 }
