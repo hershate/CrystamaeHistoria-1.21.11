@@ -350,7 +350,9 @@ public class ChroniclerPanelCache extends AbstractCache {
             } else {
                 light.setLevel(lightDimming ? level - 1 : level + 1);
             }
-            block.setBlockData(light);
+            // 光源等级为内部装饰动画：不带 physics（免邻居通知级联，客户端仍收到
+            // 方块状态更新），与 HarmonysSonata/Cascada 既有惯例一致（r70）
+            block.setBlockData(light, false);
         }
     }
 
