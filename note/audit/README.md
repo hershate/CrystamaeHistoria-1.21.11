@@ -93,6 +93,7 @@
 | 80 | generic-stories↔枚举覆盖矩阵（[round-80](round-80.md)） | ✅ **零发现 2/2——循环收敛休眠（第六次）**（45 故事类型全合法+45 格每格恰 1 篇+跨档同名经 getStory(id,rarity) 分表消费核实为设计——数据-枚举形态与依赖形态互异） |
 | 81 | 命令层 Tab 补全权限矩阵（[round-81](round-81.md)） | ✅ 零发现 1/2（一级补全 canUse 前置过滤不泄露 op 专属命令名+子命令参数补全双守卫+补全口径与执行一致（getId/enabledSpells，eca4568 对称生效）——与 r39 执行面角度互异） |
 | 82 | Materials 材料族消费点清单（[round-82](round-82.md)） | ✅ **零发现 2/2——循环收敛休眠（第七次）**（24 字段消费核对：3 活跃 getter 全为已验证高频消费点+23 项为注册即消费形态（注册表/配方/图鉴），Lombok 生成冗余非死代码——与 r81 角度互异） |
+| 83 | Artistic 剩余物品消费点（[round-83](round-83.md)） | ✅ 零发现 1/2（InfinitePaintbrush 选色回绕/实体涂色权限/PDC 默认值安全+不消耗为设计语义；Pigment/Tintanno 注册即消费——Artistic 族消费链全闭环（Basic 有限 r53/Infinite 本轮/材料 r82 形态）） |
 
 ## 已修复问题汇总
 
