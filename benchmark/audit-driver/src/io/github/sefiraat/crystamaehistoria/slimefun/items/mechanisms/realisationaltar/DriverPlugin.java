@@ -468,6 +468,16 @@ public class DriverPlugin extends JavaPlugin {
         reply(sender, "lens displays " + displaysBefore + "→" + displaysAfter1 + "→" + displaysAfter2
             + " " + ((displaysAfter1 == displaysBefore + 1 && displaysAfter2 <= displaysAfter1) ? "PASS" : "CHECK"));
         player.getInventory().setItemInMainHand(prevMain);
+        // 终极探针：枚举五阶液化池实例的缓存（跨层注册混淆检测）
+        final StringBuilder tiers = new StringBuilder();
+        for (int t = 1; t <= 5; t++) {
+            final SlimefunItem tierItem = SlimefunItem.getById("CRY_LIQUEFACTION_BASIN_" + t);
+            if (tierItem instanceof LiquefactionBasin) {
+                final LiquefactionBasinCache c = ((LiquefactionBasin) tierItem).getCacheMap().get(new Location(world, x, y, z));
+                tiers.append('T').append(t).append('=').append(c == null ? "-" : c.getFillLevel()).append(' ');
+            }
+        }
+        reply(sender, "tier_scan " + tiers);
         reply(sender, "salts_done");
     }
 
