@@ -41,6 +41,14 @@ public class DriverPlugin extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length >= 1 && args[0].equals("legacy")) {
+            try {
+                driveLegacy(sender);
+            } catch (Exception e) {
+                reply(sender, "error=" + e);
+            }
+            return true;
+        }
         if (args.length >= 1 && args[0].equals("spells") && args.length >= 2) {
             try {
                 if (args[1].equals("cast")) {
@@ -276,6 +284,102 @@ public class DriverPlugin extends JavaPlugin {
             cx++;
         }
         reply(sender, "gadgets_done placed=" + placed + " cancelled=" + cancelled + " missing=" + missing + " range=x" + x + "..x" + (cx - 1));
+    }
+
+    /** 第 45 轮：旧存档兼容复验——v1 写入 → v2 双读断言（故事列表/法杖/区块晶簇） */
+    private void driveLegacy(CommandSender sender) {
+        // ---- 1. 故事列表 v1（PDC_STORIES + 旧容器编码）----
+        try {
+            final ItemStack legacyItem = new ItemStack(Material.DIORITE);
+            StoryUtils.makeStoried(legacyItem);
+            final int limit = StoryUtils.getMaxStoryAmount(legacyItem.getItemMeta());
+            int g = 0;
+            while (StoryUtils.getStoryAmount(legacyItem.getItemMeta()) < limit && g++ < 20) {
+                StoryUtils.commitStory(legacyItem, StoryUtils.pickStory(legacyItem), null);
+            }
+            final List<Story> sample = StoryUtils.getAllStories(legacyItem.getItemMeta());
+            // 复制到新物品并以 v1 编码写入
+            final ItemStack v1Item = new ItemStack(Material.DIORITE);
+            final org.bukkit.inventory.meta.ItemMeta v1Meta = v1Item.getItemMeta();
+            io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods.setCustom(
+                v1Meta, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_STORIES,
+                io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoriesDataType.TYPE, sample);
+            v1Meta.getPersistentDataContainer().set(io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_IS_STORIED, org.bukkit.persistence.PersistentDataType.BOOLEAN, true);
+            v1Item.setItemMeta(v1Meta);
+            final List<Story> readBack = StoryUtils.getAllStories(v1Item.getItemMeta());
+            boolean storiesOk = readBack != null && readBack.size() == (sample == null ? 0 : sample.size());
+            if (storiesOk && sample != null) {
+                for (int i = 0; i < sample.size(); i++) {
+                    if (!sample.get(i).getId().equals(readBack.get(i).getId())
+                        || sample.get(i).getRarity() != readBack.get(i).getRarity()) {
+                        storiesOk = false;
+                        break;
+                    }
+                }
+            }
+            reply(sender, "legacy_stories " + (storiesOk ? "PASS" : "FAIL")
+                + " written=" + (sample == null ? 0 : sample.size()) + " read=" + (readBack == null ? 0 : readBack.size()));
+        } catch (Throwable t) {
+            reply(sender, "legacy_stories ERROR " + t);
+        }
+
+        // ---- 2. 法杖 v1（PDC_STAVE_STORAGE + 旧每板容器编码）→ v2 readStaveMap 双读 ----
+        try {
+            final ItemStack stave = io.github.sefiraat.crystamaehistoria.slimefun.Tools.getStaveBasic().getItem().clone();
+            final io.github.sefiraat.crystamaehistoria.magic.spells.core.InstanceStave instance =
+                new io.github.sefiraat.crystamaehistoria.magic.spells.core.InstanceStave(stave);
+            final io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate plate =
+                new io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate(1, io.github.sefiraat.crystamaehistoria.magic.SpellType.PUSH, 123);
+            instance.getSpellInstanceMap().put(io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot.LEFT_CLICK, plate);
+            final ItemStack v1Stave = io.github.sefiraat.crystamaehistoria.slimefun.Tools.getStaveBasic().getItem().clone();
+            final org.bukkit.inventory.meta.ItemMeta sm = v1Stave.getItemMeta();
+            io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods.setCustom(
+                sm, io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_STAVE_STORAGE,
+                io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveDataType.TYPE, instance.getSpellInstanceMap());
+            v1Stave.setItemMeta(sm);
+            final java.util.Map<io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot, io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate> readMap =
+                io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveV2DataType.readStaveMap(v1Stave.getItemMeta());
+            boolean staveOk = readMap != null && readMap.size() == 1;
+            if (staveOk) {
+                final io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate rp =
+                    readMap.get(io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot.LEFT_CLICK);
+                staveOk = rp != null && rp.getStoredSpell() == io.github.sefiraat.crystamaehistoria.magic.SpellType.PUSH && rp.getCrysta() == 123;
+            }
+            reply(sender, "legacy_stave " + (staveOk ? "PASS" : "FAIL") + " readSize=" + (readMap == null ? -1 : readMap.size()));
+        } catch (Throwable t) {
+            reply(sender, "legacy_stave ERROR " + t);
+        }
+
+        // ---- 3. 区块晶簇 v1（旧容器编码）→ v2 readChunkStories 双读 ----
+        try {
+            final Player player = Bukkit.getOnlinePlayers().isEmpty() ? null : Bukkit.getOnlinePlayers().iterator().next();
+            if (player == null) {
+                reply(sender, "legacy_chunk SKIP no_player");
+            } else {
+                final org.bukkit.Chunk chunk = player.getLocation().getChunk();
+                final Story s = StoryUtils.pickStory(new ItemStack(Material.DIORITE));
+                final Story cs = s == null ? null : s.copy();
+                boolean chunkOk = false;
+                if (cs != null) {
+                    cs.setBlockPosition(new BlockPosition(player.getLocation().getBlock()));
+                    final List<Story> write = new java.util.ArrayList<>();
+                    write.add(cs);
+                    final org.bukkit.NamespacedKey testKey = new org.bukkit.NamespacedKey(this, "legacy_test_v1");
+                    io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods.setCustom(
+                        chunk, testKey,
+                        io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoryChunkDataType.TYPE, write);
+                    final List<Story> readC = io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStoryChunkV2DataType.readChunkStories(chunk, testKey);
+                    chunkOk = readC != null && readC.size() == 1
+                        && readC.get(0).getId().equals(cs.getId())
+                        && readC.get(0).getBlockPosition() != null;
+                    chunk.getPersistentDataContainer().remove(testKey);
+                }
+                reply(sender, "legacy_chunk " + (chunkOk ? "PASS" : "FAIL"));
+            }
+        } catch (Throwable t) {
+            reply(sender, "legacy_chunk ERROR " + t);
+        }
+        reply(sender, "legacy_done");
     }
 
     /** 第 44 轮：多原型法术施放（生产路径：CastInformation+freeze+castSpell，同 test-spell） */
