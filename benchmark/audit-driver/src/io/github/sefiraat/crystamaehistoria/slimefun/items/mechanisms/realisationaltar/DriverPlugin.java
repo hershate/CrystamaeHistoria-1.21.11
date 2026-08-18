@@ -41,6 +41,20 @@ public class DriverPlugin extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length >= 1 && args[0].equals("spells") && args.length >= 2) {
+            try {
+                if (args[1].equals("cast")) {
+                    driveSpellsCast(sender);
+                } else if (args[1].equals("stat")) {
+                    driveSpellsStat(sender);
+                } else {
+                    reply(sender, "usage=spells cast|stat");
+                }
+            } catch (Exception e) {
+                reply(sender, "error=" + e);
+            }
+            return true;
+        }
         if (args.length >= 1 && args[0].equals("gadgets") && args.length >= 5) {
             try {
                 driveGadgets(sender, args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
@@ -262,6 +276,60 @@ public class DriverPlugin extends JavaPlugin {
             cx++;
         }
         reply(sender, "gadgets_done placed=" + placed + " cancelled=" + cancelled + " missing=" + missing + " range=x" + x + "..x" + (cx - 1));
+    }
+
+    /** 第 44 轮：多原型法术施放（生产路径：CastInformation+freeze+castSpell，同 test-spell） */
+    private void driveSpellsCast(CommandSender sender) {
+        final Player player = Bukkit.getOnlinePlayers().isEmpty() ? null : Bukkit.getOnlinePlayers().iterator().next();
+        if (player == null) {
+            reply(sender, "error=no_player");
+            return;
+        }
+        final String[] ids = {
+            "HEAL", "BRIGHT",
+            "FIREBALL", "FAN_OF_ARROWS",
+            "TIME_COMPRESSION", "PUSH",
+            "STAR_FALL",
+            "CALL_LIGHTNING",
+            "SUMMON_GOLEM",
+            "PHANTOMS_FLIGHT"
+        };
+        int ok = 0, err = 0;
+        for (String id : ids) {
+            final io.github.sefiraat.crystamaehistoria.magic.spells.core.Spell st = io.github.sefiraat.crystamaehistoria.magic.SpellType.getById(id);
+            if (st == null) {
+                reply(sender, "missing=" + id);
+                continue;
+            }
+            try {
+                final io.github.sefiraat.crystamaehistoria.magic.CastInformation ci =
+                    new io.github.sefiraat.crystamaehistoria.magic.CastInformation(player, 2);
+                ci.freezeTargetsOnCast();
+                st.castSpell(ci);
+                ok++;
+                reply(sender, "cast_ok=" + id);
+            } catch (Throwable t) {
+                err++;
+                reply(sender, "cast_err=" + id + ":" + t.getClass().getSimpleName() + ":" + t.getMessage());
+            }
+        }
+        reply(sender, "cast_done ok=" + ok + " err=" + err);
+    }
+
+    /** 第 44 轮：SpellMemory 全表尺寸快照（生命周期回收断言用） */
+    private void driveSpellsStat(CommandSender sender) {
+        final io.github.sefiraat.crystamaehistoria.SpellMemory sm =
+            io.github.sefiraat.crystamaehistoria.CrystamaeHistoria.getSpellMemory();
+        reply(sender, "stat projectiles=" + sm.getProjectileMap().size()
+            + " fallingBlocks=" + sm.getFallingBlockMap().size()
+            + " strikes=" + sm.getStrikeMap().size()
+            + " ticking=" + sm.getTickingCastables().size()
+            + " summons=" + sm.getSummonedEntities().size()
+            + " flight=" + sm.getPlayersWithFlight().size()
+            + " frozenTime=" + sm.getPlayersWithFrozenTime().size()
+            + " frozenWeather=" + sm.getPlayersWithFrozenWeather().size()
+            + " displayItems=" + sm.getDisplayItems().size()
+            + " sleepBags=" + sm.getSleepingBags().size());
     }
 
     private int countItems(Location l) {
