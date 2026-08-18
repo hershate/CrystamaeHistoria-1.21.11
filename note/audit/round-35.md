@@ -37,10 +37,12 @@
    保持打开期间看到的是陈旧副本（名称/计数不更新）。**验证物品真实状态必须用
    服务器端神谕**：物品丢出后 `/data get entity @e[type=item]`，或停服读
    `stored-inventories/*.sfi`。
-2. **面板类 GUI 默认封锁玩家背包侧点击**（ChestMenu `clickable=false`，
-   InfinityLib 语义）：从背包拾取物品到游标的点击会被服务器取消，mineflayer
-   的乐观本地状态会误导（本轮石头/圆石"看似插入实未落盘"的假象来源；真实
-   客户端会正确处理取消与槽位重同步）。机器人操作应先持物再开 GUI。
+2. **~~面板类 GUI 默认封锁玩家背包侧点击~~（round-36 更正：此推断错误）**：
+   REF 源码 `BlockMenuPreset.clone()`（:226）对每个 BlockMenu 调用
+   `setPlayerInventoryClickable(true)`——机械 GUI 的玩家背包点击**是放行的**
+   （r35 闪长岩成功入槽即为实证）。机器人"看似插入实未落盘"的假象来自
+   mineflayer 对 90 槽 BlockMenu 窗口原始槽位号映射的客户端怪癖，真实
+   客户端不受影响。详见 [round-36](round-36.md)。
 3. 出生点常驻区块不会因传送卸载——想触发 BlockMenu 落盘需停服或等自动保存。
 
 ## 验证
