@@ -321,17 +321,19 @@ public class ChroniclerPanelCache extends AbstractCache {
                 final Story unique = remaining == 1 ? StoryUtils.pickUniqueStory(i) : null;
                 if (story != null || unique != null) {
                     StoryUtils.commitStory(i, story, unique);
-                }
-                if (remaining == 1 && activePlayer != null) {
-                    // That was the last story, unlock unique and set research
-                    if (!PlayerStatistics.hasUnlockedUniqueStory(activePlayer, blockDefinition)) {
-                        PlayerStatistics.unlockUniqueStory(activePlayer, blockDefinition);
+                    if (remaining == 1 && activePlayer != null) {
+                        // That was the last story, unlock unique and set research
+                        if (!PlayerStatistics.hasUnlockedUniqueStory(activePlayer, blockDefinition)) {
+                            PlayerStatistics.unlockUniqueStory(activePlayer, blockDefinition);
+                        }
+                        PlayerStatistics.addChronicle(activePlayer, blockDefinition);
                     }
-                    PlayerStatistics.addChronicle(activePlayer, blockDefinition);
+                    // 闪电 = 故事实际写入的信号：仅提交成功后触发——空池时不假闪电、
+                    // 不空发解锁/编年史统计（统计与实际写入保持一致）
+                    blockMenu.getBlock().getWorld().strikeLightningEffect(blockMiddle);
+                    // 提交修改了物品元数据：失效备忘录，下 tick 重判
+                    verdictItem = null;
                 }
-                blockMenu.getBlock().getWorld().strikeLightningEffect(blockMiddle);
-                // 提交可能修改了物品元数据：失效备忘录，下 tick 重判
-                verdictItem = null;
             }
         }
     }
