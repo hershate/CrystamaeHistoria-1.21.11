@@ -16,3 +16,4 @@ dependency-reduced-pom.xml
 /benchmark/results/latest.tsv
 /benchmark/server-addon/CHPerfBench.jar
 /benchmark/server-addon/build/
+benchmark/audit-driver/build/
