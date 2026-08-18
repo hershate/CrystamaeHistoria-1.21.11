@@ -115,6 +115,8 @@
 | 74 | 判定轮（第十六轮收敛 1/2，角度：运行时文本模式处理/数值解析）：唯一 matches 站点为 EphemeralWorkBench 启动静态块（冷）、RefillableUseItem 为预编译 Pattern；split/SimpleDateFormat/BigDecimal/replaceAll 全库零命中；parseInt 全 5 站点为命令/恢复路径——零发现（[round-74](round-74.md)） | ✅ 完成（判定轮，无变更） |
 | 75 | 判定轮（**第十六轮收敛 2/2**，角度：每秒清理链空表守卫一致性——12/12 remove* 均有 isEmpty 早退（r1 模式完备）；运行期注册表遍历——全部启动/注册期，运行期全为 O(1) 访问）：零发现——**r74+r75 连续零发现（角度互异）→ 第十六轮循环收敛**，版本收口 0.17.0（[round-75](round-75.md)，含循环总账） | ✅ 完成（判定轮，无变更，**第十六轮循环收敛**） |
 | 76 | 驻留条目每 tick 重复解析域（**第十七轮循环开启**，长期存活条目形态角度）：tryGrow 晶簇条目存活至破坏——每株每 tick getBlock 解析 + 粒子 Location 两次分配 + 镀金 DustOptions 构造全为位置恒定纯浪费——按条目缓存 Block/Location + DustOptions 静态化 + isEmpty 守卫：成熟晶株每 tick 体 39.70→24.65ns（**1.61x 卫生级**），粒子节拍数量不变；缓存与新鲜构造逐位一致 true（[round-76](round-76.md)） | ✅ 完成（服务器回归通过，242 变体，0 CH 错误） |
+| 77 | 判定轮（第十七轮收敛 1/2，角度：液化池 tick 全形态审计——getCenterLocation/resolver/dirty/fillLevel 全部已缓存（r11/r40），无条件扫描=拾取玩法语义（r35 空域锚定）；gadget 扫描=主动功能无节流空间）：零发现（[round-77](round-77.md)） | ✅ 完成（判定轮，无变更） |
+| 78 | 判定轮（**第十七轮收敛 2/2**，角度：getLocation 链 25 站点全分类——静态驻留已全部缓存化，残留全为动态语义/事件级；BlockPosition.getBlock 仅剩 2 处一次性站点）：零发现——**r77+r78 连续零发现（角度互异）→ 第十七轮循环收敛**，版本收口 0.18.0（[round-78](round-78.md)，含循环总账） | ✅ 完成（判定轮，无变更，**第十七轮循环收敛**） |
 | 71 | 判定轮（第十五轮收敛 1/2，角度：重复状态应用形态/世界时间查询形态）：12 个效果应用点 tick 间隔逐一核对——重应用节拍即光环玩法语义（3×20t=1s 标准 + ChillWind 5t 设计节拍，节流化改变 HUD 计时形态拒绝，先例 r37/r65）；TimePeriod 为 ~ns 整数比较且 chance 短路在前——零发现（[round-71](round-71.md)） | ✅ 完成（判定轮，无变更） |
 | 72 | 判定轮（**第十五轮收敛 2/2**，角度：集合快照分配 toArray/copyOf——全库零命中；instanceof 链分派——单发检查无级联；String.format/MessageFormat——全启动期/事件级/已缓存）：零发现——**r71+r72 连续零发现（角度互异）→ 第十五轮循环收敛**，版本收口 0.16.0（[round-72](round-72.md)，含循环总账） | ✅ 完成（判定轮，无变更，**第十五轮循环收敛**） |
 

@@ -282,7 +282,10 @@ r74+r75 连续判定收敛，**第十六轮循环收口 0.17.0**；总账见
 触发，2026-08-18 起）第 76 轮驻留条目重复解析域：晶簇条目存活至
 破坏——Block/粒子 Location 按条目缓存 + DustOptions 静态化，成熟
 晶株每 tick 体 1.61x（卫生级），粒子语义不变；详见
-[report/perf/round-76](report/perf/round-76.md)。
+[report/perf/round-76](report/perf/round-76.md)。第 77/78 轮判定——
+液化池 tick 全形态/gadget 扫描/getLocation 动态链/块解析残留四角度
+零发现，r77+r78 连续判定收敛，**第十七轮循环收口 0.18.0**；总账见
+[report/perf/round-78](report/perf/round-78.md)。
 
 ## 维护要点（改代码前必读）
 
