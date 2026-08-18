@@ -41,6 +41,14 @@ public class DriverPlugin extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length >= 1 && args[0].equals("configurator") && args.length >= 6) {
+            try {
+                driveConfigurator(sender, args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]), args[5]);
+            } catch (Exception e) {
+                reply(sender, "error=" + e);
+            }
+            return true;
+        }
         if (args.length >= 1 && args[0].equals("stats")) {
             try {
                 driveStats(sender);
@@ -300,6 +308,46 @@ public class DriverPlugin extends JavaPlugin {
             cx++;
         }
         reply(sender, "gadgets_done placed=" + placed + " cancelled=" + cancelled + " missing=" + missing + " range=x" + x + "..x" + (cx - 1));
+    }
+
+    /** 第 48 轮：法杖配置器驱动：fill（法杖+充能板入槽）/ assert（组装后 PDC 断言） */
+    private void driveConfigurator(CommandSender sender, String worldName, int x, int y, int z, String mode) {
+        final World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            reply(sender, "error=world_not_found");
+            return;
+        }
+        final BlockMenu menu = BlockStorage.getInventory(new Location(world, x, y, z));
+        if (menu == null) {
+            reply(sender, "error=no_menu");
+            return;
+        }
+        if (mode.equals("fill")) {
+            final SlimefunItem staveSf = SlimefunItem.getById("CRY_STAVE_1");
+            if (staveSf == null) {
+                reply(sender, "error=no_stave_item");
+                return;
+            }
+            menu.replaceExistingItem(19, staveSf.getItem().clone());
+            menu.replaceExistingItem(14, io.github.sefiraat.crystamaehistoria.slimefun.items.tools.plates.ChargedPlate.getChargedPlate(1, io.github.sefiraat.crystamaehistoria.magic.SpellType.PUSH, 50));
+            reply(sender, "configurator_filled stave=19 plate=14");
+        } else if (mode.equals("assert")) {
+            final ItemStack stave = menu.getItemInSlot(19);
+            boolean ok = false;
+            String detail = "noStave";
+            if (stave != null && stave.getType() == Material.STICK) {
+                final java.util.Map<io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot, io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate> map =
+                    io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentStaveV2DataType.readStaveMap(stave.getItemMeta());
+                final io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate plate =
+                    map == null ? null : map.get(io.github.sefiraat.crystamaehistoria.slimefun.items.tools.stave.SpellSlot.LEFT_CLICK);
+                ok = plate != null && plate.getStoredSpell() == io.github.sefiraat.crystamaehistoria.magic.SpellType.PUSH && plate.getCrysta() == 50;
+                detail = "plate=" + (plate == null ? "null" : plate.getStoredSpell() + "/" + plate.getCrysta())
+                    + " platesSlot14=" + (menu.getItemInSlot(14) == null || menu.getItemInSlot(14).getType().isAir() ? "cleared" : "left");
+            }
+            reply(sender, "configurator_assert " + (ok ? "PASS" : "FAIL") + " " + detail);
+        } else {
+            reply(sender, "usage=configurator <world> <x> <y> <z> fill|assert");
+        }
     }
 
     /** 第 47 轮：统计写入链驱动验证（六写点→纪元失效→落盘） */
