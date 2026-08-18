@@ -59,6 +59,7 @@
 | 46 | 图鉴 GUI 打开/统计路径验证（[round-46](round-46.md)） | ✅ 完成（三 FlexGroup 生产路径打开全成功零异常 + rank 统计正常；harness 限制如实归档：指南类 GUI 按钮名对 mineflayer 不可见，翻页点击不可自动驱动——翻页数据层已由 perf r21-23/31 覆盖，交互层建议真人复核；驱动新增 compendium 子命令） |
 | 47 | 统计写入链驱动验证（[round-47](round-47.md)） | ✅ 完成（六写点零异常→纪元缓存读回全真→force 落盘→player_stats.yml 磁盘核验——写入/失效/读回/落盘全链实证；player_stats.yml 快照还原；驱动新增 stats 子命令） |
 | 48 | 法杖配置器驱动验证 + 组装链复核（[round-48](round-48.md)） | ◐ 完成（放置注册/槽位填充 ✅；ADD/REMOVE 处理器逐行复核无新缺陷（损坏板退还双路径在位）；GUI 点击未成——mineflayer/BlockMenu 非确定性交互（r36 家族），建议真人复核；驱动新增 configurator fill|assert 子命令） |
+| 49 | Waystone/传送网驱动验证（[round-49](round-49.md)） | ◐ 完成（**绑定生产路径 PASS**（真实 PlayerInteractEvent→PDC 写入，两度实证）；传送链零异常+代码复核无缺陷——teleportAsync 等待客户端 ACK 而 mineflayer 不发送（vanilla /tp 对照证明非处理器条件问题），如实归档为自动化边界；驱动新增 waystone/tpasync 子命令） |
 
 ## 已修复问题汇总
 

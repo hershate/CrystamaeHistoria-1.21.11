@@ -41,6 +41,30 @@ public class DriverPlugin extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length >= 5 && args[0].equals("tpasync")) {
+            try {
+                driveTpAsync(sender, args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
+            } catch (Exception e) {
+                reply(sender, "error=" + e);
+            }
+            return true;
+        }
+        if (args.length >= 6 && args[0].equals("waystone") && args[5].equals("pos")) {
+            try {
+                drivePos(sender, Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
+            } catch (Exception e) {
+                reply(sender, "error=" + e);
+            }
+            return true;
+        }
+        if (args.length >= 1 && args[0].equals("waystone") && args.length >= 5) {
+            try {
+                driveWaystone(sender, args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
+            } catch (Exception e) {
+                reply(sender, "error=" + e);
+            }
+            return true;
+        }
         if (args.length >= 1 && args[0].equals("configurator") && args.length >= 6) {
             try {
                 driveConfigurator(sender, args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]), args[5]);
@@ -308,6 +332,80 @@ public class DriverPlugin extends JavaPlugin {
             cx++;
         }
         reply(sender, "gadgets_done placed=" + placed + " cancelled=" + cancelled + " missing=" + missing + " range=x" + x + "..x" + (cx - 1));
+    }
+
+    /** teleportAsync×mineflayer 微探针：fired 即回，60 tick 后回报完成态与位置 */
+    private void driveTpAsync(CommandSender sender, String worldName, int x, int y, int z) {
+        final World world = Bukkit.getWorld(worldName);
+        final Player player = Bukkit.getOnlinePlayers().isEmpty() ? null : Bukkit.getOnlinePlayers().iterator().next();
+        if (world == null || player == null) {
+            reply(sender, "error=world_or_player");
+            return;
+        }
+        final java.util.concurrent.atomic.AtomicBoolean done = new java.util.concurrent.atomic.AtomicBoolean(false);
+        player.teleportAsync(new Location(world, x + 0.5, y, z + 0.5)).thenRun(() -> done.set(true));
+        reply(sender, "tpasync_fired");
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            final org.bukkit.Location now = player.getLocation();
+            reply(sender, "tpasync_result completed=" + done.get()
+                + " now=" + now.getBlockX() + ',' + now.getBlockY() + ',' + now.getBlockZ());
+        }, 60L);
+    }
+
+    /** 异步传送后的位置查询（两段式验证） */
+    private void drivePos(CommandSender sender, int x, int y, int z) {
+        final Player player = Bukkit.getOnlinePlayers().isEmpty() ? null : Bukkit.getOnlinePlayers().iterator().next();
+        if (player == null) {
+            reply(sender, "error=no_player");
+            return;
+        }
+        final org.bukkit.Location now = player.getLocation();
+        final double dist = now.distance(new Location(now.getWorld(), x + 1.5, y, z + 0.5));
+        reply(sender, "pos now=" + now.getBlockX() + ',' + now.getBlockY() + ',' + now.getBlockZ()
+            + " distToWaystoneTop=" + String.format("%.1f", dist) + " " + (dist < 3.0 ? "PASS" : "FAIL"));
+    }
+
+    /** 第 49 轮：Waystone 绑定-传送往返（真实 PlayerInteractEvent 驱动生产路径） */
+    private void driveWaystone(CommandSender sender, String worldName, int x, int y, int z) {
+        final World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            reply(sender, "error=world_not_found");
+            return;
+        }
+        final Player player = Bukkit.getOnlinePlayers().isEmpty() ? null : Bukkit.getOnlinePlayers().iterator().next();
+        if (player == null) {
+            reply(sender, "error=no_player");
+            return;
+        }
+        final Block waystone = world.getBlockAt(x, y, z);
+        if (!(me.mrCookieSlime.Slimefun.api.BlockStorage.check(waystone) instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.gadgets.Waystone)) {
+            reply(sender, "error=waystone_not_registered block=" + waystone.getType());
+            return;
+        }
+        final SlimefunItem latticeSf = SlimefunItem.getById("CRY_RECALL_LATTICE");
+        if (latticeSf == null) {
+            reply(sender, "error=no_lattice");
+            return;
+        }
+        final ItemStack lattice = latticeSf.getItem().clone();
+        // 1) 绑定：潜行 + 右击路标（真实 PlayerInteractEvent → SlimefunItemListener → ItemUseHandler.setLocation）
+        player.setSneaking(true);
+        final org.bukkit.event.player.PlayerInteractEvent bindEvent = new org.bukkit.event.player.PlayerInteractEvent(
+            player, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, lattice, waystone, org.bukkit.block.BlockFace.UP, org.bukkit.inventory.EquipmentSlot.HAND);
+        Bukkit.getPluginManager().callEvent(bindEvent);
+        player.setSneaking(false);
+        final boolean bound = lattice.getItemMeta().getPersistentDataContainer().has(io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_RECALL_LOCATION, io.github.sefiraat.crystamaehistoria.utils.datatypes.DataType.LOCATION);
+        reply(sender, "bind " + (bound ? "PASS" : "FAIL") + " (lattice meta PDC 含位置)");
+        // 2) 传送：远离后非潜行右击（用绑定后的物品——重新从处理器写入后的物品取 meta）
+        if (bound) {
+            player.teleport(new Location(world, x + 40.5, y, z + 0.5));
+            final org.bukkit.event.player.PlayerInteractEvent tpEvent = new org.bukkit.event.player.PlayerInteractEvent(
+                player, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, lattice, waystone, org.bukkit.block.BlockFace.UP, org.bukkit.inventory.EquipmentSlot.HAND);
+            Bukkit.getPluginManager().callEvent(tpEvent);
+            final org.bukkit.Location now = player.getLocation();
+            final double dist = now.distance(new Location(world, x + 1.5, y + 1.0, z + 0.5));
+            reply(sender, "teleport_fired=async");
+        }
     }
 
     /** 第 48 轮：法杖配置器驱动：fill（法杖+充能板入槽）/ assert（组装后 PDC 断言） */
