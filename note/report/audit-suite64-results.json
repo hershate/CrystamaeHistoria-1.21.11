@@ -1,0 +1,122 @@
+[
+  {
+    "name": "place_basin",
+    "pass": true,
+    "out": "AUDIT37|placed=true block=CAULDRON"
+  },
+  {
+    "name": "place_gilder",
+    "pass": true,
+    "out": "AUDIT37|placed=true block=WARPED_FENCE"
+  },
+  {
+    "name": "place_altar",
+    "pass": true,
+    "out": "AUDIT37|placed=true block=CHISELED_DEEPSLATE"
+  },
+  {
+    "name": "place_configurator",
+    "pass": true,
+    "out": "AUDIT37|placed=true block=CUT_COPPER"
+  },
+  {
+    "name": "place_waystone",
+    "pass": true,
+    "out": "AUDIT37|placed=true block=END_STONE_BRICK_WALL"
+  },
+  {
+    "name": "gadgets",
+    "pass": false,
+    "out": "AUDIT37|gadgets_done placed=13 cancelled=0 missing=0 range=x2..x14"
+  },
+  {
+    "name": "altar",
+    "pass": true,
+    "out": "AUDIT37|cache_found=true | AUDIT37|storied_item=ready limit=3 stories=4 | AUDIT37|injected=true | AUDIT37|after_drive mapSize=4 small=0 medium=0 large=4 inputLe"
+  },
+  {
+    "name": "gilder",
+    "pass": true,
+    "out": "AUDIT37|cache_found=true fill0=0 | AUDIT37|absorb fillAfter=1 pass=true | AUDIT37|gild fillBefore=1 fillAfter=0 heldConsumed=true pass=true | AUDIT37|result=PAS"
+  },
+  {
+    "name": "basin",
+    "pass": true,
+    "out": "AUDIT37|cache_found=true fill0=0 | AUDIT37|recipe_found=[ELEMENTAL, MECHANICAL, ALCHEMICAL] | AUDIT37|preDiag type=ELEMENTAL stack=PLAYER_HEADx1 sameAsPrev=fals"
+  },
+  {
+    "name": "basinplate",
+    "pass": false,
+    "out": "AUDIT37|recharge expected=13 got=13 fillAfter=0 PASS | AUDIT37|mismatch fillAfter=0 platesLeft=1 FAIL | AUDIT37|corrupt platesLeft=1 fillAfter=0 FAIL | AUDIT37|"
+  },
+  {
+    "name": "spells_cast",
+    "pass": true,
+    "out": "AUDIT37|cast_ok=HEAL | AUDIT37|cast_ok=BRIGHT | AUDIT37|cast_ok=FIREBALL | AUDIT37|cast_ok=FAN_OF_ARROWS | AUDIT37|cast_ok=TIME_COMPRESSION | AUDIT37|cast_ok=PU"
+  },
+  {
+    "name": "spells_stat",
+    "pass": false,
+    "out": "AUDIT37|stat projectiles=1 fallingBlocks=0 strikes=0 ticking=3 summons=2 flight=0 frozenTime=0 frozenWeather=0 displayItems=1 sleepBags=0"
+  },
+  {
+    "name": "legacy",
+    "pass": true,
+    "out": "AUDIT37|legacy_stories PASS written=1 read=1 | AUDIT37|legacy_stave PASS readSize=1 | AUDIT37|legacy_chunk PASS | AUDIT37|legacy_done"
+  },
+  {
+    "name": "stats",
+    "pass": true,
+    "out": "AUDIT37|readback usage=true spell=true unique=true | AUDIT37|stats_done filePersisted=true pass=true"
+  },
+  {
+    "name": "configurator_add",
+    "pass": true,
+    "out": "AUDIT37|configurator_filled stave=19 plate=14 | AUDIT37|configurator_add_invoked"
+  },
+  {
+    "name": "configurator_assert",
+    "pass": true,
+    "out": "AUDIT37|configurator_assert PASS plate=PUSH/50 platesSlot14=cleared"
+  },
+  {
+    "name": "waystone",
+    "pass": true,
+    "out": "AUDIT37|bind PASS (lattice meta PDC 含位置) | AUDIT37|teleport_fired=async"
+  },
+  {
+    "name": "compendium_spells",
+    "pass": true,
+    "out": "AUDIT37|compendium_opened=spells"
+  },
+  {
+    "name": "compendium_stories",
+    "pass": true,
+    "out": "AUDIT37|compendium_opened=stories"
+  },
+  {
+    "name": "compendium_gilded",
+    "pass": true,
+    "out": "AUDIT37|compendium_opened=gilded"
+  },
+  {
+    "name": "brush",
+    "pass": false,
+    "out": "AUDIT37|brush_depleted_at=100 (堆已空——LimitedUseItem 耗尽语义)"
+  },
+  {
+    "name": "crysta",
+    "pass": true,
+    "out": "AUDIT37|downgrade PASS (RARE→UNCOMMON 事件取消=true now=UNCOMMON valid=true) | AUDIT37|drain PASS (in=PLAYER_HEAD expected=PLAYER_HEAD now=PLAYER_HEAD)"
+  },
+  {
+    "name": "exalted_time",
+    "pass": false,
+    "out": "AUDIT37|exalted=time frozenTimeTable=HIT frozenWeatherTable=miss playerTime=6000 weather=null"
+  },
+  {
+    "name": "salts",
+    "pass": true,
+    "out": "AUDIT37|hand_probe type=REDSTONE getByItem=CRY_THAUMATURGIC_SALT | AUDIT37|perm_probe BREAK_BLOCK=true check=CRY_LIQUEFACTION_BASIN_1 | AUDIT37|salts fill=3→0 P"
+  }
+]
