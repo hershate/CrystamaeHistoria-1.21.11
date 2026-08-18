@@ -41,6 +41,14 @@ public class DriverPlugin extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length >= 1 && args[0].equals("exalted")) {
+            try {
+                driveExalted(sender, args.length >= 2 ? args[1] : "");
+            } catch (Exception e) {
+                reply(sender, "error=" + e);
+            }
+            return true;
+        }
         if (args.length >= 5 && args[0].equals("basinplate")) {
             try {
                 driveBasinPlate(sender, args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
@@ -340,6 +348,37 @@ public class DriverPlugin extends JavaPlugin {
             cx++;
         }
         reply(sender, "gadgets_done placed=" + placed + " cancelled=" + cancelled + " missing=" + missing + " range=x" + x + "..x" + (cx - 1));
+    }
+
+    /** 第 52 轮：Exalted 物品效果链（onExalt 生产方法 + SpellMemory 冻结表登记/过期回收） */
+    private void driveExalted(CommandSender sender, String which) {
+        final Player player = Bukkit.getOnlinePlayers().isEmpty() ? null : Bukkit.getOnlinePlayers().iterator().next();
+        if (player == null) {
+            reply(sender, "error=no_player");
+            return;
+        }
+        final String id = which.equals("weather") ? "CRY_EXALTED_SUN" : "CRY_EXALTED_DAWN";
+        final SlimefunItem sfi = SlimefunItem.getById(id);
+        if (!(sfi instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.exhalted.ExaltedItem)) {
+            reply(sender, "error=not_exalted id=" + id + " found=" + (sfi != null));
+            return;
+        }
+        final io.github.sefiraat.crystamaehistoria.slimefun.items.exhalted.ExaltedItem exalted =
+            (io.github.sefiraat.crystamaehistoria.slimefun.items.exhalted.ExaltedItem) sfi;
+        try {
+            exalted.onExalt(exalted, player.getLocation().clone());
+        } catch (Throwable t) {
+            reply(sender, "exalt_error=" + t);
+            return;
+        }
+        final io.github.sefiraat.crystamaehistoria.SpellMemory sm =
+            io.github.sefiraat.crystamaehistoria.CrystamaeHistoria.getSpellMemory();
+        final boolean timeHit = sm.getPlayersWithFrozenTime().containsKey(player.getUniqueId());
+        final boolean weatherHit = sm.getPlayersWithFrozenWeather().containsKey(player.getUniqueId());
+        reply(sender, "exalted=" + which
+            + " frozenTimeTable=" + (timeHit ? "HIT" : "miss")
+            + " frozenWeatherTable=" + (weatherHit ? "HIT" : "miss")
+            + " playerTime=" + player.getPlayerTime() + " weather=" + player.getPlayerWeather());
     }
 
     /** 第 50 轮：液化池充能板三分支（同法术再充能/异法术销毁/损坏 PDC 吞没） */
