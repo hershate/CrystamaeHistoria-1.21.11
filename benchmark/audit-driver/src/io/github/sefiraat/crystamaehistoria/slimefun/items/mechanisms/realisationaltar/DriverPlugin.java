@@ -428,6 +428,11 @@ public class DriverPlugin extends JavaPlugin {
         final ItemStack salts = saltsSf.getItem().clone();
         final ItemStack prevMain = player.getInventory().getItemInMainHand();
         player.getInventory().setItemInMainHand(salts);
+        reply(sender, "hand_probe type=" + player.getInventory().getItemInMainHand().getType() + " getByItem=" + (SlimefunItem.getByItem(player.getInventory().getItemInMainHand()) != null ? SlimefunItem.getByItem(player.getInventory().getItemInMainHand()).getId() : "null"));
+        reply(sender, "perm_probe BREAK_BLOCK=" + io.github.sefiraat.crystamaehistoria.utils.GeneralUtils.hasPermission(
+                player, basinBlock, io.github.thebusybiscuit.slimefun4.libraries.dough.protection.Interaction.BREAK_BLOCK)
+            + " check=" + (me.mrCookieSlime.Slimefun.api.BlockStorage.check(basinBlock) != null
+                ? me.mrCookieSlime.Slimefun.api.BlockStorage.check(basinBlock).getId() : "null"));
         final org.bukkit.event.player.PlayerInteractEvent saltsEvent = new org.bukkit.event.player.PlayerInteractEvent(
             player, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, salts, basinBlock, org.bukkit.block.BlockFace.UP, org.bukkit.inventory.EquipmentSlot.HAND);
         Bukkit.getPluginManager().callEvent(saltsEvent);
