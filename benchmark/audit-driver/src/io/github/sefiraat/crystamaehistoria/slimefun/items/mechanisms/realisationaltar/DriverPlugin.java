@@ -830,7 +830,7 @@ public class DriverPlugin extends JavaPlugin {
             reply(sender, "error=no_menu");
             return;
         }
-        if (mode.equals("fill")) {
+        if (mode.equals("fill") || mode.equals("add")) {
             final SlimefunItem staveSf = SlimefunItem.getById("CRY_STAVE_1");
             if (staveSf == null) {
                 reply(sender, "error=no_stave_item");
@@ -839,6 +839,20 @@ public class DriverPlugin extends JavaPlugin {
             menu.replaceExistingItem(19, staveSf.getItem().clone());
             menu.replaceExistingItem(14, io.github.sefiraat.crystamaehistoria.slimefun.items.tools.plates.ChargedPlate.getChargedPlate(1, io.github.sefiraat.crystamaehistoria.magic.SpellType.PUSH, 50));
             reply(sender, "configurator_filled stave=19 plate=14");
+            if (mode.equals("add")) {
+                final Player clicker = Bukkit.getOnlinePlayers().isEmpty() ? null : Bukkit.getOnlinePlayers().iterator().next();
+                if (clicker == null) {
+                    reply(sender, "error=no_player");
+                    return;
+                }
+                final me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ChestMenu.MenuClickHandler handler = menu.getMenuClickHandler(30);
+                if (handler == null) {
+                    reply(sender, "configurator_add_no_handler");
+                    return;
+                }
+                handler.onClick(clicker, 30, menu.getItemInSlot(30), new me.mrCookieSlime.CSCoreLibPlugin.general.Inventory.ClickAction(false, false));
+                reply(sender, "configurator_add_invoked");
+            }
         } else if (mode.equals("assert")) {
             final ItemStack stave = menu.getItemInSlot(19);
             boolean ok = false;
