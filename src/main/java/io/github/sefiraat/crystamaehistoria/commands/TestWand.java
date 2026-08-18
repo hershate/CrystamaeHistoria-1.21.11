@@ -49,17 +49,24 @@ public class TestWand extends SubCommand {
                     return;
                 }
 
-                // 与 test-spell 一致：非法法术名给出提示而非抛出 IllegalArgumentException
-                final io.github.sefiraat.crystamaehistoria.magic.spells.core.Spell spell =
-                    SpellType.getById(args[0]);
-                if (spell == null) {
+                // 与 test-spell 一致：非法法术名给出提示而非抛出 IllegalArgumentException。
+                // 法术 id（如 ABSTRACT_VOID）与枚举常量名（AbstractVoid）不同形——
+                // 原实现 getById 校验后裸 valueOf(args[0]) 必抛 IAE，按 id 直接解析枚举
+                SpellType spellType = null;
+                for (SpellType st : SpellType.getCachedValues()) {
+                    if (st.getId().equals(args[0])) {
+                        spellType = st;
+                        break;
+                    }
+                }
+                if (spellType == null) {
                     player.sendMessage("法术不存在!");
                     return;
                 }
 
                 final InstanceStave staveInstance = new InstanceStave(stave);
                 final Map<SpellSlot, InstancePlate> map = staveInstance.getSpellInstanceMap();
-                final InstancePlate plateInstance = new InstancePlate(1, SpellType.valueOf(args[0]), 9999);
+                final InstancePlate plateInstance = new InstancePlate(1, spellType, 9999);
                 map.put(SpellSlot.LEFT_CLICK, plateInstance);
                 ItemMeta itemMeta = stave.getItemMeta();
                 PersistentStaveV2DataType.writeStaveMap(itemMeta, staveInstance.getSpellInstanceMap()
@@ -76,7 +83,7 @@ public class TestWand extends SubCommand {
     protected void complete(CommandSender commandSender, String[] strings, List<String> list) {
         if (strings.length == 1) {
             for (SpellType spell : SpellType.getEnabledSpells()) {
-                list.add(spell.name());
+                list.add(spell.getId());
             }
         }
     }

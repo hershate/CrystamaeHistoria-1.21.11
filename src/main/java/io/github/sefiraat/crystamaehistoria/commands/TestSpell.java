@@ -53,7 +53,7 @@ public class TestSpell extends SubCommand {
     protected void complete(CommandSender commandSender, String[] strings, List<String> list) {
         if (strings.length == 1) {
             for (SpellType spell : SpellType.getEnabledSpells()) {
-                list.add(spell.name());
+                list.add(spell.getId());
             }
         }
     }
