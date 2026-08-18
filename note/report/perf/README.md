@@ -112,6 +112,8 @@
 |------|--------|------|
 | 70 | 方块写入标志与逐 tick BlockData 克隆域（**第十五轮循环开启**，physics 标志角度）：CraftBlock 字节码实证单参 setBlockData/setType 默认 physics=true（NMS flag 3：邻居通知+观察者可见）vs false（flag 530：客户端更新+观察者不可见）——animateLight 光源呼吸动画（**每 tick 每工作面板**唯一热站点）改免 physics：全序列 1954.43 → ~285ns（**~6.9x**，保留每 tick 新读以保发光勺外部调节语义）+ HarmonysSonata 花朵写入 4 处族一致性补 false；GreenHouseGlass 作物催熟/晶簇生长/AIR 移除/用户工具写入判定保留 physics（**语义红线口径沉淀**：内部装饰效果非契约 vs 玩法可构建依赖语义）；60 步序列逐位等价 true + 观察者实证归档（[round-70](round-70.md)） | ✅ 完成（服务器回归通过，boot_r70 0 错误 0 watchdog） |
 | 73 | 每 tick 派发任务折叠域（**第十六轮循环开启**，长期循环任务形态角度）：FloatingHeadAnimation（每工作面板一个 period=1 任务，r47 只删死分支未折叠）折叠进 process() 每 tick 驱动——动画路径 54.35→21.7ns（~2.5x 噪声级）+ **全库唯一长期每 tick 任务类消除** + 卸载区块空转任务消除；任务/直接驱动 10 步头姿双精度逐位等价 true，类删除（benchRound47 不受影响）（[round-73](round-73.md)） | ✅ 完成（服务器回归通过，234 变体，0 CH 错误） |
+| 74 | 判定轮（第十六轮收敛 1/2，角度：运行时文本模式处理/数值解析）：唯一 matches 站点为 EphemeralWorkBench 启动静态块（冷）、RefillableUseItem 为预编译 Pattern；split/SimpleDateFormat/BigDecimal/replaceAll 全库零命中；parseInt 全 5 站点为命令/恢复路径——零发现（[round-74](round-74.md)） | ✅ 完成（判定轮，无变更） |
+| 75 | 判定轮（**第十六轮收敛 2/2**，角度：每秒清理链空表守卫一致性——12/12 remove* 均有 isEmpty 早退（r1 模式完备）；运行期注册表遍历——全部启动/注册期，运行期全为 O(1) 访问）：零发现——**r74+r75 连续零发现（角度互异）→ 第十六轮循环收敛**，版本收口 0.17.0（[round-75](round-75.md)，含循环总账） | ✅ 完成（判定轮，无变更，**第十六轮循环收敛**） |
 | 71 | 判定轮（第十五轮收敛 1/2，角度：重复状态应用形态/世界时间查询形态）：12 个效果应用点 tick 间隔逐一核对——重应用节拍即光环玩法语义（3×20t=1s 标准 + ChillWind 5t 设计节拍，节流化改变 HUD 计时形态拒绝，先例 r37/r65）；TimePeriod 为 ~ns 整数比较且 chance 短路在前——零发现（[round-71](round-71.md)） | ✅ 完成（判定轮，无变更） |
 | 72 | 判定轮（**第十五轮收敛 2/2**，角度：集合快照分配 toArray/copyOf——全库零命中；instanceof 链分派——单发检查无级联；String.format/MessageFormat——全启动期/事件级/已缓存）：零发现——**r71+r72 连续零发现（角度互异）→ 第十五轮循环收敛**，版本收口 0.16.0（[round-72](round-72.md)，含循环总账） | ✅ 完成（判定轮，无变更，**第十五轮循环收敛**） |
 
