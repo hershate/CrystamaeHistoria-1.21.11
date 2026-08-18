@@ -67,6 +67,7 @@
 | 54 | 长时连续 soak（20 分钟混合负载）（[round-54](round-54.md)） | ✅ 完成（1199s×7 周期：70 法术施放零错误、祭坛 mapSize 2→11 持续生长、SpellMemory 稳态有界（63-75 波动）且终态全表排空零泄漏、0 掉线、日志全零指标、优雅停服——r40 soak 时长翻倍扩展） |
 | 55 | 水晶燃烧降级+下界门脱水驱动验证（[round-55](round-55.md)） | ✅ 完成（真实 Bukkit 事件双驱动：RARE→UNCOMMON 降级+事件取消+弹开（r6 语义在位）、脱水配方原位转换精确匹配——零异常；驱动新增 crysta 子命令） |
 | 56 | 真人 GUI 复核清单 + 修复相互作用矩阵（[round-56](round-56.md)） | ✅ 完成（harness 边界项归集为 [manual/gui-review-checklist.md](../manual/gui-review-checklist.md) 四项真人复核清单；7 项修复爆炸半径交叉审查——零冲突，同链修复已被 r37 E2E 同链验证） |
+| 57 | 奇术盐+折射透镜真实事件驱动（[round-57](round-57.md)） | ◐ 完成（透镜 PASS：每内容类型一 DisplayItem 语义澄清 + 冷却护栏为真实客户端路径（合成事件连发绕过，harness 观察归档）；奇术盐未定：事件全条件到达但 emptyBasin 未执行，嫌疑为合成事件权限解析——代码与 r6 形态一致，列入真人复核；驱动新增 salts 子命令） |
 
 ## 已修复问题汇总
 

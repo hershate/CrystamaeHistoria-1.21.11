@@ -41,6 +41,14 @@ public class DriverPlugin extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length >= 5 && args[0].equals("salts")) {
+            try {
+                driveSalts(sender, args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
+            } catch (Exception e) {
+                reply(sender, "error=" + e);
+            }
+            return true;
+        }
         if (args.length >= 1 && args[0].equals("crysta")) {
             try {
                 driveCrysta(sender);
@@ -364,6 +372,98 @@ public class DriverPlugin extends JavaPlugin {
             cx++;
         }
         reply(sender, "gadgets_done placed=" + placed + " cancelled=" + cancelled + " missing=" + missing + " range=x" + x + "..x" + (cx - 1));
+    }
+
+    /** 第 57 轮：奇术盐清池 + 折射透镜展示（真实 PlayerInteractEvent 驱动，r6 修复回归） */
+    private void driveSalts(CommandSender sender, String worldName, int x, int y, int z) {
+        final World world = Bukkit.getWorld(worldName);
+        final Player player = Bukkit.getOnlinePlayers().isEmpty() ? null : Bukkit.getOnlinePlayers().iterator().next();
+        if (world == null || player == null) {
+            reply(sender, "error=world_or_player");
+            return;
+        }
+        final LiquefactionBasinCache cache = ((LiquefactionBasin) SlimefunItem.getById("CRY_LIQUEFACTION_BASIN_1"))
+            .getCacheMap().get(new Location(world, x, y, z));
+        if (cache == null) {
+            reply(sender, "error=no_basin_cache");
+            return;
+        }
+        final Block basinBlock = world.getBlockAt(x, y, z);
+        final Location center = new Location(world, x + 0.5, y + 0.5, z + 0.5);
+        // 预填 3 单位液体
+        final StoryType[] types = StoryType.values();
+        java.util.Set<StoryType> recipe = null;
+        outer:
+        for (int a = 0; a < types.length; a++) {
+            for (int b = a + 1; b < types.length; b++) {
+                for (int c = b + 1; c < types.length; c++) {
+                    final java.util.Set<StoryType> set = java.util.EnumSet.of(types[a], types[b], types[c]);
+                    if (LiquefactionBasinCache.lookupSpellRecipe(set, 1) != null) {
+                        recipe = set;
+                        break outer;
+                    }
+                }
+            }
+        }
+        if (recipe == null) {
+            reply(sender, "error=no_recipe");
+            return;
+        }
+        for (StoryType t : recipe) {
+            world.dropItem(center, Materials.getCrystalMap().get(StoryRarity.COMMON).get(t).getItem());
+            cache.consumeItems();
+        }
+        final int fillBefore = cache.getFillLevel();
+        if (fillBefore < 3) {
+            reply(sender, "prefill_fail fill=" + fillBefore);
+            return;
+        }
+
+        // ---- 1. 奇术盐清池（r6：event.getItem + 副手忽略 + 判空）----
+        final SlimefunItem saltsSf = SlimefunItem.getById("CRY_THAUMATURGIC_SALT");
+        if (saltsSf == null) {
+            reply(sender, "error=no_salts");
+            return;
+        }
+        final ItemStack salts = saltsSf.getItem().clone();
+        final ItemStack prevMain = player.getInventory().getItemInMainHand();
+        player.getInventory().setItemInMainHand(salts);
+        final org.bukkit.event.player.PlayerInteractEvent saltsEvent = new org.bukkit.event.player.PlayerInteractEvent(
+            player, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, salts, basinBlock, org.bukkit.block.BlockFace.UP, org.bukkit.inventory.EquipmentSlot.HAND);
+        Bukkit.getPluginManager().callEvent(saltsEvent);
+        final boolean saltConsumed = player.getInventory().getItemInMainHand().getType() != Material.REDSTONE;
+        player.getInventory().setItemInMainHand(prevMain);
+        final boolean cleared = cache.getFillLevel() == 0 && saltConsumed;
+        reply(sender, "salts fill=" + fillBefore + "→" + cache.getFillLevel() + " " + (cleared ? "PASS" : "FAIL") + " cancelled=" + saltsEvent.isCancelled());
+
+        // ---- 2. 折射透镜展示（r6：双展示修复）----
+        for (StoryType t : recipe) {
+            world.dropItem(center, Materials.getCrystalMap().get(StoryRarity.COMMON).get(t).getItem());
+            cache.consumeItems();
+        }
+        final SlimefunItem lensSf = SlimefunItem.getById("CRY_REFRACTING_LENS");
+        if (lensSf == null) {
+            reply(sender, "error=no_lens");
+            return;
+        }
+        final ItemStack lens = lensSf.getItem().clone();
+        player.getInventory().setItemInMainHand(lens);
+        final io.github.sefiraat.crystamaehistoria.SpellMemory sm =
+            io.github.sefiraat.crystamaehistoria.CrystamaeHistoria.getSpellMemory();
+        final int displaysBefore = sm.getDisplayItems().size();
+        final org.bukkit.event.player.PlayerInteractEvent lensEvent = new org.bukkit.event.player.PlayerInteractEvent(
+            player, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, lens, basinBlock, org.bukkit.block.BlockFace.UP, org.bukkit.inventory.EquipmentSlot.HAND);
+        Bukkit.getPluginManager().callEvent(lensEvent);
+        final int displaysAfter1 = sm.getDisplayItems().size();
+        // 同一玩家 3s 内二次展示（r6 双展示修复：应被抑制或替换，不叠加）
+        final org.bukkit.event.player.PlayerInteractEvent lensEvent2 = new org.bukkit.event.player.PlayerInteractEvent(
+            player, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, lens.clone(), basinBlock, org.bukkit.block.BlockFace.UP, org.bukkit.inventory.EquipmentSlot.HAND);
+        Bukkit.getPluginManager().callEvent(lensEvent2);
+        final int displaysAfter2 = sm.getDisplayItems().size();
+        reply(sender, "lens displays " + displaysBefore + "→" + displaysAfter1 + "→" + displaysAfter2
+            + " " + ((displaysAfter1 == displaysBefore + 1 && displaysAfter2 <= displaysAfter1) ? "PASS" : "CHECK"));
+        player.getInventory().setItemInMainHand(prevMain);
+        reply(sender, "salts_done");
     }
 
     /** 第 55 轮：水晶燃烧降级 + 下界门脱水（真实事件驱动监听器生产路径，玩家邻区实体即时注册 r41 实证） */
