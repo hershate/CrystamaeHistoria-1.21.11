@@ -208,6 +208,8 @@ public class DriverPlugin extends JavaPlugin {
         reply(sender, "result=" + (pass ? "PASS" : "CHECK_MANUALLY"));
     }
 
+    private ItemStack lastDropStack;
+
     private int countItems(Location l) {
         int n = 0;
         for (Entity e : l.getWorld().getNearbyEntities(l, 3, 3, 3)) {
@@ -353,7 +355,16 @@ public class DriverPlugin extends JavaPlugin {
         // 2. 依次投入 3 种 COMMON 水晶（各 1 体积）——吸取路径（addCrystamae/updateDisplay）
         final Location center = new Location(world, x + 0.5, y + 0.5, z + 0.5);
         for (StoryType t : recipe) {
-            world.dropItem(center, Materials.getCrystalMap().get(StoryRarity.COMMON).get(t).getItem());
+            final ItemStack dropStack = Materials.getCrystalMap().get(StoryRarity.COMMON).get(t).getItem();
+            reply(sender, "preDiag type=" + t + " stack=" + dropStack.getType() + "x" + dropStack.getAmount()
+                + " sameAsPrev=" + (dropStack == lastDropStack));
+            lastDropStack = dropStack;
+            final org.bukkit.entity.Item dropped = world.dropItem(center, dropStack);
+            reply(sender, "diag type=" + t + " resolved=" + io.github.sefiraat.crystamaehistoria.utils.SlimefunItemResolver.resolve(dropped)
+                + " boxEntities=" + world.getNearbyEntities(center, 0.3, 0.3, 0.3).size()
+                + " spawnLoc=" + dropped.getLocation().getBlockX() + ',' + dropped.getLocation().getBlockY() + ',' + dropped.getLocation().getBlockZ()
+                + " exact=" + String.format("%.2f,%.2f,%.2f", dropped.getLocation().getX(), dropped.getLocation().getY(), dropped.getLocation().getZ())
+                + " valid=" + dropped.isValid());
             cache.consumeItems();
         }
         final int fillAfter = cache.getFillLevel();
