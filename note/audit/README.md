@@ -95,6 +95,7 @@
 | 82 | Materials 材料族消费点清单（[round-82](round-82.md)） | ✅ **零发现 2/2——循环收敛休眠（第七次）**（24 字段消费核对：3 活跃 getter 全为已验证高频消费点+23 项为注册即消费形态（注册表/配方/图鉴），Lombok 生成冗余非死代码——与 r81 角度互异） |
 | 83 | Artistic 剩余物品消费点（[round-83](round-83.md)） | ✅ 零发现 1/2（InfinitePaintbrush 选色回绕/实体涂色权限/PDC 默认值安全+不消耗为设计语义；Pigment/Tintanno 注册即消费——Artistic 族消费链全闭环（Basic 有限 r53/Infinite 本轮/材料 r82 形态）） |
 | 84 | Exalted 剩余四物品 onExalt 消费链（[round-84](round-84.md)） | ✅ **零发现 2/2——循环收敛休眠（第八次）**（Beacon 广播/Pharo 零复制随机/Harvester·SeaBreeze 的 r11 clone 基准与 r42 单读优化全在位——族互异（画笔族 vs 崇高族）连续零发现） |
+| 85 | types/machines 基类边界复查（[round-85](round-85.md)） | ✅ 零发现 1/2（RefillableUseItem 的 refill 钳制+PDC 默认值防御确认在位（r26 溢出语义 refill 侧同样生效）；Stand r7 修复族全在位；MenuBlock 族既往覆盖——角度互异判定轮） |
 
 ## 已修复问题汇总
 
