@@ -41,6 +41,14 @@ public class DriverPlugin extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length >= 5 && args[0].equals("basinplate")) {
+            try {
+                driveBasinPlate(sender, args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
+            } catch (Exception e) {
+                reply(sender, "error=" + e);
+            }
+            return true;
+        }
         if (args.length >= 5 && args[0].equals("tpasync")) {
             try {
                 driveTpAsync(sender, args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
@@ -332,6 +340,120 @@ public class DriverPlugin extends JavaPlugin {
             cx++;
         }
         reply(sender, "gadgets_done placed=" + placed + " cancelled=" + cancelled + " missing=" + missing + " range=x" + x + "..x" + (cx - 1));
+    }
+
+    /** 第 50 轮：液化池充能板三分支（同法术再充能/异法术销毁/损坏 PDC 吞没） */
+    private void driveBasinPlate(CommandSender sender, String worldName, int x, int y, int z) {
+        final World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            reply(sender, "error=world_not_found");
+            return;
+        }
+        final Player player = Bukkit.getOnlinePlayers().isEmpty() ? null : Bukkit.getOnlinePlayers().iterator().next();
+        if (player == null) {
+            reply(sender, "error=no_player");
+            return;
+        }
+        final LiquefactionBasinCache cache = ((LiquefactionBasin) SlimefunItem.getById("CRY_LIQUEFACTION_BASIN_1"))
+            .getCacheMap().get(new Location(world, x, y, z));
+        if (cache == null) {
+            reply(sender, "error=no_basin_cache");
+            return;
+        }
+        final Location center = new Location(world, x + 0.5, y + 0.5, z + 0.5);
+        // 有效配方组合（与 basin 子命令同法）
+        final StoryType[] types = StoryType.values();
+        java.util.Set<StoryType> recipe = null;
+        outer:
+        for (int a = 0; a < types.length; a++) {
+            for (int b = a + 1; b < types.length; b++) {
+                for (int c = b + 1; c < types.length; c++) {
+                    final java.util.Set<StoryType> set = java.util.EnumSet.of(types[a], types[b], types[c]);
+                    if (LiquefactionBasinCache.lookupSpellRecipe(set, 1) != null) {
+                        recipe = set;
+                        break outer;
+                    }
+                }
+            }
+        }
+        if (recipe == null) {
+            reply(sender, "error=no_recipe");
+            return;
+        }
+        final io.github.sefiraat.crystamaehistoria.magic.SpellType matching = LiquefactionBasinCache.lookupSpellRecipe(recipe, 1);
+        final io.github.sefiraat.crystamaehistoria.magic.SpellType other = matching == io.github.sefiraat.crystamaehistoria.magic.SpellType.PUSH
+            ? io.github.sefiraat.crystamaehistoria.magic.SpellType.HEAL : io.github.sefiraat.crystamaehistoria.magic.SpellType.PUSH;
+
+        // ---- 分支 1：同法术再充能 ----
+        cache.emptyBasin();
+        for (StoryType t : recipe) {
+            world.dropItem(center, Materials.getCrystalMap().get(StoryRarity.COMMON).get(t).getItem());
+            cache.consumeItems();
+        }
+        final int fillBefore = cache.getFillLevel();
+        final ItemStack plateSame = io.github.sefiraat.crystamaehistoria.slimefun.items.tools.plates.ChargedPlate.getChargedPlate(1, matching, 10);
+        world.dropItem(center, plateSame);
+        cache.consumeItems();
+        cache.consumeItems();
+        // 收集结果板（原地重铸：再充能板在物品位置重下）
+        int newCrysta = -1;
+        for (Entity en : world.getNearbyEntities(center, 2, 2, 2)) {
+            if (en instanceof Item) {
+                final ItemStack is = ((Item) en).getItemStack();
+                if (SlimefunItem.getByItem(is) instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.tools.plates.ChargedPlate) {
+                    final io.github.sefiraat.crystamaehistoria.magic.spells.core.InstancePlate ip = io.github.sefiraat.crystamaehistoria.utils.datatypes.DataTypeMethods.getCustom(
+                        is.getItemMeta(), io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_PLATE_STORAGE,
+                        io.github.sefiraat.crystamaehistoria.utils.datatypes.PersistentPlateDataType.TYPE);
+                    newCrysta = ip == null ? -2 : ip.getCrysta();
+                    en.remove();
+                }
+            }
+        }
+        boolean rechargeOk = newCrysta == 10 + fillBefore && cache.getFillLevel() == 0;
+        reply(sender, "recharge expected=" + (10 + fillBefore) + " got=" + newCrysta + " fillAfter=" + cache.getFillLevel()
+            + " " + (rechargeOk ? "PASS" : "FAIL"));
+
+        // ---- 分支 2：异法术销毁（惩罚路径）----
+        cache.emptyBasin();
+        for (StoryType t : recipe) {
+            world.dropItem(center, Materials.getCrystalMap().get(StoryRarity.COMMON).get(t).getItem());
+            cache.consumeItems();
+        }
+        world.dropItem(center, io.github.sefiraat.crystamaehistoria.slimefun.items.tools.plates.ChargedPlate.getChargedPlate(1, other, 10));
+        cache.consumeItems();
+        cache.consumeItems();
+        int platesLeft = 0;
+        for (Entity en : world.getNearbyEntities(center, 3, 3, 3)) {
+            if (en instanceof Item && SlimefunItem.getByItem(((Item) en).getItemStack()) instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.tools.plates.ChargedPlate) {
+                platesLeft++;
+            }
+        }
+        boolean mismatchOk = cache.getFillLevel() == 0 && platesLeft == 0;
+        reply(sender, "mismatch fillAfter=" + cache.getFillLevel() + " platesLeft=" + platesLeft + " " + (mismatchOk ? "PASS" : "FAIL"));
+
+        // ---- 分支 3：损坏 PDC 板吞没（失败关闭 + 告警）----
+        cache.emptyBasin();
+        for (StoryType t : recipe) {
+            world.dropItem(center, Materials.getCrystalMap().get(StoryRarity.COMMON).get(t).getItem());
+            cache.consumeItems();
+        }
+        final ItemStack corrupt = io.github.sefiraat.crystamaehistoria.slimefun.items.tools.plates.ChargedPlate.getChargedPlate(1, matching, 10);
+        final org.bukkit.inventory.meta.ItemMeta cm = corrupt.getItemMeta();
+        // 伪造损坏：以错误类型写键（读取抛 IllegalStateException → 吞没路径）
+        cm.getPersistentDataContainer().set(io.github.sefiraat.crystamaehistoria.utils.Keys.PDC_PLATE_STORAGE, org.bukkit.persistence.PersistentDataType.STRING, "corrupted");
+        corrupt.setItemMeta(cm);
+        world.dropItem(center, corrupt);
+        cache.consumeItems();
+        cache.consumeItems();
+        int corruptLeft = 0;
+        for (Entity en : world.getNearbyEntities(center, 3, 3, 3)) {
+            if (en instanceof Item && SlimefunItem.getByItem(((Item) en).getItemStack()) instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.tools.plates.ChargedPlate) {
+                corruptLeft++;
+            }
+        }
+        reply(sender, "corrupt platesLeft=" + corruptLeft + " fillAfter=" + cache.getFillLevel()
+            + " " + (corruptLeft == 0 ? "PASS(吞没+告警)" : "FAIL"));
+        reply(sender, "basinplate_done");
     }
 
     /** teleportAsync×mineflayer 微探针：fired 即回，60 tick 后回报完成态与位置 */

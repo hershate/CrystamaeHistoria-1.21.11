@@ -60,6 +60,7 @@
 | 47 | 统计写入链驱动验证（[round-47](round-47.md)） | ✅ 完成（六写点零异常→纪元缓存读回全真→force 落盘→player_stats.yml 磁盘核验——写入/失效/读回/落盘全链实证；player_stats.yml 快照还原；驱动新增 stats 子命令） |
 | 48 | 法杖配置器驱动验证 + 组装链复核（[round-48](round-48.md)） | ◐ 完成（放置注册/槽位填充 ✅；ADD/REMOVE 处理器逐行复核无新缺陷（损坏板退还双路径在位）；GUI 点击未成——mineflayer/BlockMenu 非确定性交互（r36 家族），建议真人复核；驱动新增 configurator fill|assert 子命令） |
 | 49 | Waystone/传送网驱动验证（[round-49](round-49.md)） | ◐ 完成（**绑定生产路径 PASS**（真实 PlayerInteractEvent→PDC 写入，两度实证）；传送链零异常+代码复核无缺陷——teleportAsync 等待客户端 ACK 而 mineflayer 不发送（vanilla /tp 对照证明非处理器条件问题），如实归档为自动化边界；驱动新增 waystone/tpasync 子命令） |
+| 50 | 液化池充能板三分支驱动验证（[round-50](round-50.md)） | ✅ 完成（再充能晶能算术精确吻合 10+3=13 且池清空；异法术液体全销毁+板存活为设计语义（断言误设已更正）；损坏 PDC 吞没+配置不正确告警两度实证（r2 失败关闭在位）；驱动新增 basinplate 子命令） |
 
 ## 已修复问题汇总
 
