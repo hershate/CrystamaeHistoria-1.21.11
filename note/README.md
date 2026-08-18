@@ -278,7 +278,11 @@ process() 同节拍驱动——~2.5x 噪声级 + **全库唯一长期每 tick �
 [report/perf/round-73](report/perf/round-73.md)。第 74/75 轮判定——
 运行时文本模式/数值解析/清理链守卫一致性/注册表遍历四角度零发现，
 r74+r75 连续判定收敛，**第十六轮循环收口 0.17.0**；总账见
-[report/perf/round-75](report/perf/round-75.md)。
+[report/perf/round-75](report/perf/round-75.md)。第十七轮循环（用户再
+触发，2026-08-18 起）第 76 轮驻留条目重复解析域：晶簇条目存活至
+破坏——Block/粒子 Location 按条目缓存 + DustOptions 静态化，成熟
+晶株每 tick 体 1.61x（卫生级），粒子语义不变；详见
+[report/perf/round-76](report/perf/round-76.md)。
 
 ## 维护要点（改代码前必读）
 
