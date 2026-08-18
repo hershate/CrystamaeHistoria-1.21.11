@@ -115,7 +115,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound59(w),
                 () -> benchRound62(w),
                 () -> benchRound63(w),
-                () -> benchRound70(w)
+                () -> benchRound70(w),
+                () -> benchRound73(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -4055,5 +4056,65 @@ public final class CHPerfBench extends JavaPlugin {
                 }, 3L);
             }, 6L);
         }, 3L);
+    }
+
+    // ==================== 第 73 轮：每 tick 派发任务折叠域（FloatingHeadAnimation → process 内联） ====================
+
+    private void benchRound73(PrintWriter w) {
+        final World world = Bukkit.getWorlds().get(0);
+        final ArmorStand stand = world.spawn(new Location(world, 20, 210, 20), ArmorStand.class);
+
+        // —— 等价性 1：折叠形态（直接调用 step）与任务形态（period=1 任务真实跑 10 tick）头姿增量一致 ——
+        // 新形态：同一函数直接调 10 次
+        final ArmorStand standDirect = world.spawn(new Location(world, 24, 210, 20), ArmorStand.class);
+        for (int i = 0; i < 10; i++) {
+            io.github.sefiraat.crystamaehistoria.utils.ArmourStandUtils.panelAnimationStep(standDirect, true);
+        }
+        final double directYaw = standDirect.getHeadPose().getY();
+        // 旧形态：真实 runTaskTimer(1) 任务驱动 10 tick 后读回（经 12 tick 延迟读取）
+        final ArmorStand standTask = world.spawn(new Location(world, 28, 210, 20), ArmorStand.class);
+        final org.bukkit.scheduler.BukkitTask[] taskHolder = new org.bukkit.scheduler.BukkitTask[1];
+        final double[] taskYaw = new double[1];
+        taskHolder[0] = new org.bukkit.scheduler.BukkitRunnable() {
+            private int runs;
+            @Override
+            public void run() {
+                io.github.sefiraat.crystamaehistoria.utils.ArmourStandUtils.panelAnimationStep(standTask, true);
+                if (++runs >= 10) {
+                    taskYaw[0] = standTask.getHeadPose().getY();
+                    cancel();
+                }
+            }
+        }.runTaskTimer(this, 1L, 1L);
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            getLogger().info("round73 等价性(头姿增量 10 步: 任务驱动 vs 直接调用): "
+                + (Math.abs(taskYaw[0] - directYaw) < 1e-9) + " (task=" + taskYaw[0] + ", direct=" + directYaw + ")");
+        }, 14L);
+
+        // —— 调度派发代理：一次性同步任务入队+执行（每 tick 循环任务处理成本的上界代理；
+        //    待执行任务在步骤返回后的空闲 tick 排泄，批量取 10k 控制排湿冲击） ——
+        time(w, "headAnimFold", "sched_dispatchProxy", 10_000, () -> {
+            Bukkit.getScheduler().runTask(this, () -> bh++);
+        });
+
+        // —— 展示架解析形态：UUID 注册表查（折叠后备路径） vs 直接引用字段（折叠形态） ——
+        final java.util.UUID standUuid = stand.getUniqueId();
+        time(w, "headAnimFold", "stand_uuidLookup", 200_000, () -> {
+            final org.bukkit.entity.Entity e = Bukkit.getEntity(standUuid);
+            bh += e == null ? 0 : e.getEntityId();
+        });
+        time(w, "headAnimFold", "stand_directRef", 200_000, () -> bh += stand.getEntityId());
+
+        // —— step 本体（与 r47 基线连续） ——
+        time(w, "headAnimFold", "step_body", 200_000, () -> {
+            io.github.sefiraat.crystamaehistoria.utils.ArmourStandUtils.panelAnimationStep(stand, true);
+        });
+
+        // 清理（等价性读取在其后 14L tick，此处只移除解析/计时用 stand）
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            stand.remove();
+            standDirect.remove();
+            standTask.remove();
+        }, 16L);
     }
 }
