@@ -114,7 +114,8 @@ public final class CHPerfBench extends JavaPlugin {
                 () -> benchRound57(w),
                 () -> benchRound59(w),
                 () -> benchRound62(w),
-                () -> benchRound63(w)
+                () -> benchRound63(w),
+                () -> benchRound70(w)
             };
             chainSteps(w, steps, 0);
         } catch (Exception e) {
@@ -3913,5 +3914,146 @@ public final class CHPerfBench extends JavaPlugin {
             }
         }
         return "<none>";
+    }
+
+    // ==================== 第 70 轮：方块写入标志与逐 tick BlockData 克隆域 ====================
+
+    /** 复刻 0.15.0 ChroniclerPanelCache.animateLight 单 tick 体（getBlockData 克隆 + 单参 setBlockData=physics） */
+    private int round70StepOld(Block b, boolean[] dim) {
+        if (b.getType() == Material.LIGHT) {
+            final org.bukkit.block.data.type.Light light = (org.bukkit.block.data.type.Light) b.getBlockData();
+            final int level = light.getLevel();
+            if (level >= 15) {
+                light.setLevel(level - 1);
+                dim[0] = true;
+            } else if (level <= 5) {
+                light.setLevel(level + 1);
+                dim[0] = false;
+            } else {
+                light.setLevel(dim[0] ? level - 1 : level + 1);
+            }
+            b.setBlockData(light);
+            return light.getLevel();
+        }
+        return -1;
+    }
+
+    /** 新形态：缓存 Light 实例就地调级 + setBlockData(data, false)（无邻居通知、观察者不可见） */
+    private int round70StepNew(Block b, org.bukkit.block.data.type.Light cached, boolean[] dim) {
+        if (b.getType() == Material.LIGHT) {
+            final int level = cached.getLevel();
+            if (level >= 15) {
+                cached.setLevel(level - 1);
+                dim[0] = true;
+            } else if (level <= 5) {
+                cached.setLevel(level + 1);
+                dim[0] = false;
+            } else {
+                cached.setLevel(dim[0] ? level - 1 : level + 1);
+            }
+            b.setBlockData(cached, false);
+            return cached.getLevel();
+        }
+        return -1;
+    }
+
+    private void benchRound70(PrintWriter w) {
+        final World world = Bukkit.getWorlds().get(0);
+        final Block lightBlock = world.getBlockAt(50, 220, 50);
+        lightBlock.getChunk().load();
+
+        // —— 等价性：两种形态自同一初态出发 60 步 level 序列逐位一致 + 新形态终态读回一致 ——
+        final boolean[] dim = {true};
+        final int[] oldSeq = new int[60];
+        final int[] newSeq = new int[60];
+        lightBlock.setType(Material.AIR);
+        lightBlock.setType(Material.LIGHT);
+        org.bukkit.block.data.type.Light init = (org.bukkit.block.data.type.Light) lightBlock.getBlockData();
+        init.setLevel(10);
+        lightBlock.setBlockData(init);
+        for (int i = 0; i < 60; i++) {
+            oldSeq[i] = round70StepOld(lightBlock, dim);
+        }
+        lightBlock.setType(Material.AIR);
+        lightBlock.setType(Material.LIGHT);
+        init = (org.bukkit.block.data.type.Light) lightBlock.getBlockData();
+        init.setLevel(10);
+        lightBlock.setBlockData(init);
+        dim[0] = true;
+        final org.bukkit.block.data.type.Light cached = (org.bukkit.block.data.type.Light) lightBlock.getBlockData();
+        for (int i = 0; i < 60; i++) {
+            newSeq[i] = round70StepNew(lightBlock, cached, dim);
+        }
+        boolean equiv = java.util.Arrays.equals(oldSeq, newSeq);
+        equiv &= ((org.bukkit.block.data.type.Light) lightBlock.getBlockData()).getLevel() == cached.getLevel();
+        getLogger().info("round70 等价性(level 序列 60 步逐位一致 + 终态读回): " + equiv);
+
+        // —— 全序列计时（工作面板每 tick 实际执行的形态）——
+        time(w, "lightAnim", "old_getClone_physics", 4_000, () -> bh += round70StepOld(lightBlock, dim));
+        // 重同步缓存实例到方块当前 level，保证两变体从同一相位出发
+        cached.setLevel(((org.bukkit.block.data.type.Light) lightBlock.getBlockData()).getLevel());
+        time(w, "lightAnim", "new_cached_nophysics", 4_000, () -> bh += round70StepNew(lightBlock, cached, dim));
+
+        // —— 隔离项 ——
+        time(w, "lightAnim", "iso_getBlockData", 200_000, () -> bh += lightBlock.getBlockData().hashCode());
+        final org.bukkit.block.data.type.Light l13 = (org.bukkit.block.data.type.Light) Material.LIGHT.createBlockData();
+        l13.setLevel(13);
+        final org.bukkit.block.data.type.Light l12 = (org.bukkit.block.data.type.Light) Material.LIGHT.createBlockData();
+        l12.setLevel(12);
+        final boolean[] flip = {false};
+        time(w, "lightAnim", "iso_set_physics", 4_000, () -> {
+            flip[0] = !flip[0];
+            lightBlock.setBlockData(flip[0] ? l13 : l12);
+        });
+        time(w, "lightAnim", "iso_set_nophysics", 4_000, () -> {
+            flip[0] = !flip[0];
+            lightBlock.setBlockData(flip[0] ? l13 : l12, false);
+        });
+
+        // —— 作物催熟对照（GreenHouseGlass 形态；physics 差异即该站点的语义成本）——
+        final Block farmland = world.getBlockAt(60, 220, 50);
+        final Block wheat = world.getBlockAt(60, 221, 50);
+        farmland.setType(Material.FARMLAND);
+        wheat.setType(Material.WHEAT);
+        final org.bukkit.block.data.Ageable w2 = (org.bukkit.block.data.Ageable) wheat.getBlockData();
+        w2.setAge(2);
+        final org.bukkit.block.data.Ageable w3 = (org.bukkit.block.data.Ageable) wheat.getBlockData();
+        w3.setAge(3);
+        time(w, "cropAge", "iso_set_physics", 50_000, () -> {
+            flip[0] = !flip[0];
+            wheat.setBlockData(flip[0] ? w2 : w3);
+        });
+        time(w, "cropAge", "iso_set_nophysics", 50_000, () -> {
+            flip[0] = !flip[0];
+            wheat.setBlockData(flip[0] ? w2 : w3, false);
+        });
+
+        // —— 观察者语义实证（佐证 CraftBlock 字节码：physics=true→NMS flag 3（邻居通知+观察者可见），
+        //    false→flag 530（客户端更新+抑制掉落+观察者不可见））——
+        final Block obs = world.getBlockAt(50, 220, 51);
+        obs.setType(Material.OBSERVER);
+        final org.bukkit.block.data.Directional dir = (org.bukkit.block.data.Directional) obs.getBlockData();
+        dir.setFacing(BlockFace.NORTH);
+        obs.setBlockData(dir);
+        final org.bukkit.block.data.type.Light pl = (org.bukkit.block.data.type.Light) lightBlock.getBlockData();
+        pl.setLevel(pl.getLevel() == 12 ? 13 : 12);
+        lightBlock.setBlockData(pl);
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            final boolean poweredAfterPhysics = ((org.bukkit.block.data.type.Observer) obs.getBlockData()).isPowered();
+            Bukkit.getScheduler().runTaskLater(this, () -> {
+                final org.bukkit.block.data.type.Light nl = (org.bukkit.block.data.type.Light) lightBlock.getBlockData();
+                nl.setLevel(nl.getLevel() == 12 ? 13 : 12);
+                lightBlock.setBlockData(nl, false);
+                Bukkit.getScheduler().runTaskLater(this, () -> {
+                    final boolean poweredAfterNoPhysics = ((org.bukkit.block.data.type.Observer) obs.getBlockData()).isPowered();
+                    getLogger().info("round70 观察者实证: physics写后=" + poweredAfterPhysics
+                        + "(预期true), noPhysics写后=" + poweredAfterNoPhysics + "(预期false)");
+                    obs.setType(Material.AIR);
+                    lightBlock.setType(Material.AIR);
+                    farmland.setType(Material.AIR);
+                    wheat.setType(Material.AIR);
+                }, 3L);
+            }, 6L);
+        }, 3L);
     }
 }
