@@ -49,6 +49,14 @@ public class DriverPlugin extends JavaPlugin {
             }
             return true;
         }
+        if (args.length >= 1 && args[0].equals("r72")) {
+            try {
+                driveR72(sender);
+            } catch (Exception e) {
+                reply(sender, "error=" + e);
+            }
+            return true;
+        }
         if (args.length >= 1 && args[0].equals("r68")) {
             try {
                 driveR68(sender);
@@ -489,6 +497,38 @@ public class DriverPlugin extends JavaPlugin {
         }
         reply(sender, "tier_scan " + tiers);
         reply(sender, "salts_done");
+    }
+
+    /** 第 72 轮：293ef90 修复实机验证——预取消事件分发下 onPoseClone 应跳过（消息哨兵） */
+    private void driveR72(CommandSender sender) {
+        final Player player = Bukkit.getOnlinePlayers().isEmpty() ? null : Bukkit.getOnlinePlayers().iterator().next();
+        if (player == null) {
+            reply(sender, "error=no_player");
+            return;
+        }
+        final SlimefunItem cloner = SlimefunItem.getById("CRY_POSE_CLONER");
+        if (cloner == null) {
+            reply(sender, "error=no_cloner");
+            return;
+        }
+        final org.bukkit.entity.ArmorStand stand = player.getWorld().spawn(
+            player.getLocation().add(2, 0, 0), org.bukkit.entity.ArmorStand.class);
+        final ItemStack prevMain = player.getInventory().getItemInMainHand();
+        player.getInventory().setItemInMainHand(cloner.getItem().clone());
+        // 对照 1：未取消事件 → 处理器应执行（非注入架 → 消息发送）
+        final org.bukkit.event.player.PlayerInteractAtEntityEvent normal =
+            new org.bukkit.event.player.PlayerInteractAtEntityEvent(player, stand, new org.bukkit.util.Vector(0.5, 0.5, 0.5), org.bukkit.inventory.EquipmentSlot.HAND);
+        Bukkit.getPluginManager().callEvent(normal);
+        reply(sender, "normal_fired cancelled=" + normal.isCancelled());
+        // 对照 2：预取消事件 → 修复后处理器应跳过（无新消息）
+        final org.bukkit.event.player.PlayerInteractAtEntityEvent preCancelled =
+            new org.bukkit.event.player.PlayerInteractAtEntityEvent(player, stand, new org.bukkit.util.Vector(0.5, 0.5, 0.5), org.bukkit.inventory.EquipmentSlot.HAND);
+        preCancelled.setCancelled(true);
+        Bukkit.getPluginManager().callEvent(preCancelled);
+        reply(sender, "precancelled_fired stayedCancelled=" + preCancelled.isCancelled());
+        reply(sender, "verify=观察两个消息哨兵（normal 有/precancelled 无）");
+        player.getInventory().setItemInMainHand(prevMain);
+        stand.remove();
     }
 
     /** 第 68 轮：睡袋（ItemUseHandler 方法级直调）+ 临时合成台（openWorkbench 生产调用） */
