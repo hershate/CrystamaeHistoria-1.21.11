@@ -49,9 +49,9 @@ public class TestWand extends SubCommand {
                     return;
                 }
 
-                // 与 test-spell 一致：非法法术名给出提示而非抛出 IllegalArgumentException。
-                // 法术 id（如 ABSTRACT_VOID）与枚举常量名（AbstractVoid）不同形——
-                // 原实现 getById 校验后裸 valueOf(args[0]) 必抛 IAE，按 id 直接解析枚举
+                // 按 id 解析 SpellType。现状全部 69 个法术 id 与枚举常量名完全一致
+                // （原 valueOf 亦安全——初判"必抛 IAE"系文件名比对方法论错误所致误报），
+                // 但该不变量无任何强制约束——按 id 循环解析消除对隐式耦合的依赖
                 SpellType spellType = null;
                 for (SpellType st : SpellType.getCachedValues()) {
                     if (st.getId().equals(args[0])) {
