@@ -30,6 +30,7 @@ import io.github.sefiraat.crystamaehistoria.slimefun.Tools;
 import io.github.sefiraat.crystamaehistoria.slimefun.Uniques;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.chroniclerpanel.ChroniclerPanel;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.chroniclerpanel.ChroniclerPanelCache;
+import io.github.sefiraat.crystamaehistoria.slimefun.items.tools.crafting.EphemeralWorkBench;
 import io.github.thebusybiscuit.slimefun4.api.SlimefunAddon;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.collections.Pair;
 import io.github.thebusybiscuit.slimefun4.libraries.paperlib.PaperLib;
@@ -244,6 +245,9 @@ public class CrystamaeHistoria extends JavaPlugin implements SlimefunAddon {
                 getLogger().severe("你必须更新下界乌托邦才能让魔法水晶编年史添加相关功能.");
             }
         }
+        // 全部物品注册完成后再收集增强合成台配方：类加载时点快照会漏掉
+        // 后续注册段（Gadgets/Artistic/Exalted/Uniques/Runes/Netheo）的配方
+        EphemeralWorkBench.setupRecipes();
     }
 
     @Nonnull

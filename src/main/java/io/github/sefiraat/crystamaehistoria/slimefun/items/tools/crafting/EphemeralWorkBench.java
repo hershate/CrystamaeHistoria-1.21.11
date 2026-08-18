@@ -44,7 +44,16 @@ public class EphemeralWorkBench extends SlimefunItem {
 
     private static final Map<ItemStack[], ItemStack> RECIPES = new HashMap<>();
 
-    static {
+    /**
+     * 重建增强合成台配方表。必须在全部物品注册完成后调用
+     * （{@code CrystamaeHistoria#setupSlimefun} 末尾）。
+     * <p>
+     * 原实现为类加载时点（Tools 注册段）的静态快照，早于 Gadgets/
+     * ArtisticItems 等后续注册段——这些物品的增强合成台配方会全部
+     * 缺失，与物品描述"原版+增强型工作台配方"不符。
+     */
+    public static void setupRecipes() {
+        RECIPES.clear();
         for (SlimefunItem i : Slimefun.getRegistry().getEnabledSlimefunItems()) {
             RecipeType recipeType = i.getRecipeType();
             if ((recipeType == RecipeType.ENHANCED_CRAFTING_TABLE) && allowedRecipe(i)) {
