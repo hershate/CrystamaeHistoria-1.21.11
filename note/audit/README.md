@@ -65,6 +65,7 @@
 | 52 | Exalted 物品效果链驱动验证（[round-52](round-52.md)） | ✅ 完成（时间/天气双链：onExalt 零异常→冻结表登记 HIT→玩家状态实际应用（playerTime=6000/weather=CLEAR）→2s 过期每秒回收 stat=0——统一过期模型在 Exalted 族实机实证；驱动新增 exalted 子命令） |
 | 53 | Artistic 画笔消耗链驱动验证（[round-53](round-53.md)） | ✅ 完成（黑色 100 款：涂色 100/100（wool 族语义）+ PDC uses 衰减 + 第 100 次耗尽堆清空（LimitedUseItem 用尽即毁实证）——零插件异常；驱动新增 brush 子命令） |
 | 54 | 长时连续 soak（20 分钟混合负载）（[round-54](round-54.md)） | ✅ 完成（1199s×7 周期：70 法术施放零错误、祭坛 mapSize 2→11 持续生长、SpellMemory 稳态有界（63-75 波动）且终态全表排空零泄漏、0 掉线、日志全零指标、优雅停服——r40 soak 时长翻倍扩展） |
+| 55 | 水晶燃烧降级+下界门脱水驱动验证（[round-55](round-55.md)） | ✅ 完成（真实 Bukkit 事件双驱动：RARE→UNCOMMON 降级+事件取消+弹开（r6 语义在位）、脱水配方原位转换精确匹配——零异常；驱动新增 crysta 子命令） |
 
 ## 已修复问题汇总
 

@@ -41,6 +41,14 @@ public class DriverPlugin extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length >= 1 && args[0].equals("crysta")) {
+            try {
+                driveCrysta(sender);
+            } catch (Exception e) {
+                reply(sender, "error=" + e);
+            }
+            return true;
+        }
         if (args.length >= 1 && args[0].equals("brush")) {
             try {
                 driveBrush(sender);
@@ -356,6 +364,57 @@ public class DriverPlugin extends JavaPlugin {
             cx++;
         }
         reply(sender, "gadgets_done placed=" + placed + " cancelled=" + cancelled + " missing=" + missing + " range=x" + x + "..x" + (cx - 1));
+    }
+
+    /** 第 55 轮：水晶燃烧降级 + 下界门脱水（真实事件驱动监听器生产路径，玩家邻区实体即时注册 r41 实证） */
+    private void driveCrysta(CommandSender sender) {
+        final Player player = Bukkit.getOnlinePlayers().isEmpty() ? null : Bukkit.getOnlinePlayers().iterator().next();
+        if (player == null) {
+            reply(sender, "error=no_player");
+            return;
+        }
+        final Location loc = player.getLocation().clone().add(2, 0.5, 0);
+        // ---- 1. 燃烧降级：RARE → UNCOMMON ----
+        final org.bukkit.entity.Item rare = player.getWorld().dropItem(loc,
+            Materials.getCrystalMap().get(io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity.RARE)
+                .get(io.github.sefiraat.crystamaehistoria.stories.definition.StoryType.ELEMENTAL).getItem());
+        final org.bukkit.block.Block fire = loc.getBlock();
+        fire.setType(Material.FIRE);
+        final org.bukkit.event.entity.EntityCombustByBlockEvent combust =
+            new org.bukkit.event.entity.EntityCombustByBlockEvent(fire, rare, 8);
+        Bukkit.getPluginManager().callEvent(combust);
+        final SlimefunItem downgraded = SlimefunItem.getByItem(rare.getItemStack());
+        fire.setType(Material.AIR);
+        final io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity nowRarity =
+            downgraded instanceof io.github.sefiraat.crystamaehistoria.slimefun.items.materials.Crystal
+                ? ((io.github.sefiraat.crystamaehistoria.slimefun.items.materials.Crystal) downgraded).getRarity() : null;
+        final boolean downgradeOk = nowRarity == io.github.sefiraat.crystamaehistoria.stories.definition.StoryRarity.UNCOMMON
+            && combust.isCancelled();
+        reply(sender, "downgrade " + (downgradeOk ? "PASS" : "FAIL")
+            + " (RARE→UNCOMMON 事件取消=" + combust.isCancelled() + " now=" + nowRarity + " valid=" + rare.isValid() + ")");
+        rare.remove();
+
+        // ---- 2. 下界门脱水：第一个有效配方入→出 ----
+        java.util.Map.Entry<ItemStack, ItemStack> hit = null;
+        for (java.util.Map.Entry<ItemStack, ItemStack> en : io.github.sefiraat.crystamaehistoria.slimefun.CrystaRecipeTypes.getDrainingRecipes().entrySet()) {
+            if (en.getKey() != null && en.getKey().getType() != Material.AIR && en.getValue() != null) {
+                hit = en;
+                break;
+            }
+        }
+        if (hit == null) {
+            reply(sender, "drain SKIP no_recipe");
+            return;
+        }
+        final org.bukkit.entity.Item toDrain = player.getWorld().dropItem(loc, hit.getKey().clone());
+        final org.bukkit.event.entity.EntityPortalEnterEvent portal =
+            new org.bukkit.event.entity.EntityPortalEnterEvent(toDrain, loc);
+        Bukkit.getPluginManager().callEvent(portal);
+        final ItemStack after = toDrain.getItemStack();
+        final boolean drainOk = io.github.thebusybiscuit.slimefun4.utils.SlimefunUtils.isItemSimilar(after, hit.getValue(), true, false);
+        reply(sender, "drain " + (drainOk ? "PASS" : "FAIL")
+            + " (in=" + hit.getKey().getType() + " expected=" + hit.getValue().getType() + " now=" + after.getType() + ")");
+        toDrain.remove();
     }
 
     /** 第 53 轮：画笔消耗链（tryPaint 生产路径 + LimitedUseItem PDC 衰减 + 耗尽损坏） */
