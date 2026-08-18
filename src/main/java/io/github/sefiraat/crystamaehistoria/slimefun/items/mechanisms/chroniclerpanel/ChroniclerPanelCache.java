@@ -2,7 +2,6 @@ package io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.chronicle
 
 import io.github.sefiraat.crystamaehistoria.CrystamaeHistoria;
 import io.github.sefiraat.crystamaehistoria.player.PlayerStatistics;
-import io.github.sefiraat.crystamaehistoria.runnables.spells.FloatingHeadAnimation;
 import io.github.sefiraat.crystamaehistoria.slimefun.items.mechanisms.AbstractCache;
 import io.github.sefiraat.crystamaehistoria.stories.BlockDefinition;
 import io.github.sefiraat.crystamaehistoria.stories.Story;
@@ -42,7 +41,7 @@ public class ChroniclerPanelCache extends AbstractCache {
     private Material workingOn;
     private boolean working;
     private BlockDefinition blockDefinition;
-    private FloatingHeadAnimation animation;
+    private ArmorStand displayStand;
     private Location blockMiddle;
     private boolean lightDimming = true;
     private UUID armorStandUUID;
@@ -105,8 +104,10 @@ public class ChroniclerPanelCache extends AbstractCache {
         final ArmorStand armourStand = getDisplayStand();
 
         ArmourStandUtils.panelAnimationReset(armourStand, blockMenu.getBlock());
-        animation = new FloatingHeadAnimation(armourStand);
-        animation.runTaskTimer(CrystamaeHistoria.getInstance(), 0, FloatingHeadAnimation.SPEED);
+        // 头部旋转动画折叠进 process() 工作分支（同为每 tick 驱动）：原独立 period=1
+        // 任务每工作面板每 tick 一次调度派发为纯开销（r73）；直接引用与原任务持有
+        // 引用的陈旧语义一致（展示架被外部移除时同样静默失效，下次 setWorking 重建）
+        displayStand = armourStand;
     }
 
     @ParametersAreNonnullByDefault
@@ -201,6 +202,7 @@ public class ChroniclerPanelCache extends AbstractCache {
         } else {
             // Working with an item in slot while workingOn matches means we can process the item
             animateLight();
+            ArmourStandUtils.panelAnimationStep(displayStand, true);
             processStack(inputItem);
         }
     }
@@ -285,9 +287,7 @@ public class ChroniclerPanelCache extends AbstractCache {
             lightBlock.setType(Material.AIR);
         }
 
-        if (animation != null) {
-            animation.cancel();
-        }
+        displayStand = null;
 
         ArmourStandUtils.panelAnimationReset(getDisplayStand(), block);
     }
