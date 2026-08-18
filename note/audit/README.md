@@ -91,6 +91,7 @@
 | 78 | tick 路径 ItemMeta 热点复查（[round-78](round-78.md)） | ✅ **零发现 2/2——循环收敛休眠（第五次）**（gadgets/mechanisms 全部 13 处 getItemMeta 按方法热度分类：7 事件级一次性 + 5 热点处全被备忘录/事件门控/脏标记覆盖（r15/r22/r36 形态一致）+1 展示路径——无遗漏热点克隆） |
 | 79 | Runes 古坛依赖边界（[round-79](round-79.md)） | ✅ 零发现 1/2（26 符文 ANCIENT_ALTAR 属 Slimefun 硬依赖常量无软依赖边界问题；23 种核心物品引用+本地引用注册序正确；9 元素布局与 AltarRecipe 消费兼容——角度互异判定轮） |
 | 80 | generic-stories↔枚举覆盖矩阵（[round-80](round-80.md)） | ✅ **零发现 2/2——循环收敛休眠（第六次）**（45 故事类型全合法+45 格每格恰 1 篇+跨档同名经 getStory(id,rarity) 分表消费核实为设计——数据-枚举形态与依赖形态互异） |
+| 81 | 命令层 Tab 补全权限矩阵（[round-81](round-81.md)） | ✅ 零发现 1/2（一级补全 canUse 前置过滤不泄露 op 专属命令名+子命令参数补全双守卫+补全口径与执行一致（getId/enabledSpells，eca4568 对称生效）——与 r39 执行面角度互异） |
 
 ## 已修复问题汇总
 
