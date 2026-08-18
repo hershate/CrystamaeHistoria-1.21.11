@@ -41,6 +41,14 @@ public class DriverPlugin extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length >= 1 && args[0].equals("gadgets") && args.length >= 5) {
+            try {
+                driveGadgets(sender, args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
+            } catch (Exception e) {
+                reply(sender, "error=" + e);
+            }
+            return true;
+        }
         if (args.length >= 1 && args[0].equals("place") && args.length >= 6) {
             try {
                 drivePlace(sender, args[1], args[2], Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]));
@@ -209,6 +217,52 @@ public class DriverPlugin extends JavaPlugin {
     }
 
     private ItemStack lastDropStack;
+
+    /** 第 43 轮：沿 +x 逐格放置全部 tick 类 gadget（真实 BlockPlaceEvent，玩家须在线且邻近） */
+    private void driveGadgets(CommandSender sender, String worldName, int x, int y, int z) {
+        final World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            reply(sender, "error=world_not_found");
+            return;
+        }
+        final Player player = Bukkit.getOnlinePlayers().isEmpty() ? null : Bukkit.getOnlinePlayers().iterator().next();
+        if (player == null) {
+            reply(sender, "error=no_player");
+            return;
+        }
+        final String[] ids = {
+            "CRY_MOB_LAMP_1", "CRY_MOB_FAN_1", "CRY_MOB_DIRT_1", "CRY_MOB_PLATE_1", "CRY_MOB_PLATE_TRAP",
+            "CRY_EXP_COLLECTOR_1", "CRY_ENDER_INHIBITOR_1", "CRY_MOB_CANDLE_1", "CRY_CROP_GLASS_1",
+            "CRY_MYSTERIOUS_POTTED_PLANT", "CRY_TROPHY_DISPLAY_1", "CRY_FRAGMENTED_VOID", "CRY_WAYSTONE"
+        };
+        int placed = 0, cancelled = 0, missing = 0;
+        int cx = x;
+        for (String sfId : ids) {
+            final SlimefunItem sfi = SlimefunItem.getById(sfId);
+            if (sfi == null) {
+                reply(sender, "missing=" + sfId);
+                missing++;
+                cx++;
+                continue;
+            }
+            final Block block = world.getBlockAt(cx, y, z);
+            final org.bukkit.block.BlockState replacedState = block.getState();
+            block.setType(sfi.getItem().getType());
+            final BlockPlaceEvent event = new BlockPlaceEvent(
+                block, replacedState, block.getRelative(org.bukkit.block.BlockFace.DOWN),
+                sfi.getItem().clone(), player, true, org.bukkit.inventory.EquipmentSlot.HAND);
+            Bukkit.getPluginManager().callEvent(event);
+            if (event.isCancelled()) {
+                block.setType(Material.AIR);
+                reply(sender, "cancelled=" + sfId);
+                cancelled++;
+            } else {
+                placed++;
+            }
+            cx++;
+        }
+        reply(sender, "gadgets_done placed=" + placed + " cancelled=" + cancelled + " missing=" + missing + " range=x" + x + "..x" + (cx - 1));
+    }
 
     private int countItems(Location l) {
         int n = 0;
