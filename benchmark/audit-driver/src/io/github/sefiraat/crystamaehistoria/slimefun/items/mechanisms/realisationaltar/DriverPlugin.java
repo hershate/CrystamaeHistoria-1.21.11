@@ -436,6 +436,8 @@ public class DriverPlugin extends JavaPlugin {
         final org.bukkit.event.player.PlayerInteractEvent saltsEvent = new org.bukkit.event.player.PlayerInteractEvent(
             player, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, salts, basinBlock, org.bukkit.block.BlockFace.UP, org.bukkit.inventory.EquipmentSlot.HAND);
         Bukkit.getPluginManager().callEvent(saltsEvent);
+        // 方法级直接调用（绕过合成事件预取消链——r60 机制取解的对照验证）
+        new io.github.sefiraat.crystamaehistoria.listeners.ThaumaturgicSaltsListener().onInteract(saltsEvent);
         final boolean saltConsumed = player.getInventory().getItemInMainHand().getType() != Material.REDSTONE;
         player.getInventory().setItemInMainHand(prevMain);
         final boolean cleared = cache.getFillLevel() == 0 && saltConsumed;
