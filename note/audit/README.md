@@ -81,6 +81,7 @@
 | 68 | SleepingBag+临时合成台驱动验证（[round-68](round-68.md)） | ✅ 完成（睡袋 ItemUseHandler 方法级直调零异常——假玩家 sleep 失败→回滚路径实证（无床残留/未登记，r1 修复在位）；openWorkbench 打开 PASS） |
 | 69 | Runes/Uniques 交互链审查（[round-69](round-69.md)） | ✅ 完成（Runes 8 项纯材料无运行时面；Trophy 双防御 handler（禁放/禁食）+ TrophyDisplay 取放兜底复核在位，展示架 tick 已由 r43 覆盖——零新发现，纯代码轮） |
 | 70 | 跨维度边界判定轮（[round-70](round-70.md)） | ✅ **循环收敛休眠**（全新探针角度：全库 6 处 distance callsite 逐一审查——跨世界守卫全在位（r7/r12 修复），构造同世界 3 处安全——零发现，连续 2/2 角度互异，按 r44 准则休眠待触发） |
+| 71 | 事件优先级全景矩阵（[round-71](round-71.md)） | ✅ 完成（**发现并修复 293ef90**：onPoseClone 缺 ignoreCancelled（红线 4 违例，r25 漏网处）——被否决交互仍克隆消耗，一行修复；脚本化全景矩阵证明判定轮换角度的价值：r10-19 逐文件与 r25 专项均未覆盖此参数组合） |
 
 ## 已修复问题汇总
 
